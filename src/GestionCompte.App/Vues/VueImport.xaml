@@ -217,7 +217,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Rattachée à" Width="230">
+                        <DataGridTemplateColumn Header="Rattachée à" Width="260">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <ComboBox Style="{StaticResource ListeCellule}" ItemsSource="{Binding Options}" IsEnabled="{Binding Modifiable}"
@@ -234,7 +234,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Règle" Width="200">
+                        <DataGridTemplateColumn Header="Règle" Width="170">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox IsChecked="{Binding RetenirRegle, UpdateSourceTrigger=PropertyChanged}" Margin="4,0"

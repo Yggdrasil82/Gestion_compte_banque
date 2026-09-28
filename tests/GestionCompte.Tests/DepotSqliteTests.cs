@@ -221,7 +221,9 @@ public sealed class DepotSqliteTests : IDisposable
         var compte = depot.Charger()!;
         Assert.Equal(RegleClassement.ParDefaut, compte.Configuration.Regles);
         Assert.All(compte.Mois.SelectMany(m => m.Operations), o => Assert.Null(o.IdentifiantBanque));
-        Assert.All(compte.Mois.SelectMany(m => m.Revenus), r => Assert.False(r.Recu));
+        // Revenus des mois passés considérés reçus ; ceux du dernier mois attendent l'import.
+        Assert.All(compte.Mois.SkipLast(1).SelectMany(m => m.Revenus), r => Assert.True(r.Recu));
+        Assert.All(compte.Mois[^1].Revenus, r => Assert.False(r.Recu));
 
         compte.Mois[0].Operations[0].IdentifiantBanque = "F1";
         depot.Enregistrer(compte);

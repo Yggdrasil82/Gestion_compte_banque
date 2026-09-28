@@ -92,6 +92,11 @@ public sealed class DepotSqlite
                 Recu = l.GetInt64(3) != 0,
                 IdentifiantBanque = TexteOuNull(l, 4),
             }));
+        // Avant le format 4, les revenus n'étaient pas cochés « reçu » : ceux des mois passés sont considérés reçus
+        // (sinon le solde pointé serait faux au premier import) ; ceux du dernier mois le seront à l'import.
+        if (!format4)
+            foreach (var revenu in compte.Mois.SkipLast(1).SelectMany(m => m.Revenus))
+                revenu.Recu = true;
         Lire(connexion, "SELECT mois_id, nom, budget FROM mois_enveloppe ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Enveloppes.Add(new LigneEnveloppe(l.GetString(1), LireDecimal(l.GetString(2)))));
         Lire(connexion,

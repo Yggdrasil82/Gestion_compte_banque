@@ -81,7 +81,8 @@ internal static class Captures
         };
 
         // Aperçu d'import sur un relevé d'exemple (rien n'est validé).
-        var releve = Path.Combine(Path.GetTempPath(), $"gestioncompte-releve-{Guid.NewGuid():N}.ofx");
+        var dossierReleve = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"gestioncompte-{Guid.NewGuid():N}")).FullName;
+        var releve = Path.Combine(dossierReleve, "releve-decembre-2026.ofx");
         File.WriteAllText(releve, ConfigurationParDefaut.ReleveDemo());
         vm.OuvrirImport(releve);
 
@@ -105,7 +106,7 @@ internal static class Captures
             }
 
             File.Delete(depot.CheminFichier);
-            File.Delete(releve);
+            Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
         });
     }

@@ -74,7 +74,7 @@ public static class ConfigurationParDefaut
             + Ligne("DEBIT", "20261218", "-23.80", "DEMO08", "CB BOULANGERIE DU MARCHE 17/12/26")
             + Ligne("CREDIT", "20261227", "+2812.35", "DEMO09", "VIR SALAIRE ROMAIN")
             + Ligne("CREDIT", "20261228", "+12.50", "DEMO10", "VIREMENT CPMS")
-            + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>1843.27\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
+            + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>4677.68\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
     }
 
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>
@@ -96,6 +96,7 @@ public static class ConfigurationParDefaut
 
         var octobre = compte.CreerMoisSuivant();
         octobre.Operations.ForEach(o => o.Pointee = true);
+        octobre.Revenus.ForEach(r => r.Recu = true);
         octobre.Operations.AddRange(new[]
         {
             new Operation("Leclerc", debit: 142.35m) { Enveloppe = "Courses", Pointee = true },
@@ -106,6 +107,7 @@ public static class ConfigurationParDefaut
 
         var novembre = compte.CreerMoisSuivant();
         novembre.Revenus.Single(r => r.Nom == "NDF").Montant = 86.40m;
+        novembre.Revenus.ForEach(r => r.Recu = true);
         novembre.Operations.Single(o => o.CompteCumul == Epargne).Debit = 150m;
         foreach (var operation in novembre.Operations.Take(8))
             operation.Pointee = true;
