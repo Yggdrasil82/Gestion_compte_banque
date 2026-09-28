@@ -218,16 +218,65 @@ public sealed class DepotSqliteTests : IDisposable
             commande.ExecuteNonQuery();
         }
 
-        var compte = depot.Charger()!;
+        // Octobre et novembre terminés, décembre en cours.
+        var compte = depot.Charger(new PeriodeMois(2026, 12))!;
         Assert.Equal(RegleClassement.ParDefaut, compte.Configuration.Regles);
         Assert.All(compte.Mois.SelectMany(m => m.Operations), o => Assert.Null(o.IdentifiantBanque));
-        // Revenus des mois passés considérés reçus ; ceux du dernier mois attendent l'import.
+        // Revenus des mois terminés considérés reçus ; ceux du mois en cours attendent l'import.
         Assert.All(compte.Mois.SkipLast(1).SelectMany(m => m.Revenus), r => Assert.True(r.Recu));
         Assert.All(compte.Mois[^1].Revenus, r => Assert.False(r.Recu));
 
         compte.Mois[0].Operations[0].IdentifiantBanque = "F1";
         depot.Enregistrer(compte);
         Assert.Equal("F1", depot.Charger()!.Mois[0].Operations[0].IdentifiantBanque);
+    }
+
+    [Fact]
+    public void FichierAuFormat3_MoisPasEncoreCommences_RevenusNonRecus()
+    {
+        var depot = new DepotSqlite(Chemin());
+        depot.Enregistrer(CompteAvecTroisMois());
+        using (var connexion = new SqliteConnection($"Data Source={depot.CheminFichier};Pooling=False"))
+        {
+            connexion.Open();
+            using var commande = connexion.CreateCommand();
+            commande.CommandText = "ALTER TABLE mois_revenu DROP COLUMN recu; ALTER TABLE mois_revenu DROP COLUMN identifiant_banque; " +
+                                   "ALTER TABLE operation DROP COLUMN identifiant_banque; PRAGMA user_version = 3;";
+            commande.ExecuteNonQuery();
+        }
+
+        // En septembre, aucun des trois mois (octobre à décembre) n'a commencé.
+        var compte = depot.Charger(new PeriodeMois(2026, 9))!;
+        Assert.All(compte.Mois.SelectMany(m => m.Revenus), r => Assert.False(r.Recu));
+    }
+
+    [Fact]
+    public void FichierAuFormat4_RevenusDesMoisPasEncoreCommences_Decoches()
+    {
+        var compte = CompteAvecTroisMois();
+        foreach (var revenu in compte.Mois.SelectMany(m => m.Revenus))
+            revenu.Recu = true;
+        compte.Mois[2].Revenus[0].IdentifiantBanque = "FIT-1";
+        var depot = new DepotSqlite(Chemin());
+        depot.Enregistrer(compte);
+        using (var connexion = new SqliteConnection($"Data Source={depot.CheminFichier};Pooling=False"))
+        {
+            connexion.Open();
+            using var commande = connexion.CreateCommand();
+            commande.CommandText = "PRAGMA user_version = 4;";
+            commande.ExecuteNonQuery();
+        }
+
+        // Novembre en cours : octobre et novembre gardent « reçu », décembre est décoché sauf le revenu importé.
+        var relu = depot.Charger(new PeriodeMois(2026, 11))!;
+        Assert.All(relu.Mois[0].Revenus.Concat(relu.Mois[1].Revenus), r => Assert.True(r.Recu));
+        Assert.True(relu.Mois[2].Revenus[0].Recu);
+        Assert.All(relu.Mois[2].Revenus.Skip(1), r => Assert.False(r.Recu));
+
+        // Une fois enregistré au format 5, la correction n'est plus refaite : une coche manuelle est conservée.
+        relu.Mois[2].Revenus[1].Recu = true;
+        depot.Enregistrer(relu);
+        Assert.True(depot.Charger(new PeriodeMois(2026, 11))!.Mois[2].Revenus[1].Recu);
     }
 
     [Fact]

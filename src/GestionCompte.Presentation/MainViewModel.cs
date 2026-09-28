@@ -34,7 +34,7 @@ public sealed partial class MainViewModel : ObservableObject
         Apparence = apparence ?? new ApparenceViewModel(null);
 
         // Une erreur de lecture est remontée à l'appelant : on n'écrase jamais un fichier illisible.
-        var compte = depot.Charger();
+        var compte = depot.Charger(new PeriodeMois(aujourdHui.Year, aujourdHui.Month));
         if (compte is null)
         {
             _compte = new CompteBancaire(ConfigurationParDefaut.Creer(new PeriodeMois(aujourdHui.Year, aujourdHui.Month)));
@@ -270,6 +270,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void ImportTermine(ResultatImport resultat)
     {
         var soldeBanque = Import?.SoldeBanque;
+        var soldePointe = Import?.SoldePointeApres ?? 0m;
         Import = null;
 
         // Affiche le dernier mois concerné par l'import.
@@ -285,7 +286,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (resultat.MoisCrees.Count > 0)
             texte += $", mois créé(s) : {string.Join(", ", resultat.MoisCrees.Select(m => m.Libelle))}";
         if (soldeBanque is { } solde)
-            texte += $". Solde banque : {Montants.Formater(solde)} €, solde pointé : {Montants.Formater(ImportReleve.SoldePointe(_compte))} €";
+            texte += $". Solde banque : {Montants.Formater(solde)} €, solde pointé : {Montants.Formater(soldePointe)} €";
         Statut = texte + ".";
     }
 

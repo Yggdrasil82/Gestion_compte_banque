@@ -28,7 +28,7 @@ public sealed partial class ImportViewModel : ObservableObject
         _dialogues = dialogues;
         _termine = termine;
         _annule = annule;
-        _soldePointeAvant = ImportReleve.SoldePointe(compte);
+        _soldePointeAvant = ImportReleve.SoldePointe(compte, plan.DateSolde);
         NomFichier = nomFichier;
 
         NomsEnveloppes = new[] { "" }.Concat(compte.Configuration.Enveloppes.Select(e => e.Nom)).ToList();
@@ -36,6 +36,20 @@ public sealed partial class ImportViewModel : ObservableObject
         MoisACreer = string.Join(", ", plan.MoisACreer.Select(p => p.Libelle));
         SoldeBanque = plan.SoldeBanque;
         DateSolde = plan.DateSolde?.ToString("dd/MM/yyyy") ?? "";
+
+        var premierMois = compte.Configuration.PremierMois;
+        SoldeAvantPremierMois = plan.DateSolde is { } date && new PeriodeMois(date.Year, date.Month) < premierMois;
+        LibelleSoldePointe = SoldeAvantPremierMois ? "Solde de départ (configuration)" : "Solde pointé après import";
+
+        var nonImportables = Lignes.Where(l => !l.Modifiable).Select(l => l.Statut).ToList();
+        RienAImporter = nonImportables.Count == Lignes.Count;
+        MessageRienAImporter = !RienAImporter ? ""
+            : Lignes.Count == 0 ? "Ce relevé ne contient aucune opération."
+            : nonImportables.All(s => s == StatutImport.AvantDebut)
+                ? $"Ce relevé est antérieur au premier mois géré ({premierMois.Libelle}) : aucune opération à importer."
+            : nonImportables.All(s => s == StatutImport.DejaImportee)
+                ? "Toutes les opérations de ce relevé ont déjà été importées."
+                : $"Aucune opération à importer : elles sont déjà importées ou antérieures au premier mois géré ({premierMois.Libelle}).";
 
         Recalculer();
     }
@@ -57,6 +71,16 @@ public sealed partial class ImportViewModel : ObservableObject
     public bool ASoldeBanque => SoldeBanque is not null;
 
     public string DateSolde { get; }
+
+    /// <summary>Le solde de la banque date d'avant le premier mois : il est comparé au solde de départ de la configuration.</summary>
+    public bool SoldeAvantPremierMois { get; }
+
+    public string LibelleSoldePointe { get; }
+
+    /// <summary>Aucune ligne ne peut être importée (toutes déjà importées ou antérieures au premier mois).</summary>
+    public bool RienAImporter { get; }
+
+    public string MessageRienAImporter { get; }
 
     [ObservableProperty] private int _nombreRapprochees;
     [ObservableProperty] private int _nombreAjustees;
@@ -89,12 +113,17 @@ public sealed partial class ImportViewModel : ObservableObject
         NombreNouvelles = importees.Count(l => l.Ligne.Statut == StatutImport.Nouvelle);
         NombreIgnorees = Lignes.Count - importees.Count;
 
-        // Chaque ligne importée devient pointée avec le montant de la banque.
-        SoldePointeApres = _soldePointeAvant + importees.Sum(l => l.Ligne.Source.Montant);
+        // Chaque ligne importée devient pointée avec le montant de la banque (seules celles jusqu'à la date du solde comptent).
+        SoldePointeApres = _soldePointeAvant + importees
+            .Where(l => _plan.DateSolde is not { } date || l.Ligne.Source.Date <= date)
+            .Sum(l => l.Ligne.Source.Montant);
         Ecart = (SoldeBanque ?? 0m) - SoldePointeApres;
+        ValiderCommand.NotifyCanExecuteChanged();
     }
 
-    [RelayCommand]
+    private bool PeutValider() => Lignes.Any(l => l.Ligne.Importer && l.Ligne.Modifiable);
+
+    [RelayCommand(CanExecute = nameof(PeutValider))]
     private void Valider()
     {
         if (AMoisACreer && !_dialogues.Confirmer("Créer des mois",

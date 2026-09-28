@@ -284,10 +284,16 @@ public static class ImportReleve
     /// Solde réel d'après l'application : solde de départ + revenus reçus + opérations pointées.
     /// Comparable au solde donné par la banque quand tout est pointé.
     /// </summary>
-    public static decimal SoldePointe(CompteBancaire compte) =>
-        compte.Configuration.SoldeInitial + compte.Mois.Sum(m =>
-            m.Revenus.Where(r => r.Recu).Sum(r => r.Montant)
-            + m.Operations.Where(o => o.Pointee).Sum(o => o.Credit - o.Debit));
+    /// <param name="jusquAu">Date du solde de la banque : seuls les mois jusqu'à celui-ci sont comptés
+    /// (avant le premier mois, il reste le solde de départ de la configuration).</param>
+    public static decimal SoldePointe(CompteBancaire compte, DateOnly? jusquAu = null)
+    {
+        var dernier = jusquAu is { } date ? new PeriodeMois(date.Year, date.Month) : (PeriodeMois?)null;
+        return compte.Configuration.SoldeInitial + compte.Mois
+            .Where(m => dernier is null || m.Periode <= dernier.Value)
+            .Sum(m => m.Revenus.Where(r => r.Recu).Sum(r => r.Montant)
+                      + m.Operations.Where(o => o.Pointee).Sum(o => o.Credit - o.Debit));
+    }
 
     /// <summary>Enveloppe donnée par la première règle dont le mot-clé figure dans le libellé, si l'enveloppe existe.</summary>
     public static string? EnveloppePour(IEnumerable<RegleClassement> regles, string libelle, IReadOnlyCollection<string> enveloppes)

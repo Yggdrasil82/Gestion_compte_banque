@@ -50,6 +50,42 @@ public sealed class ImportViewModelTests : IDisposable
     }
 
     [Fact]
+    public void ReleveAvantLePremierMois_RienAImporter_ComparaisonAuSoldeDeDepart()
+    {
+        var vm = OuvrirDemo();
+        var ofx = ImportReleveTests.Ofx(
+                ImportReleveTests.Ligne("DEBIT", "20260925", "-9.99", "S1", "PRLV SEPA BOUYGUES TELECOM"),
+                ImportReleveTests.Ligne("POS", "20260925", "-3.80", "S2", "CB HUGO"))
+            .Replace("20261027000000", "20260927000000");
+        File.WriteAllText(Chemin("septembre.ofx"), ofx);
+
+        vm.OuvrirImport(Chemin("septembre.ofx"));
+
+        var import = vm.Import!;
+        Assert.True(import.RienAImporter);
+        Assert.Contains("antérieur au premier mois", import.MessageRienAImporter);
+        Assert.False(import.ValiderCommand.CanExecute(null));
+        Assert.True(import.SoldeAvantPremierMois);
+        Assert.Equal(ConfigurationParDefaut.CreerDemo().Configuration.SoldeInitial, import.SoldePointeApres);
+        Assert.Equal(-483.45m - import.SoldePointeApres, import.Ecart);
+    }
+
+    [Fact]
+    public void ToutesLesLignesDecochees_ValiderImpossible()
+    {
+        var vm = OuvrirDemo();
+        vm.ImporterReleveCommand.Execute(null);
+        var import = vm.Import!;
+        Assert.False(import.RienAImporter);
+        Assert.True(import.ValiderCommand.CanExecute(null));
+
+        foreach (var ligne in import.Lignes)
+            ligne.Importer = false;
+
+        Assert.False(import.ValiderCommand.CanExecute(null));
+    }
+
+    [Fact]
     public void Annuler_RevientALEcranPrecedent()
     {
         var vm = OuvrirDemo();

@@ -39,6 +39,7 @@ du classeur Excel d'origine.
 
 - **1.0.0** : mois, prévisionnel, aide au budget, apparences.
 - **1.1.0** : import des relevés bancaires OFX.
+- **1.1.1** : import — solde comparé à la date du relevé, revenus « reçus » corrigés pour les mois pas encore commencés, message quand il n'y a rien à importer.
 
 ## Télécharger l'application
 

@@ -326,6 +326,23 @@ public class ImportReleveTests
         Assert.Equal(100m - 801m + 2650.40m, ImportReleve.SoldePointe(compte));
     }
 
+    [Fact]
+    public void SoldePointe_JusquALaDateDuReleve_IgnoreLesMoisSuivants()
+    {
+        var compte = CompteOctobre();
+        compte.Configuration.SoldeInitial = 100m;
+        compte.Mois[0].Revenus[0].Recu = true;
+        var novembre = compte.CreerMoisSuivant();
+        novembre.Revenus[0].Recu = true;
+        novembre.Operations[0].Pointee = true;
+
+        var octobre = 100m + compte.Mois[0].Revenus[0].Montant;
+        Assert.Equal(octobre, ImportReleve.SoldePointe(compte, new DateOnly(2026, 10, 27)));
+        // Relevé antérieur au premier mois : seul le solde de départ compte.
+        Assert.Equal(100m, ImportReleve.SoldePointe(compte, new DateOnly(2026, 9, 27)));
+        Assert.True(ImportReleve.SoldePointe(compte) != octobre);
+    }
+
     [Theory]
     [InlineData("PRLV SEPA FREE MOBILE", "Mobile Killian", 0.5)]
     [InlineData("PRLV SEPA LOYER", "Loyer", 1.0)]

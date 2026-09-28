@@ -16,8 +16,9 @@ public sealed class DepotSqlite
     /// <remarks>
     /// Version 2 : opérations prévues. Version 3 : catégories 50/30/20 et objectifs d'épargne.
     /// Version 4 : import des relevés (identifiant bancaire, revenus reçus, règles de classement).
+    /// Version 5 : même schéma ; marque la correction des revenus « reçus » des mois pas encore commencés.
     /// </remarks>
-    public const int VersionSchema = 4;
+    public const int VersionSchema = 5;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -36,13 +37,15 @@ public sealed class DepotSqlite
     public bool Existe => File.Exists(CheminFichier);
 
     /// <summary>Recharge le compte, ou renvoie null si aucun compte n'a encore été enregistré.</summary>
-    public CompteBancaire? Charger()
+    /// <param name="moisEnCours">Mois du jour (par défaut, celui de l'horloge) : sert à mettre à jour les anciens fichiers.</param>
+    public CompteBancaire? Charger(PeriodeMois? moisEnCours = null)
     {
         if (!Existe)
             return null;
 
         using var connexion = Ouvrir(SqliteOpenMode.ReadOnly);
-        VerifierVersion(connexion);
+        var version = VerifierVersion(connexion);
+        var aujourdHui = moisEnCours ?? new PeriodeMois(DateTime.Today.Year, DateTime.Today.Month);
 
         var parametres = LireParametres(connexion);
         if (parametres.Count == 0)
@@ -92,11 +95,17 @@ public sealed class DepotSqlite
                 Recu = l.GetInt64(3) != 0,
                 IdentifiantBanque = TexteOuNull(l, 4),
             }));
-        // Avant le format 4, les revenus n'étaient pas cochés « reçu » : ceux des mois passés sont considérés reçus
-        // (sinon le solde pointé serait faux au premier import) ; ceux du dernier mois le seront à l'import.
+        // Avant le format 4, les revenus n'étaient pas cochés « reçu » : ceux des mois terminés sont considérés reçus
+        // (sinon le solde pointé serait faux au premier import) ; ceux du mois en cours le seront à l'import.
         if (!format4)
-            foreach (var revenu in compte.Mois.SkipLast(1).SelectMany(m => m.Revenus))
+            foreach (var revenu in compte.Mois.Where(m => m.Periode < aujourdHui).SelectMany(m => m.Revenus))
                 revenu.Recu = true;
+        // Le format 4 cochait aussi les revenus des mois pas encore commencés : ils sont décochés
+        // (sauf s'ils viennent d'un relevé importé).
+        else if (version < 5)
+            foreach (var revenu in compte.Mois.Where(m => m.Periode > aujourdHui).SelectMany(m => m.Revenus))
+                if (revenu.IdentifiantBanque is null)
+                    revenu.Recu = false;
         Lire(connexion, "SELECT mois_id, nom, budget FROM mois_enveloppe ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Enveloppes.Add(new LigneEnveloppe(l.GetString(1), LireDecimal(l.GetString(2)))));
         Lire(connexion,
@@ -258,12 +267,13 @@ public sealed class DepotSqlite
     private static string ChaineConnexion(string chemin, SqliteOpenMode mode) =>
         new SqliteConnectionStringBuilder { DataSource = chemin, Mode = mode, Pooling = false }.ToString();
 
-    private void VerifierVersion(SqliteConnection connexion)
+    private int VerifierVersion(SqliteConnection connexion)
     {
         var version = Convert.ToInt32(ExecuterScalaire(connexion, "PRAGMA user_version"), CultureInfo.InvariantCulture);
         if (version > VersionSchema)
             throw new InvalidDataException(
                 $"Le fichier {CheminFichier} a été créé par une version plus récente de l'application (format {version}).");
+        return version;
     }
 
     private static void CreerSchema(SqliteConnection connexion)
