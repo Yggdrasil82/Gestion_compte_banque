@@ -8,6 +8,7 @@ du classeur Excel `compte Romain_3_type.xlsm`.
 | Dossier | Contenu |
 |---|---|
 | `src/GestionCompte.Core` | Moteur de calcul : configuration, mois, soldes, enveloppes, comptes cumulés |
+| `src/GestionCompte.Data` | Enregistrement dans un fichier SQLite (par défaut `Documents\GestionCompte\compte.db`) et sauvegarde |
 | `tests/GestionCompte.Tests` | Tests automatiques des calculs (reproduisent les chiffres d'Octobre 2026 du fichier Excel) |
 
 ## Règles de calcul
