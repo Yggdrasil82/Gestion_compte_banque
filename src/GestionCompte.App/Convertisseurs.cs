@@ -11,8 +11,9 @@ namespace GestionCompte.App;
 /// </summary>
 public sealed class MontantConvertisseur : IValueConverter
 {
+    /// <param name="parameter">« vide » : un montant nul s'affiche comme une case vide.</param>
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is decimal montant ? Montants.Formater(montant) : "";
+        value is decimal montant && !(montant == 0 && parameter as string == "vide") ? Montants.Formater(montant) : "";
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

@@ -115,4 +115,7 @@ public sealed class ApparenceViewModel : ObservableObject
     }
 }
 
-public sealed record ChoixAmbiance(Ambiance Valeur, string Nom);
+public sealed record ChoixAmbiance(Ambiance Valeur, string Nom)
+{
+    public override string ToString() => Nom;
+}

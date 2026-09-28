@@ -59,7 +59,7 @@
                     <Button Style="{StaticResource BoutonBarre}" Command="{Binding OuvrirDossierDonneesCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icone}" Text="&#xE838;" Margin="0,0,10,0" />
-                            <TextBlock Text="Ouvrir le dossier des données" />
+                            <TextBlock Text="Ouvrir le dossier" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

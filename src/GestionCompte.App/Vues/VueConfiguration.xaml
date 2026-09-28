@@ -156,7 +156,7 @@
                                                 ElementStyle="{StaticResource CelluleMontant}"
                                                 EditingElementStyle="{StaticResource EditionMontant}" />
                             <DataGridTextColumn Header="Crédit" Width="90"
-                                                Binding="{Binding Credit, Converter={StaticResource Montant}}"
+                                                Binding="{Binding Credit, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                                 ElementStyle="{StaticResource CelluleMontant}"
                                                 EditingElementStyle="{StaticResource EditionMontant}" />
                             <DataGridTemplateColumn Header="Compte cumulé" Width="130">

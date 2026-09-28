@@ -53,6 +53,8 @@ internal static class Captures
         var contenu = (UIElement)fenetre.Content;
         fenetre.Content = null;
         var hote = new Border { Child = contenu, DataContext = vm, Width = Largeur, Height = Hauteur };
+        // Le contenu reste rattaché à la fenêtre (jamais affichée) pour recevoir les changements de couleurs.
+        fenetre.Content = hote;
         hote.SetResourceReference(Border.BackgroundProperty, "Fond");
         hote.SetResourceReference(TextElement.ForegroundProperty, "Texte");
         TextElement.SetFontFamily(hote, new FontFamily("Segoe UI"));

@@ -260,11 +260,11 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Débit" Width="95"
-                                            Binding="{Binding Debit, Converter={StaticResource Montant}}"
+                                            Binding="{Binding Debit, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                             ElementStyle="{StaticResource CelluleMontant}"
                                             EditingElementStyle="{StaticResource EditionMontant}" />
                         <DataGridTextColumn Header="Crédit" Width="95"
-                                            Binding="{Binding Credit, Converter={StaticResource Montant}}"
+                                            Binding="{Binding Credit, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                             EditingElementStyle="{StaticResource EditionMontant}">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
