@@ -19,6 +19,9 @@ internal static class Captures
     private const double Largeur = 1400;
     private const double Hauteur = 880;
 
+    /// <summary>L'aide au budget est longue : elle est capturée en entier sur une image plus haute.</summary>
+    private const double HauteurAide = 1720;
+
     public static void Lancer(App app, string dossier)
     {
         dossier = Path.GetFullPath(dossier);
@@ -71,6 +74,8 @@ internal static class Captures
             ("7-previsionnel-nuit", Ambiance.Nuit, false, MainViewModel.OngletPrevisionnel, false),
             ("8-previsionnel-pastel", Ambiance.Pastel, false, MainViewModel.OngletPrevisionnel, false),
             ("9-configuration-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false),
+            ("10-aide-ocean", Ambiance.Ocean, false, MainViewModel.OngletAide, false),
+            ("11-aide-nuit", Ambiance.Nuit, false, MainViewModel.OngletAide, false),
         };
 
         app.Dispatcher.InvokeAsync(async () =>
@@ -83,8 +88,10 @@ internal static class Captures
                 if (etape.MoisPrecedent)
                     vm.MoisPrecedentCommand.Execute(null);
 
-                await MettreEnPage(hote);
-                Enregistrer(hote, Path.Combine(dossier, etape.Nom + ".png"));
+                var hauteur = etape.Onglet == MainViewModel.OngletAide ? HauteurAide : Hauteur;
+                hote.Height = hauteur;
+                await MettreEnPage(hote, hauteur);
+                Enregistrer(hote, Path.Combine(dossier, etape.Nom + ".png"), hauteur);
 
                 if (etape.MoisPrecedent)
                     vm.MoisSuivantCommand.Execute(null);
@@ -95,21 +102,21 @@ internal static class Captures
         });
     }
 
-    private static async Task MettreEnPage(FrameworkElement element)
+    private static async Task MettreEnPage(FrameworkElement element, double hauteur)
     {
         for (var passe = 0; passe < 3; passe++)
         {
-            element.Measure(new Size(Largeur, Hauteur));
-            element.Arrange(new Rect(0, 0, Largeur, Hauteur));
+            element.Measure(new Size(Largeur, hauteur));
+            element.Arrange(new Rect(0, 0, Largeur, hauteur));
             element.UpdateLayout();
             await Task.Delay(250);
             await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         }
     }
 
-    private static void Enregistrer(FrameworkElement element, string chemin)
+    private static void Enregistrer(FrameworkElement element, string chemin, double hauteur)
     {
-        var image = new RenderTargetBitmap((int)Largeur, (int)Hauteur, 96, 96, PixelFormats.Pbgra32);
+        var image = new RenderTargetBitmap((int)Largeur, (int)hauteur, 96, 96, PixelFormats.Pbgra32);
         image.Render(element);
 
         var encodeur = new PngBitmapEncoder();

@@ -23,8 +23,8 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             Synchroniser);
 
         Enveloppes = new ListeEditable<ElementConfigViewModel>(
-            configuration.Enveloppes.Select(e => new ElementConfigViewModel(e.Nom, e.BudgetParDefaut, Synchroniser)),
-            () => new ElementConfigViewModel("Nouvelle enveloppe", 0m, Synchroniser),
+            configuration.Enveloppes.Select(e => new ElementConfigViewModel(e.Nom, e.BudgetParDefaut, Synchroniser, e.Categorie)),
+            () => new ElementConfigViewModel("Nouvelle enveloppe", 0m, Synchroniser, Categorie.Essentiel),
             Synchroniser);
 
         Charges = new ListeEditable<ChargeConfigViewModel>(
@@ -78,6 +78,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         set { if (SetProperty(_configuration.SoldeInitial, value, _configuration, (c, v) => c.SoldeInitial = v)) _modifiee(); }
     }
 
+    /// <summary>Choix de la colonne « Catégorie » (règle 50/30/20).</summary>
+    public static IReadOnlyList<ChoixCategorie> Categories => ChoixCategorie.Tous;
+
     public ListeEditable<ElementConfigViewModel> Revenus { get; }
 
     public ListeEditable<ElementConfigViewModel> Enveloppes { get; }
@@ -95,7 +98,7 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         _configuration.Revenus.Clear();
         _configuration.Revenus.AddRange(Revenus.Elements.Select(r => new ModeleRevenu(r.Nom, r.Montant)));
         _configuration.Enveloppes.Clear();
-        _configuration.Enveloppes.AddRange(Enveloppes.Elements.Select(e => new ModeleEnveloppe(e.Nom, e.Montant)));
+        _configuration.Enveloppes.AddRange(Enveloppes.Elements.Select(e => new ModeleEnveloppe(e.Nom, e.Montant, e.Categorie.Valeur)));
         _configuration.Charges.Clear();
         _configuration.Charges.AddRange(Charges.Elements.Select(c => c.VersModele()));
         _configuration.ComptesCumul.Clear();
@@ -106,18 +109,26 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     }
 }
 
-/// <summary>Ligne « nom + montant » (revenu ou enveloppe).</summary>
+/// <summary>Ligne « nom + montant » (revenu, ou enveloppe avec sa catégorie).</summary>
 public sealed class ElementConfigViewModel : ObservableObject
 {
     private readonly Action _modifie;
     private string _nom;
     private decimal _montant;
+    private ChoixCategorie _categorie;
 
-    public ElementConfigViewModel(string nom, decimal montant, Action modifie)
+    public ElementConfigViewModel(string nom, decimal montant, Action modifie, Core.Modeles.Categorie categorie = Core.Modeles.Categorie.NonClassee)
     {
         _nom = nom;
         _montant = montant;
         _modifie = modifie;
+        _categorie = ChoixCategorie.De(categorie);
+    }
+
+    public ChoixCategorie Categorie
+    {
+        get => _categorie;
+        set { if (value is not null && SetProperty(ref _categorie, value)) _modifie(); }
     }
 
     public string Nom
@@ -140,6 +151,7 @@ public sealed class ChargeConfigViewModel : ObservableObject
     private decimal _debit;
     private decimal _credit;
     private string? _compteCumul;
+    private ChoixCategorie _categorie;
 
     public ChargeConfigViewModel(ModeleCharge charge, Action modifie)
     {
@@ -147,7 +159,14 @@ public sealed class ChargeConfigViewModel : ObservableObject
         _debit = charge.Debit;
         _credit = charge.Credit;
         _compteCumul = charge.CompteCumul;
+        _categorie = ChoixCategorie.De(charge.Categorie);
         _modifie = modifie;
+    }
+
+    public ChoixCategorie Categorie
+    {
+        get => _categorie;
+        set { if (value is not null && SetProperty(ref _categorie, value)) _modifie(); }
     }
 
     public string Nom
@@ -175,7 +194,7 @@ public sealed class ChargeConfigViewModel : ObservableObject
         set { if (SetProperty(ref _compteCumul, OperationViewModel.VideVersNull(value))) _modifie(); }
     }
 
-    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul);
+    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur);
 }
 
 public sealed class CompteCumulConfigViewModel : ObservableObject
@@ -213,4 +232,20 @@ public sealed class CompteCumulConfigViewModel : ObservableObject
     }
 
     internal CompteCumul VersModele() => new(Nom, MontantInitial, Objectif);
+}
+
+/// <summary>Catégorie de la règle 50/30/20, avec son libellé.</summary>
+public sealed record ChoixCategorie(Categorie Valeur, string Nom)
+{
+    public static IReadOnlyList<ChoixCategorie> Tous { get; } = new[]
+    {
+        new ChoixCategorie(Core.Modeles.Categorie.NonClassee, "—"),
+        new ChoixCategorie(Core.Modeles.Categorie.Essentiel, "Essentiel"),
+        new ChoixCategorie(Core.Modeles.Categorie.Confort, "Confort"),
+        new ChoixCategorie(Core.Modeles.Categorie.Epargne, "Épargne"),
+    };
+
+    public static ChoixCategorie De(Categorie categorie) => Tous.First(c => c.Valeur == categorie);
+
+    public override string ToString() => Nom;
 }

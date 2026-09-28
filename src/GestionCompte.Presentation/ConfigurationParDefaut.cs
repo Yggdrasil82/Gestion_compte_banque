@@ -32,24 +32,24 @@ public static class ConfigurationParDefaut
 
         configuration.Charges.AddRange(new[]
         {
-            new ModeleCharge("Loyer", 801m),
-            new ModeleCharge("Mobile Killian", 9.99m),
-            new ModeleCharge("Épargne", 0m, CompteCumul: Epargne),
-            new ModeleCharge("Remb. Pascale", 100m, CompteCumul: RembPascale),
-            new ModeleCharge("Mobile", 9.99m),
-            new ModeleCharge("Crédit Voiture", 487m),
-            new ModeleCharge("Assurance Voiture", 135.89m),
-            new ModeleCharge("Mobile Anaëlle", 8.99m),
-            new ModeleCharge("Abo Xbox", 18m),
-            new ModeleCharge("Assurance LCL", 3.8m),
-            new ModeleCharge("Spotify", 18.99m),
-            new ModeleCharge("Mobile Adien", 15.99m),
-            new ModeleCharge("Internet", 2m),
-            new ModeleCharge("Cantine", 150m),
-            new ModeleCharge("Électricité", 145m),
-            new ModeleCharge("Eau", 45m),
-            new ModeleCharge("Alarme", 65m),
-            new ModeleCharge("Poubelle", 61.18m),
+            new ModeleCharge("Loyer", 801m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile Killian", 9.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Épargne", 0m, CompteCumul: Epargne, Categorie: Categorie.Epargne),
+            new ModeleCharge("Remb. Pascale", 100m, CompteCumul: RembPascale, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile", 9.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Crédit Voiture", 487m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Assurance Voiture", 135.89m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile Anaëlle", 8.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Abo Xbox", 18m, Categorie: Categorie.Confort),
+            new ModeleCharge("Assurance LCL", 3.8m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Spotify", 18.99m, Categorie: Categorie.Confort),
+            new ModeleCharge("Mobile Adien", 15.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Internet", 2m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Cantine", 150m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Électricité", 145m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Eau", 45m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Alarme", 65m, Categorie: Categorie.Confort),
+            new ModeleCharge("Poubelle", 61.18m, Categorie: Categorie.Essentiel),
         });
 
         return configuration;
@@ -69,6 +69,8 @@ public static class ConfigurationParDefaut
             new OperationPrevue(new PeriodeMois(2027, 7), "Vacances d'été", debit: 1800m),
             new OperationPrevue(new PeriodeMois(2027, 9), "Taxe foncière", debit: 950m),
         });
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances d'été", 1800m, new PeriodeMois(2027, 6), dejaEpargne: 300m));
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Fonds d'urgence", 3000m, new PeriodeMois(2027, 12)));
 
         var octobre = compte.CreerMoisSuivant();
         octobre.Operations.ForEach(o => o.Pointee = true);

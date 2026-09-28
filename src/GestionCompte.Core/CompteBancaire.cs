@@ -29,6 +29,9 @@ public sealed class CompteBancaire
     /// <summary>Opérations ponctuelles prévues pour des mois pas encore créés.</summary>
     public List<OperationPrevue> OperationsPrevues { get; } = new();
 
+    /// <summary>Objectifs d'épargne (montant à réunir pour une date).</summary>
+    public List<ObjectifEpargne> ObjectifsEpargne { get; } = new();
+
     /// <summary>Mois qui sera créé ensuite : le suivant du dernier mois, ou le premier mois de la configuration.</summary>
     public PeriodeMois ProchainMois => _mois.Count == 0 ? Configuration.PremierMois : _mois[^1].Periode.Suivant();
 

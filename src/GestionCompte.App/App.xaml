@@ -485,6 +485,10 @@
             <vues:VuePrevisionnel />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:AideBudgetViewModel}">
+            <vues:VueAideBudget />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ConfigurationViewModel}">
             <vues:VueConfiguration />
         </DataTemplate>

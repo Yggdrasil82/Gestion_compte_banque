@@ -96,7 +96,15 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Enveloppe" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
                                                     EditingElementStyle="{StaticResource EditionTexte}" />
-                                <DataGridTextColumn Header="Budget mensuel" Width="130"
+                                <DataGridTemplateColumn Header="Catégorie" Width="110">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Style="{StaticResource ListeCellule}" ItemsSource="{x:Static vm:ConfigurationViewModel.Categories}"
+                                                      SelectedItem="{Binding Categorie, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Budget mensuel" Width="120"
                                                     Binding="{Binding Montant, Converter={StaticResource Montant}}"
                                                     ElementStyle="{StaticResource CelluleMontant}"
                                                     EditingElementStyle="{StaticResource EditionMontant}" />
@@ -151,14 +159,22 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Charge" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
                                                     EditingElementStyle="{StaticResource EditionTexte}" />
-                            <DataGridTextColumn Header="Débit" Width="90"
+                            <DataGridTextColumn Header="Débit" Width="80"
                                                 Binding="{Binding Debit, Converter={StaticResource Montant}}"
                                                 ElementStyle="{StaticResource CelluleMontant}"
                                                 EditingElementStyle="{StaticResource EditionMontant}" />
-                            <DataGridTextColumn Header="Crédit" Width="90"
+                            <DataGridTextColumn Header="Crédit" Width="70"
                                                 Binding="{Binding Credit, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                                 ElementStyle="{StaticResource CelluleMontant}"
                                                 EditingElementStyle="{StaticResource EditionMontant}" />
+                            <DataGridTemplateColumn Header="Catégorie" Width="105">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Style="{StaticResource ListeCellule}" ItemsSource="{x:Static vm:ConfigurationViewModel.Categories}"
+                                                  SelectedItem="{Binding Categorie, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="Compte cumulé" Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>

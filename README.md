@@ -24,6 +24,10 @@ du classeur Excel d'origine.
 - **Prévisionnel** : les mois suivant le dernier mois créé sont simulés avec la configuration (revenus habituels,
   charges, budgets complets des enveloppes) et les opérations ponctuelles prévues ; ces dernières sont ajoutées
   au mois lors de sa création. La date d'atteinte des objectifs des comptes cumulés est cherchée sur 10 ans.
+- **Aide au budget** : analyse des charges (coût annuel, familles de charges), répartition 50/30/20
+  (catégories Essentiel / Confort / Épargne), suivi réel des enveloppes sur les derniers mois terminés,
+  simulateur « Et si… ? », objectifs d'épargne (mensualité et faisabilité selon l'excédent prévu) et alertes.
+  Tous les calculs sont faits sur le PC, sans service extérieur.
 
 ## Télécharger l'application
 

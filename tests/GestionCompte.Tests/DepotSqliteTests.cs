@@ -35,6 +35,10 @@ public sealed class DepotSqliteTests : IDisposable
         compte.CreerMoisSuivant();
         compte.OperationsPrevues.Add(new OperationPrevue(new PeriodeMois(2027, 7), "Vacances", debit: 1200.50m));
         compte.OperationsPrevues.Add(new OperationPrevue(new PeriodeMois(2027, 3), "Prime", credit: 500m) { CompteCumul = DonneesExcel.Epargne });
+        compte.Configuration.Charges[0] = compte.Configuration.Charges[0] with { Categorie = Categorie.Essentiel };
+        compte.Configuration.Charges[1] = compte.Configuration.Charges[1] with { Categorie = Categorie.Confort };
+        compte.Configuration.Enveloppes[1] = compte.Configuration.Enveloppes[1] with { Categorie = Categorie.Confort };
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances", 1500.50m, new PeriodeMois(2027, 6), dejaEpargne: 200m));
         return compte;
     }
 
@@ -169,6 +173,34 @@ public sealed class DepotSqliteTests : IDisposable
     }
 
     [Fact]
+    public void FichierAuFormat2_SansCategoriesNiObjectifs_EstLuPuisMisAJour()
+    {
+        var depot = new DepotSqlite(Chemin());
+        depot.Enregistrer(CompteAvecTroisMois());
+        using (var connexion = new SqliteConnection($"Data Source={depot.CheminFichier};Pooling=False"))
+        {
+            connexion.Open();
+            using var commande = connexion.CreateCommand();
+            commande.CommandText = "ALTER TABLE modele_charge DROP COLUMN categorie; ALTER TABLE modele_enveloppe DROP COLUMN categorie; " +
+                                   "DROP TABLE objectif_epargne; PRAGMA user_version = 2;";
+            commande.ExecuteNonQuery();
+        }
+
+        var compte = depot.Charger()!;
+        Assert.All(compte.Configuration.Charges, c => Assert.Equal(Categorie.NonClassee, c.Categorie));
+        Assert.All(compte.Configuration.Enveloppes, e => Assert.Equal(Categorie.Essentiel, e.Categorie));
+        Assert.Empty(compte.ObjectifsEpargne);
+        Assert.Equal(2, compte.OperationsPrevues.Count);
+
+        compte.Configuration.Charges[0] = compte.Configuration.Charges[0] with { Categorie = Categorie.Essentiel };
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Voiture", 3000m, new PeriodeMois(2028, 1)));
+        depot.Enregistrer(compte);
+        var relu = depot.Charger()!;
+        Assert.Equal(Categorie.Essentiel, relu.Configuration.Charges[0].Categorie);
+        Assert.Single(relu.ObjectifsEpargne);
+    }
+
+    [Fact]
     public void Sauvegarder_CreeUneCopieRechargeable()
     {
         var original = CompteAvecTroisMois();
@@ -218,6 +250,10 @@ public sealed class DepotSqliteTests : IDisposable
         Assert.Equal(
             attendu.OperationsPrevues.Select(x => (x.Periode, x.Libelle, x.Debit, x.Credit, x.CompteCumul)),
             obtenu.OperationsPrevues.Select(x => (x.Periode, x.Libelle, x.Debit, x.Credit, x.CompteCumul)));
+
+        Assert.Equal(
+            attendu.ObjectifsEpargne.Select(x => (x.Nom, x.Montant, x.Echeance, x.DejaEpargne)),
+            obtenu.ObjectifsEpargne.Select(x => (x.Nom, x.Montant, x.Echeance, x.DejaEpargne)));
 
         Assert.Equal(attendu.Mois.Count, obtenu.Mois.Count);
         foreach (var (moisA, moisO) in attendu.Mois.Zip(obtenu.Mois))

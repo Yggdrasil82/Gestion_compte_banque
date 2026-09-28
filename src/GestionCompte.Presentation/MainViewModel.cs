@@ -57,6 +57,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private PrevisionnelViewModel _previsionnel = null!;
 
+    [ObservableProperty] private AideBudgetViewModel _aideBudget = null!;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AucunMois), nameof(TitreMois))]
     private MoisViewModel? _moisCourant;
@@ -240,7 +242,22 @@ public sealed partial class MainViewModel : ObservableObject
     private void ReconstruirePrevisionnel()
     {
         var horizon = Previsionnel?.Horizon ?? 12;
-        Previsionnel = new PrevisionnelViewModel(_compte, Enregistrer) { Horizon = horizon };
+        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
+        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee);
+    }
+
+    private void OperationsPrevuesModifiees()
+    {
+        Enregistrer();
+        AideBudget.Recalculer();
+    }
+
+    /// <summary>La configuration a été modifiée depuis l'aide au budget : tous les écrans sont recréés.</summary>
+    private void ConfigurationRemplacee()
+    {
+        Enregistrer();
+        Reconstruire();
+        Statut = "Configuration mise à jour depuis l'aide au budget.";
     }
 
     private void AfficherMoisCourant()
@@ -259,6 +276,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Enregistrer();
         Previsionnel.Recalculer();
+        AideBudget.Recalculer();
     }
 
     private void ConfigurationModifiee()

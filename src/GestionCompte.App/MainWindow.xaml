@@ -31,6 +31,9 @@
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Prévisionnel"
                                  Tag="&#xEAFC;" Background="{DynamicResource Accent4}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=1}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Aide au budget"
+                                 Tag="&#xEA80;" Background="{DynamicResource Accent2}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=2}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Configuration"
                                  Tag="&#xE713;" Background="{DynamicResource Accent3}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=3}" />
@@ -140,6 +143,10 @@
                 <!-- Écran Prévisionnel -->
                 <ContentControl Content="{Binding Previsionnel}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=1}" />
+
+                <!-- Écran Aide au budget -->
+                <ContentControl Content="{Binding AideBudget}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=2}" />
 
                 <!-- Écran Configuration -->
                 <ContentControl Content="{Binding Configuration}"

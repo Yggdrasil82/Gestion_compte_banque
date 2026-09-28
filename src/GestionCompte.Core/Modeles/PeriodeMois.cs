@@ -24,6 +24,9 @@ public readonly record struct PeriodeMois : IComparable<PeriodeMois>
     /// <summary>Mois suivant ; décembre passe à janvier de l'année suivante.</summary>
     public PeriodeMois Suivant() => Mois == 12 ? new PeriodeMois(Annee + 1, 1) : new PeriodeMois(Annee, Mois + 1);
 
+    /// <summary>Nombre de mois entre ce mois et <paramref name="autre"/> (positif si <paramref name="autre"/> est après).</summary>
+    public int MoisJusqua(PeriodeMois autre) => (autre.Annee * 12 + autre.Mois) - (Annee * 12 + Mois);
+
     public PeriodeMois Precedent() => Mois == 1 ? new PeriodeMois(Annee - 1, 12) : new PeriodeMois(Annee, Mois - 1);
 
     /// <summary>Libellé affiché, ex. « Octobre 2026 ».</summary>

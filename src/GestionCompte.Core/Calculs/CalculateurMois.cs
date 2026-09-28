@@ -75,6 +75,7 @@ public static class CalculateurMois
         return new EtatEnveloppe(enveloppe.Nom, enveloppe.Budget, depense, Math.Max(0m, enveloppe.Budget - depense));
     }
 
-    internal static bool MemeNom(string? a, string? b) =>
+    /// <summary>Noms identiques, sans tenir compte des majuscules ni des espaces autour.</summary>
+    public static bool MemeNom(string? a, string? b) =>
         a is not null && b is not null && string.Equals(a.Trim(), b.Trim(), StringComparison.CurrentCultureIgnoreCase);
 }
