@@ -35,7 +35,7 @@ public class CalculateurMoisTests
         Assert.Equal(2800m, soldes["Courses"]);
         Assert.Equal(2700m, soldes["Carburant"]);
         Assert.Equal(1899m, soldes["Loyer"]);
-        Assert.Equal(1789.01m, soldes["Remb Pascale"]);
+        Assert.Equal(1789.01m, soldes["Remb famille"]);
         Assert.Equal(938.36m, soldes["Cantine"]);
     }
 

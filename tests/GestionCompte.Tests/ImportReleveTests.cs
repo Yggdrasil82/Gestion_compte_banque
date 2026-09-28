@@ -181,11 +181,11 @@ public class ImportReleveTests
     [Fact]
     public void Preparer_SalaireRecu_RevenuRecu()
     {
-        var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE ROMAIN")));
+        var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE")));
 
         var ligne = Assert.Single(plan.Lignes);
         Assert.Equal(StatutImport.RevenuRecu, ligne.Statut);
-        Assert.Equal("Salaire Romain", ligne.Choix!.Libelle);
+        Assert.Equal("Salaire", ligne.Choix!.Libelle);
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public class ImportReleveTests
         var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("XFER", "20261005", "-9.99", "M1", "PRLV SEPA OPERATEUR")));
 
         Assert.Equal(StatutImport.Nouvelle, plan.Lignes[0].Statut);
-        Assert.Contains(plan.Lignes[0].Candidats, c => c.Libelle == "Mobile Killian");
+        Assert.Contains(plan.Lignes[0].Candidats, c => c.Libelle == "Mobile enfant 1");
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public class ImportReleveTests
         var plan = ImportReleve.Preparer(compte, Releve(
             Ligne("XFER", "20261005", "-801.00", "L1", "PRLV SEPA LOYER"),
             Ligne("XFER", "20261012", "-152.30", "E1", "PRLV SEPA EDF ELECTRICITE"),
-            Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE ROMAIN"),
+            Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE"),
             Ligne("DEBIT", "20261010", "-64.20", "C1", "CB CARREFOUR MARKET 09/10/26")));
 
         var resultat = ImportReleve.Appliquer(compte, plan);
@@ -237,7 +237,7 @@ public class ImportReleveTests
         Assert.True(loyer.Pointee);
         Assert.Equal("L1", loyer.IdentifiantBanque);
         Assert.Equal(152.30m, octobre.Operations.Single(o => o.Libelle == "Électricité").Debit);
-        var salaire = octobre.Revenus.Single(r => r.Nom == "Salaire Romain");
+        var salaire = octobre.Revenus.Single(r => r.Nom == "Salaire");
         Assert.True(salaire.Recu);
         Assert.Equal(2650.40m, salaire.Montant);
         var carrefour = octobre.Operations.Single(o => o.IdentifiantBanque == "C1");
@@ -279,7 +279,7 @@ public class ImportReleveTests
 
         var octobre = compte.Mois[0];
         Assert.True(octobre.Operations.Single(o => o.Libelle == "Mobile").Pointee);
-        Assert.False(octobre.Operations.Single(o => o.Libelle == "Mobile Killian").Pointee);
+        Assert.False(octobre.Operations.Single(o => o.Libelle == "Mobile enfant 1").Pointee);
         Assert.Equal("Courses", octobre.Operations.Single(o => o.IdentifiantBanque == "C1").Enveloppe);
         Assert.DoesNotContain(octobre.Operations, o => o.IdentifiantBanque == "C2");
         Assert.Equal(1, resultat.Ignorees);
@@ -321,7 +321,7 @@ public class ImportReleveTests
         compte.Configuration.SoldeInitial = 100m;
         ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, Releve(
             Ligne("XFER", "20261005", "-801.00", "L1", "PRLV SEPA LOYER"),
-            Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE ROMAIN"))));
+            Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE"))));
 
         Assert.Equal(100m - 801m + 2650.40m, ImportReleve.SoldePointe(compte));
     }
@@ -344,7 +344,7 @@ public class ImportReleveTests
     }
 
     [Theory]
-    [InlineData("PRLV SEPA FREE MOBILE", "Mobile Killian", 0.5)]
+    [InlineData("PRLV SEPA FREE MOBILE", "Mobile enfant 1", 0.5)]
     [InlineData("PRLV SEPA LOYER", "Loyer", 1.0)]
     [InlineData("CB CARREFOUR", "Loyer", 0.0)]
     [InlineData("PRLV SEPA EDF ELECTRICITE", "Électricité :", 1.0)]

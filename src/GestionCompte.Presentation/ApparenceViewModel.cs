@@ -91,6 +91,13 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Revient à l'apparence par défaut (Océan, clair).</summary>
+    public void Reinitialiser()
+    {
+        ModeSombre = false;
+        Ambiance = Ambiance.Ocean;
+    }
+
     /// <summary>L'ambiance Nuit est toujours sombre : l'option n'a alors pas d'effet.</summary>
     public bool ModeSombreModifiable => Ambiance != Ambiance.Nuit;
 

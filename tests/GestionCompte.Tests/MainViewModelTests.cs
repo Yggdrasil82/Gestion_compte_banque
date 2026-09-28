@@ -1,3 +1,4 @@
+using GestionCompte.Core;
 using GestionCompte.Core.Modeles;
 using GestionCompte.Data;
 using GestionCompte.Presentation;
@@ -22,8 +23,10 @@ public sealed class MainViewModelTests : IDisposable
     private MainViewModel Ouvrir(DateTime? aujourdhui = null) =>
         new(new DepotSqlite(Chemin()), _dialogues, aujourdhui ?? Aujourdhui);
 
+    /// <summary>Compte avec la configuration d'exemple (montants du classeur Excel) et un premier mois créé.</summary>
     private MainViewModel OuvrirAvecUnMois()
     {
+        new DepotSqlite(Chemin()).Enregistrer(new CompteBancaire(ConfigurationParDefaut.CreerExemple(new PeriodeMois(2026, 10))));
         var vm = Ouvrir();
         vm.CreerMoisCommand.Execute(null);
         return vm;
@@ -42,6 +45,19 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(2026, vm.Configuration.AnneeDebut);
         Assert.True(File.Exists(Chemin()));
         Assert.Equal("Créer le premier mois (Octobre 2026)", vm.TexteCreerMois);
+    }
+
+    [Fact]
+    public void PremierLancement_ConfigurationViergeSansDonneesPersonnelles()
+    {
+        Ouvrir();
+
+        var relue = new DepotSqlite(Chemin()).Charger()!.Configuration;
+        Assert.All(relue.Charges, c => Assert.Equal(0m, c.Debit));
+        Assert.All(relue.Revenus, r => Assert.Equal(0m, r.MontantParDefaut));
+        Assert.All(relue.Enveloppes, e => Assert.Equal(0m, e.BudgetParDefaut));
+        Assert.Equal(0m, relue.SoldeInitial);
+        Assert.Equal(RegleClassement.ParDefaut, relue.Regles);
     }
 
     [Fact]
@@ -252,9 +268,9 @@ public sealed class MainViewModelTests : IDisposable
     {
         var vm = OuvrirAvecUnMois();
 
-        vm.Configuration.ComptesCumul.Elements.Single(c => c.Nom == ConfigurationParDefaut.RembPascale).Objectif = 1000m;
+        vm.Configuration.ComptesCumul.Elements.Single(c => c.Nom == ConfigurationParDefaut.RembFamille).Objectif = 1000m;
 
-        var remb = vm.MoisCourant!.ComptesCumul.Single(c => c.Nom == ConfigurationParDefaut.RembPascale);
+        var remb = vm.MoisCourant!.ComptesCumul.Single(c => c.Nom == ConfigurationParDefaut.RembFamille);
         Assert.Equal(100m, remb.Total);
         Assert.Equal(10d, remb.Progression);
         Assert.Contains("reste 900,00", remb.Detail);
@@ -301,6 +317,81 @@ public sealed class MainViewModelTests : IDisposable
                      compte.Calculer(compte.Mois[1].Periode).AncienSolde);
     }
 
+    // ---- Réinitialisation ----
+
+    [Fact]
+    public void Reinitialiser_Annule_RienNeChange()
+    {
+        var vm = OuvrirAvecUnMois();
+        _dialogues.Reinitialisation = null;
+
+        vm.ReinitialiserCommand.Execute(null);
+
+        Assert.Single(new DepotSqlite(Chemin()).Charger()!.Mois);
+    }
+
+    [Fact]
+    public void EffacerLesMois_GardeLaConfigurationEtFaitUneCopie()
+    {
+        var vm = OuvrirAvecUnMois();
+        vm.CreerMoisCommand.Execute(null);
+        _dialogues.Reinitialisation = new DemandeReinitialisation(ChoixReinitialisation.EffacerMois, CopieAvant: false);
+
+        vm.ReinitialiserCommand.Execute(null);
+
+        var compte = new DepotSqlite(Chemin()).Charger(new PeriodeMois(2026, 10))!;
+        Assert.Empty(compte.Mois);
+        Assert.Contains(compte.Configuration.Charges, c => c.Nom == "Loyer" && c.Debit == 801m);
+        Assert.Equal(new PeriodeMois(2026, 10), compte.Configuration.PremierMois);
+        Assert.True(vm.AucunMois);
+        Assert.True(vm.Configuration.PremierMoisModifiable);
+        Assert.Equal(MainViewModel.OngletConfiguration, vm.OngletSelectionne);
+        Assert.Equal(2, new DepotSqlite(Chemin("compte.db.avant-reinitialisation.db")).Charger()!.Mois.Count);
+    }
+
+    [Fact]
+    public void ToutEffacer_ConfigurationViergeEtCopiesSupprimees()
+    {
+        var vm = OuvrirAvecUnMois();
+        File.WriteAllText(Chemin("compte.db.avant-restauration.db"), "ancienne copie");
+        _dialogues.FichierSauvegarde = Chemin("cle-usb/sauvegarde.db");
+        _dialogues.Reinitialisation = new DemandeReinitialisation(ChoixReinitialisation.ToutEffacer, CopieAvant: true);
+
+        vm.ReinitialiserCommand.Execute(null);
+
+        var compte = new DepotSqlite(Chemin()).Charger()!;
+        Assert.Empty(compte.Mois);
+        Assert.All(compte.Configuration.Charges, c => Assert.Equal(0m, c.Debit));
+        Assert.False(File.Exists(Chemin("compte.db.avant-restauration.db")));
+        Assert.Single(new DepotSqlite(Chemin("cle-usb/sauvegarde.db")).Charger()!.Mois);
+        Assert.Contains("définitivement", _dialogues.DerniereConfirmation);
+        Assert.True(vm.AucunMois);
+    }
+
+    [Fact]
+    public void ToutEffacer_CopieAnnulee_RienNestEfface()
+    {
+        var vm = OuvrirAvecUnMois();
+        _dialogues.FichierSauvegarde = null;
+        _dialogues.Reinitialisation = new DemandeReinitialisation(ChoixReinitialisation.ToutEffacer, CopieAvant: true);
+
+        vm.ReinitialiserCommand.Execute(null);
+
+        Assert.Single(new DepotSqlite(Chemin()).Charger()!.Mois);
+    }
+
+    [Fact]
+    public void ToutEffacer_ConfirmationRefusee_RienNestEfface()
+    {
+        var vm = OuvrirAvecUnMois();
+        _dialogues.ReponseConfirmation = false;
+        _dialogues.Reinitialisation = new DemandeReinitialisation(ChoixReinitialisation.ToutEffacer, CopieAvant: false);
+
+        vm.ReinitialiserCommand.Execute(null);
+
+        Assert.Single(new DepotSqlite(Chemin()).Charger()!.Mois);
+    }
+
     private sealed class FauxDialogues : IDialogues
     {
         public bool ReponseConfirmation { get; set; } = true;
@@ -326,6 +417,8 @@ public sealed class MainViewModelTests : IDisposable
         public string? ChoisirFichierARestaurer() => FichierARestaurer;
         public string? ChoisirReleve() => Releve;
         public string? Releve { get; set; }
+        public DemandeReinitialisation? Reinitialisation { get; set; }
+        public DemandeReinitialisation? ChoisirReinitialisation() => Reinitialisation;
 
         public void OuvrirDossier(string dossier) { }
     }

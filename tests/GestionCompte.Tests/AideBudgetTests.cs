@@ -52,7 +52,7 @@ public class AideBudgetTests
     }
 
     [Theory]
-    [InlineData("Mobile Anaëlle", "mobile")]
+    [InlineData("Mobile enfant 2", "mobile")]
     [InlineData("Crédit Voiture :", "credit")]
     [InlineData("  Électricité : ", "electricite")]
     [InlineData("", "")]

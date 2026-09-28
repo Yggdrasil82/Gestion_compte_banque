@@ -43,7 +43,7 @@ public sealed class ImportViewModelTests : IDisposable
         var parLibelle = import.Lignes.ToDictionary(l => l.Libelle);
         Assert.Equal(StatutImport.Rapprochee, parLibelle["PRLV SEPA LOYER SCI LES TILLEULS"].Statut);
         Assert.Equal(StatutImport.MontantAjuste, parLibelle["PRLV SEPA EDF ELECTRICITE"].Statut);
-        Assert.Equal(StatutImport.RevenuRecu, parLibelle["VIR SALAIRE ROMAIN"].Statut);
+        Assert.Equal(StatutImport.RevenuRecu, parLibelle["VIR SALAIRE"].Statut);
         Assert.Equal("Courses", parLibelle["CB LECLERC DRIVE"].Enveloppe);
         Assert.Equal("Carburant", parLibelle["CB ESSO EXPRESS"].Enveloppe);
         Assert.Equal(StatutImport.Nouvelle, parLibelle["CB COFIDIS AMAZON"].Statut);
@@ -113,7 +113,7 @@ public sealed class ImportViewModelTests : IDisposable
         var decembre = new DepotSqlite(Chemin("compte.db")).Charger()!.Mois[2];
         Assert.True(decembre.Operations.Single(o => o.Libelle == "Loyer").Pointee);
         Assert.Equal(152.30m, decembre.Operations.Single(o => o.Libelle == "Électricité").Debit);
-        Assert.True(decembre.Revenus.Single(r => r.Nom == "Salaire Romain").Recu);
+        Assert.True(decembre.Revenus.Single(r => r.Nom == "Salaire").Recu);
         Assert.Equal("Courses", decembre.Operations.Single(o => o.Libelle == "CB LECLERC DRIVE").Enveloppe);
         Assert.StartsWith("Import terminé", vm.Statut);
     }

@@ -264,6 +264,27 @@ public sealed class DepotSqlite
         source.BackupDatabase(cible);
     }
 
+    /// <summary>Copies de sécurité faites automatiquement à côté du fichier (avant une restauration, une réinitialisation…).</summary>
+    public IReadOnlyList<string> CopiesDeSecurite()
+    {
+        var dossier = Path.GetDirectoryName(CheminFichier)!;
+        return Directory.Exists(dossier)
+            ? Directory.GetFiles(dossier, Path.GetFileName(CheminFichier) + ".avant-*.db")
+            : Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// Supprime définitivement le fichier de données et ses copies de sécurité automatiques
+    /// (un simple enregistrement pourrait laisser d'anciennes données dans l'espace libre du fichier).
+    /// </summary>
+    public void EffacerTout()
+    {
+        foreach (var copie in CopiesDeSecurite())
+            File.Delete(copie);
+        foreach (var suffixe in new[] { "", "-journal", "-wal", "-shm" })
+            File.Delete(CheminFichier + suffixe);
+    }
+
     private SqliteConnection Ouvrir(SqliteOpenMode mode)
     {
         var connexion = new SqliteConnection(ChaineConnexion(CheminFichier, mode));

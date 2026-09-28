@@ -48,12 +48,12 @@ public sealed class PrevisionnelViewModelTests : IDisposable
     }
 
     [Fact]
-    public void Echeance_RembPascaleAvecDate()
+    public void Echeance_RembFamilleAvecDate()
     {
         // 200 € déjà remboursés fin novembre 2026, puis 100 € par mois : 1 500 € en décembre 2027.
         var echeance = OuvrirDemo().Previsionnel.Echeances.Single();
 
-        Assert.Equal(ConfigurationParDefaut.RembPascale, echeance.Nom);
+        Assert.Equal(ConfigurationParDefaut.RembFamille, echeance.Nom);
         Assert.Contains("atteint en Décembre 2027", echeance.Texte);
     }
 

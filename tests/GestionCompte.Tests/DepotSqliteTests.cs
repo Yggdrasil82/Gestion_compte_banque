@@ -19,7 +19,7 @@ public sealed class DepotSqliteTests : IDisposable
 
     private static CompteBancaire CompteAvecTroisMois()
     {
-        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembPascale: 1500m));
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembFamille: 1500m));
         compte.Configuration.SoldeInitial = -45.67m;
 
         var octobre = compte.CreerMoisSuivant();

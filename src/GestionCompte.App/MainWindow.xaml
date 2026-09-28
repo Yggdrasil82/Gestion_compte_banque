@@ -76,6 +76,12 @@
                             <TextBlock Text="Ouvrir le dossier" />
                         </StackPanel>
                     </Button>
+                    <Button Style="{StaticResource BoutonBarre}" Command="{Binding ReinitialiserCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE72C;" Margin="0,0,10,0" />
+                            <TextBlock Text="Réinitialiser…" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <Border />

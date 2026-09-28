@@ -214,6 +214,100 @@ public sealed partial class MainViewModel : ObservableObject
         Statut = $"Sauvegarde restaurée depuis {source}";
     }
 
+    [RelayCommand]
+    private void Reinitialiser()
+    {
+        var demande = _dialogues.ChoisirReinitialisation();
+        if (demande is null)
+            return;
+
+        if (demande.Choix == ChoixReinitialisation.EffacerMois)
+            EffacerLesMois();
+        else
+            ToutEffacer(demande.CopieAvant);
+    }
+
+    /// <summary>Repart de zéro avec la même configuration (nouvelle année, nouveau départ…).</summary>
+    private void EffacerLesMois()
+    {
+        if (!_dialogues.Confirmer("Effacer les mois",
+                $"Effacer les {_compte.Mois.Count} mois et les opérations prévues ?\n\n" +
+                "• la configuration (charges, revenus, enveloppes, règles) et les objectifs d'épargne sont gardés ;\n" +
+                $"• le premier mois devient {_moisDuJour.Libelle} : vérifiez ensuite le solde de départ et les montants " +
+                "déjà cumulés dans la Configuration.\n\n" +
+                "Une copie de sécurité des données actuelles est d'abord enregistrée à côté du fichier de données."))
+            return;
+
+        try
+        {
+            Enregistrer();
+            _depot.Sauvegarder(_depot.CheminFichier + ".avant-reinitialisation.db");
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"La copie de sécurité n'a pas pu être faite ; rien n'a été effacé.\n\n{e.Message}");
+            return;
+        }
+
+        var configuration = _compte.Configuration;
+        configuration.PremierMois = _moisDuJour;
+        var nouveau = new CompteBancaire(configuration);
+        nouveau.ObjectifsEpargne.AddRange(_compte.ObjectifsEpargne);
+        Repartir(nouveau);
+        Statut = "Mois effacés : vérifiez le premier mois et le solde de départ, puis créez le premier mois.";
+    }
+
+    /// <summary>Efface toutes les données, pour passer l'application à une autre personne.</summary>
+    private void ToutEffacer(bool copieAvant)
+    {
+        if (copieAvant)
+        {
+            var destination = _dialogues.ChoisirFichierSauvegarde($"compte-sauvegarde-{DateTime.Now:yyyy-MM-dd}.db");
+            if (destination is null)
+                return;
+            try
+            {
+                Enregistrer();
+                _depot.Sauvegarder(destination);
+            }
+            catch (Exception e)
+            {
+                _dialogues.Erreur($"La copie n'a pas pu être enregistrée ; rien n'a été effacé.\n\n{e.Message}");
+                return;
+            }
+        }
+
+        if (!_dialogues.Confirmer("Tout effacer",
+                "Dernière confirmation : toutes les données vont être définitivement effacées de ce PC " +
+                "(mois, configuration, règles, opérations prévues, objectifs, copies de sécurité automatiques " +
+                "et apparence).\n\nL'application repartira d'une configuration vierge. Continuer ?"))
+            return;
+
+        try
+        {
+            _depot.EffacerTout();
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"Les données n'ont pas pu être effacées (fichier ouvert ailleurs ?).\n\n{e.Message}");
+            return;
+        }
+
+        Apparence.Reinitialiser();
+        Repartir(new CompteBancaire(ConfigurationParDefaut.Creer(_moisDuJour)));
+        Statut = "Toutes les données ont été effacées. Bienvenue ! Vérifiez la configuration, puis créez le premier mois.";
+    }
+
+    private void Repartir(CompteBancaire compte)
+    {
+        Import = null;
+        _compte = compte;
+        _indexMois = -1;
+        Enregistrer();
+        Reconstruire();
+        OngletSelectionne = OngletConfiguration;
+    }
+
     [RelayCommand(CanExecute = nameof(PeutExporterMois))]
     private void ExporterMois()
     {

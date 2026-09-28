@@ -115,7 +115,7 @@ public class CompteBancaireTests
         var cumuls = compte.ComptesCumulJusqua(octobre.Periode).ToDictionary(c => c.Nom);
 
         Assert.Equal(0m, cumuls[DonneesExcel.Epargne].Total);
-        Assert.Equal(100m, cumuls[DonneesExcel.RembPascale].Total);
+        Assert.Equal(100m, cumuls[DonneesExcel.RembFamille].Total);
     }
 
     [Fact]
@@ -132,18 +132,18 @@ public class CompteBancaireTests
 
         Assert.Equal(0m, enOctobre[DonneesExcel.Epargne].Total);
         Assert.Equal(50m, enNovembre[DonneesExcel.Epargne].Total);
-        Assert.Equal(200m, enNovembre[DonneesExcel.RembPascale].Total);
+        Assert.Equal(200m, enNovembre[DonneesExcel.RembFamille].Total);
     }
 
     [Fact]
     public void CompteCumulAvecObjectif_CalculeLeResteARembourser()
     {
-        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembPascale: 250m));
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembFamille: 250m));
         compte.CreerMoisSuivant();
         compte.CreerMoisSuivant();
         var decembre = compte.CreerMoisSuivant();
 
-        var remb = compte.ComptesCumulJusqua(decembre.Periode).Single(c => c.Nom == DonneesExcel.RembPascale);
+        var remb = compte.ComptesCumulJusqua(decembre.Periode).Single(c => c.Nom == DonneesExcel.RembFamille);
 
         Assert.Equal(300m, remb.Total);
         Assert.Equal(0m, remb.Reste);

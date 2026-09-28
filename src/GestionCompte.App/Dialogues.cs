@@ -71,6 +71,12 @@ public sealed class Dialogues : IDialogues
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
     }
 
+    public DemandeReinitialisation? ChoisirReinitialisation()
+    {
+        var fenetre = new FenetreReinitialisation { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Demande : null;
+    }
+
     public void OuvrirDossier(string dossier) =>
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dossier}\"") { UseShellExecute = true });
 }

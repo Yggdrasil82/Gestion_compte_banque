@@ -134,12 +134,12 @@ public class PrevisionnelTests
     public void Echeance_DateDeFinDuRemboursement()
     {
         // 100 € par mois à partir d'octobre 2026 : 1 000 € atteints au 10e mois, juillet 2027.
-        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembPascale: 1000m));
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembFamille: 1000m));
         compte.CreerMoisSuivant();
 
         var echeance = Previsionnel.Calculer(compte, 6, 12).Echeances.Single();
 
-        Assert.Equal(DonneesExcel.RembPascale, echeance.Nom);
+        Assert.Equal(DonneesExcel.RembFamille, echeance.Nom);
         Assert.Equal(new PeriodeMois(2027, 7), echeance.AtteintEn);
         Assert.False(echeance.DejaAtteint);
     }
@@ -147,7 +147,7 @@ public class PrevisionnelTests
     [Fact]
     public void Echeance_AuDelaDeLHorizon_EstQuandMemeCalculee()
     {
-        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembPascale: 3000m));
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembFamille: 3000m));
 
         var echeance = Previsionnel.Calculer(compte, 0, 6).Echeances.Single();
 
@@ -157,7 +157,7 @@ public class PrevisionnelTests
     [Fact]
     public void Echeance_DejaAtteinteDansLesMoisReels()
     {
-        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembPascale: 150m));
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026(objectifRembFamille: 150m));
         compte.CreerMoisSuivant();
         compte.CreerMoisSuivant();
 
@@ -187,7 +187,7 @@ public class PrevisionnelTests
 
         var mois = Previsionnel.Calculer(compte, 6, 3).Mois;
 
-        Assert.Equal(new[] { 100m, 200m, 300m, 400m }, mois.Select(m => m.Cumuls[DonneesExcel.RembPascale]));
+        Assert.Equal(new[] { 100m, 200m, 300m, 400m }, mois.Select(m => m.Cumuls[DonneesExcel.RembFamille]));
     }
 
     [Fact]

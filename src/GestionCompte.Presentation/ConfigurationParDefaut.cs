@@ -3,19 +3,49 @@ using GestionCompte.Core.Modeles;
 
 namespace GestionCompte.Presentation;
 
-/// <summary>Configuration proposée au premier lancement, reprise du classeur Excel (tout est modifiable).</summary>
+/// <summary>Configurations de départ : vierge (nouvelle installation) ou d'exemple (captures d'écran).</summary>
 public static class ConfigurationParDefaut
 {
     public const string Epargne = "Épargne";
-    public const string RembPascale = "Remb. Pascale";
+    public const string RembFamille = "Remb. famille";
 
+    /// <summary>
+    /// Configuration vierge d'une nouvelle installation : postes courants à 0 €, sans aucune donnée personnelle.
+    /// </summary>
     public static ConfigurationBudget Creer(PeriodeMois premierMois)
+    {
+        var configuration = new ConfigurationBudget { PremierMois = premierMois, SoldeInitial = 0m };
+
+        configuration.Revenus.Add(new ModeleRevenu("Salaire", 0m));
+        configuration.Enveloppes.AddRange(new[]
+        {
+            new ModeleEnveloppe("Courses", 0m),
+            new ModeleEnveloppe("Carburant", 0m),
+        });
+        configuration.ComptesCumul.Add(new CompteCumul(Epargne));
+        configuration.Charges.AddRange(new[]
+        {
+            new ModeleCharge("Loyer", 0m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Électricité", 0m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Eau", 0m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Internet", 0m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile", 0m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Assurance habitation", 0m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Épargne", 0m, CompteCumul: Epargne, Categorie: Categorie.Epargne),
+        });
+        configuration.Regles.AddRange(RegleClassement.ParDefaut);
+
+        return configuration;
+    }
+
+    /// <summary>Configuration d'exemple (montants inventés), base des données de démonstration.</summary>
+    public static ConfigurationBudget CreerExemple(PeriodeMois premierMois)
     {
         var configuration = new ConfigurationBudget { PremierMois = premierMois, SoldeInitial = 0m };
 
         configuration.Revenus.AddRange(new[]
         {
-            new ModeleRevenu("Salaire Romain", 2800m),
+            new ModeleRevenu("Salaire", 2800m),
             new ModeleRevenu("NDF", 0m),
             new ModeleRevenu("CAF", 600m),
             new ModeleRevenu("Autres", 0m),
@@ -28,22 +58,22 @@ public static class ConfigurationParDefaut
         });
 
         configuration.ComptesCumul.Add(new CompteCumul(Epargne));
-        configuration.ComptesCumul.Add(new CompteCumul(RembPascale));
+        configuration.ComptesCumul.Add(new CompteCumul(RembFamille));
 
         configuration.Charges.AddRange(new[]
         {
             new ModeleCharge("Loyer", 801m, Categorie: Categorie.Essentiel),
-            new ModeleCharge("Mobile Killian", 9.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile enfant 1", 9.99m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Épargne", 0m, CompteCumul: Epargne, Categorie: Categorie.Epargne),
-            new ModeleCharge("Remb. Pascale", 100m, CompteCumul: RembPascale, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Remb. famille", 100m, CompteCumul: RembFamille, Categorie: Categorie.Essentiel),
             new ModeleCharge("Mobile", 9.99m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Crédit Voiture", 487m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Assurance Voiture", 135.89m, Categorie: Categorie.Essentiel),
-            new ModeleCharge("Mobile Anaëlle", 8.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile enfant 2", 8.99m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Abo Xbox", 18m, Categorie: Categorie.Confort),
-            new ModeleCharge("Assurance LCL", 3.8m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Assurance banque", 3.8m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Spotify", 18.99m, Categorie: Categorie.Confort),
-            new ModeleCharge("Mobile Adien", 15.99m, Categorie: Categorie.Essentiel),
+            new ModeleCharge("Mobile enfant 3", 15.99m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Internet", 2m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Cantine", 150m, Categorie: Categorie.Essentiel),
             new ModeleCharge("Électricité", 145m, Categorie: Categorie.Essentiel),
@@ -72,7 +102,7 @@ public static class ConfigurationParDefaut
             + Ligne("DEBIT", "20261212", "-52.10", "DEMO06", "CB ESSO EXPRESS 11/12/26")
             + Ligne("XFER", "20261215", "-18.99", "DEMO07", "PRLV SEPA SPOTIFY")
             + Ligne("DEBIT", "20261218", "-23.80", "DEMO08", "CB BOULANGERIE DU MARCHE 17/12/26")
-            + Ligne("CREDIT", "20261227", "+2812.35", "DEMO09", "VIR SALAIRE ROMAIN")
+            + Ligne("CREDIT", "20261227", "+2812.35", "DEMO09", "VIR SALAIRE")
             + Ligne("CREDIT", "20261228", "+12.50", "DEMO10", "VIREMENT CPMS")
             + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>4677.68\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
     }
@@ -80,9 +110,9 @@ public static class ConfigurationParDefaut
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>
     public static CompteBancaire CreerDemo()
     {
-        var configuration = Creer(new PeriodeMois(2026, 10));
+        var configuration = CreerExemple(new PeriodeMois(2026, 10));
         configuration.SoldeInitial = 350m;
-        configuration.ComptesCumul[1] = new CompteCumul(RembPascale, Objectif: 1500m);
+        configuration.ComptesCumul[1] = new CompteCumul(RembFamille, Objectif: 1500m);
         var compte = new CompteBancaire(configuration);
         compte.OperationsPrevues.AddRange(new[]
         {

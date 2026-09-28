@@ -361,7 +361,7 @@ public static class AideBudget
 
     private static string Pourcentage(decimal part) => $"{decimal.Round(part * 100, 0)} %";
 
-    /// <summary>Premier mot du nom, sans accents ni majuscules (« Mobile Anaëlle » → « mobile »).</summary>
+    /// <summary>Premier mot du nom, sans accents ni majuscules (« Mobile enfant 2 » → « mobile »).</summary>
     public static string CleFamille(string nom)
     {
         var mot = PremierMot(nom);
