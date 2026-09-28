@@ -42,6 +42,7 @@ du classeur Excel d'origine.
 - **1.1.1** : import — solde comparé à la date du relevé, revenus « reçus » corrigés pour les mois pas encore commencés, message quand il n'y a rien à importer.
 - **1.1.2** : fréquence des charges (tous les 2, 3, 6 ou 12 mois) : ajoutées seulement les mois concernés, coût ramené au mois dans l'aide au budget.
 - **1.2.0** : réinitialisation (effacer les mois ou tout effacer pour une nouvelle personne), configuration vierge au premier lancement, données d'exemple anonymes.
+- **1.3.0** : plusieurs comptes (un fichier par compte, configuration copiable), vue d'ensemble de tous les comptes, contrôle du numéro de compte à l'import.
 
 ## Télécharger l'application
 
@@ -49,7 +50,7 @@ du classeur Excel d'origine.
 captures d'écran. Le fichier `GestionCompte.exe` (aucune installation nécessaire) se télécharge dans l'onglet
 **Actions** du dépôt → dernière exécution réussie → section **Artifacts** → `GestionCompte-windows`.
 
-Les données sont enregistrées automatiquement dans `Documents\GestionCompte\compte.db`.
+Les données sont enregistrées automatiquement dans `Documents\GestionCompte\compte.db` (un fichier `compte-2.db`, `compte-3.db`… par compte supplémentaire, listés dans `comptes.json`).
 
 ## Développement
 

@@ -77,6 +77,18 @@ public sealed class Dialogues : IDialogues
         return fenetre.ShowDialog() == true ? fenetre.Demande : null;
     }
 
+    public DemandeNouveauCompte? DemanderNouveauCompte(IReadOnlyList<string> comptes, string compteActif)
+    {
+        var fenetre = new FenetreNouveauCompte(comptes, compteActif) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Demande : null;
+    }
+
+    public string? DemanderNom(string titre, string message, string valeur)
+    {
+        var fenetre = new FenetreNom(titre, message, valeur) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Valeur : null;
+    }
+
     public void OuvrirDossier(string dossier) =>
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dossier}\"") { UseShellExecute = true });
 }

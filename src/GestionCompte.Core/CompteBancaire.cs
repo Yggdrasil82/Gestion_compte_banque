@@ -22,6 +22,9 @@ public sealed class CompteBancaire
 
     public ConfigurationBudget Configuration { get; }
 
+    /// <summary>Numéro du compte bancaire (ACCTID) des relevés importés dans ce compte, ou null.</summary>
+    public string? IdentifiantBanque { get; set; }
+
     public IReadOnlyList<MoisBudget> Mois => _mois;
 
     public MoisBudget? Trouver(PeriodeMois periode) => _mois.Find(m => m.Periode == periode);

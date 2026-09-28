@@ -39,15 +39,17 @@ public partial class App : Application
         Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
         apparence.Changee += (_, _) => Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
 
+        // Un fichier de données par compte, listés dans Documents\GestionCompte\comptes.json.
+        var registre = RegistreComptes.Charger(Path.GetDirectoryName(DepotSqlite.CheminParDefaut)!);
         MainViewModel vm;
         try
         {
-            vm = new MainViewModel(new DepotSqlite(DepotSqlite.CheminParDefaut), new Dialogues(), DateTime.Today, apparence);
+            vm = new MainViewModel(registre, new Dialogues(), DateTime.Today, apparence);
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Les données n'ont pas pu être chargées depuis :\n{DepotSqlite.CheminParDefaut}\n\n{ex.Message}\n\n" +
+                $"Les données n'ont pas pu être chargées depuis :\n{registre.Chemin(registre.Actif)}\n\n{ex.Message}\n\n" +
                 "Le fichier n'a pas été modifié.",
                 "Gestion Compte", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);

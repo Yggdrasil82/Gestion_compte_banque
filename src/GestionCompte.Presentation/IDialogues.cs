@@ -23,7 +23,16 @@ public interface IDialogues
 
     /// <summary>Demande quelle réinitialisation faire ; null si l'utilisateur annule.</summary>
     DemandeReinitialisation? ChoisirReinitialisation() => null;
+
+    /// <summary>Demande le nom d'un nouveau compte et la configuration à copier ; null si l'utilisateur annule.</summary>
+    DemandeNouveauCompte? DemanderNouveauCompte(IReadOnlyList<string> comptes, string compteActif) => null;
+
+    /// <summary>Demande un texte (ex. nouveau nom d'un compte) ; null si l'utilisateur annule.</summary>
+    string? DemanderNom(string titre, string message, string valeur) => null;
 }
+
+/// <param name="CopierDe">Nom du compte dont la configuration est copiée ; null = configuration vierge.</param>
+public sealed record DemandeNouveauCompte(string Nom, string? CopierDe);
 
 public enum ChoixReinitialisation
 {

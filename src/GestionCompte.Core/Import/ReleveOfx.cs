@@ -15,7 +15,9 @@ public sealed record OperationBancaire(string Identifiant, DateOnly Date, decima
 }
 
 /// <param name="Solde">Solde du compte donné par la banque (LEDGERBAL), ou null s'il est absent.</param>
-public sealed record ReleveBancaire(IReadOnlyList<OperationBancaire> Operations, decimal? Solde, DateOnly? DateSolde);
+/// <param name="Compte">Numéro du compte bancaire (ACCTID), ou null s'il est absent.</param>
+public sealed record ReleveBancaire(
+    IReadOnlyList<OperationBancaire> Operations, decimal? Solde, DateOnly? DateSolde, string? Compte = null);
 
 /// <summary>
 /// Lecture des relevés au format OFX (« Money »), en version 1 (SGML, balises non fermées) comme en version 2 (XML).
@@ -52,6 +54,7 @@ public static class ReleveOfx
         Dictionary<string, string>? courante = null;
         decimal? solde = null;
         DateOnly? dateSolde = null;
+        string? compte = null;
         var dansSolde = false;
 
         foreach (Match m in Balise.Matches(texte))
@@ -80,13 +83,15 @@ public static class ReleveOfx
 
             if (courante is not null)
                 courante[nom] = valeur;
+            else if (nom == "ACCTID")
+                compte ??= valeur;
             else if (dansSolde && nom == "BALAMT")
                 solde = LireMontant(valeur);
             else if (dansSolde && nom == "DTASOF")
                 dateSolde = LireDate(valeur);
         }
 
-        return new ReleveBancaire(operations, solde, dateSolde);
+        return new ReleveBancaire(operations, solde, dateSolde, compte);
     }
 
     private static OperationBancaire VersOperation(Dictionary<string, string> valeurs, int rang)

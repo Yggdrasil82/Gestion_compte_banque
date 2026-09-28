@@ -80,7 +80,7 @@ public sealed class DepotSqlite
             l => configuration.ComptesCumul.Add(new CompteCumul(
                 l.GetString(0), LireDecimal(l.GetString(1)), l.IsDBNull(2) ? null : LireDecimal(l.GetString(2)))));
 
-        var compte = new CompteBancaire(configuration);
+        var compte = new CompteBancaire(configuration) { IdentifiantBanque = parametres.GetValueOrDefault("identifiant_banque") };
         var moisParId = new Dictionary<long, MoisBudget>();
 
         Lire(connexion, "SELECT id, annee, mois FROM mois ORDER BY annee, mois", l =>
@@ -179,6 +179,8 @@ public sealed class DepotSqlite
             ("$a", configuration.PremierMois.Annee.ToString(CultureInfo.InvariantCulture)),
             ("$m", configuration.PremierMois.Mois.ToString(CultureInfo.InvariantCulture)),
             ("$s", EcrireDecimal(configuration.SoldeInitial)));
+        if (compte.IdentifiantBanque is not null)
+            Executer(connexion, "INSERT INTO parametres (cle, valeur) VALUES ('identifiant_banque', $id)", ("$id", compte.IdentifiantBanque));
 
         foreach (var (revenu, ordre) in configuration.Revenus.Select((r, i) => (r, i)))
             Executer(connexion, "INSERT INTO modele_revenu (ordre, nom, montant) VALUES ($o, $n, $m)",

@@ -107,6 +107,20 @@ public static class ConfigurationParDefaut
             + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>4677.68\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
     }
 
+    /// <summary>Livret d'épargne d'exemple (second compte des captures d'écran).</summary>
+    public static CompteBancaire CreerDemoLivret()
+    {
+        var configuration = new ConfigurationBudget { PremierMois = new PeriodeMois(2026, 10), SoldeInitial = 2400m };
+        configuration.Charges.Add(new ModeleCharge("Versement depuis le compte courant", 0m, Credit: 150m, Categorie: Categorie.Epargne));
+        configuration.Regles.AddRange(RegleClassement.ParDefaut);
+        var compte = new CompteBancaire(configuration);
+        compte.OperationsPrevues.Add(new OperationPrevue(new PeriodeMois(2027, 7), "Vacances d'été", debit: 1000m));
+        foreach (var mois in new[] { compte.CreerMoisSuivant(), compte.CreerMoisSuivant() })
+            mois.Operations.ForEach(o => o.Pointee = true);
+        compte.Mois[^1].Operations.Add(new Operation("Intérêts", credit: 12.40m) { Pointee = true });
+        return compte;
+    }
+
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>
     public static CompteBancaire CreerDemo()
     {

@@ -47,9 +47,12 @@ internal static class Captures
         };
         delaiMaximum.Start();
 
-        var depot = new DepotSqlite(Path.Combine(Path.GetTempPath(), $"gestioncompte-demo-{Guid.NewGuid():N}.db"));
-        depot.Enregistrer(ConfigurationParDefaut.CreerDemo());
-        var vm = new MainViewModel(depot, new Dialogues(), new DateTime(2026, 11, 15));
+        // Deux comptes d'exemple : le compte courant et un livret.
+        var dossierDemo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"gestioncompte-demo-{Guid.NewGuid():N}")).FullName;
+        var registre = RegistreComptes.Charger(dossierDemo);
+        new DepotSqlite(registre.Chemin(registre.Actif)).Enregistrer(ConfigurationParDefaut.CreerDemo());
+        new DepotSqlite(registre.Chemin(registre.Ajouter("Livret A"))).Enregistrer(ConfigurationParDefaut.CreerDemoLivret());
+        var vm = new MainViewModel(registre, new Dialogues(), new DateTime(2026, 11, 15));
         vm.Apparence.Changee += (_, _) => Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
         Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
 
@@ -81,6 +84,7 @@ internal static class Captures
             ("11-aide-nuit", Ambiance.Nuit, false, MainViewModel.OngletAide, false),
             ("12-import-ocean", Ambiance.Ocean, false, MainViewModel.OngletImport, false),
             ("13-import-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletImport, false),
+            ("14-ensemble-ocean", Ambiance.Ocean, false, MainViewModel.OngletEnsemble, false),
         };
 
         // Aperçu d'import sur un relevé d'exemple (rien n'est validé).
@@ -113,7 +117,7 @@ internal static class Captures
                     vm.MoisSuivantCommand.Execute(null);
             }
 
-            File.Delete(depot.CheminFichier);
+            Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
         });

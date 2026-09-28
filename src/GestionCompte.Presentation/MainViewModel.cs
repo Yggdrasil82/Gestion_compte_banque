@@ -19,26 +19,54 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Aperçu d'un import de relevé (pas d'entrée dans la barre de gauche).</summary>
     public const int OngletImport = 4;
 
-    private readonly DepotSqlite _depot;
+    /// <summary>Soldes de tous les comptes (affiché quand il y a plusieurs comptes).</summary>
+    public const int OngletEnsemble = 5;
+
+    private DepotSqlite _depot;
+    private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
-    private CompteBancaire _compte;
+    private CompteBancaire _compte = null!;
     private int _indexMois = -1;
     private bool _erreurEnregistrementSignalee;
+
+    /// <summary>Numéro de compte bancaire du relevé en cours d'import.</summary>
+    private string? _compteReleve;
+
+    /// <summary>Application avec plusieurs comptes possibles (liste enregistrée dans le dossier des données).</summary>
+    public MainViewModel(RegistreComptes registre, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null)
+        : this(new DepotSqlite(registre.Chemin(registre.Actif)), dialogues, aujourdHui, apparence, registre)
+    {
+    }
 
     /// <param name="aujourdHui">Date du jour : premier mois proposé et mois affiché au démarrage.</param>
     /// <param name="apparence">Choix des couleurs ; par défaut, non enregistré.</param>
     public MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null)
+        : this(depot, dialogues, aujourdHui, apparence, null)
+    {
+    }
+
+    private MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence,
+        RegistreComptes? registre)
     {
         _depot = depot;
+        _registre = registre;
         _dialogues = dialogues;
         _moisDuJour = new PeriodeMois(aujourdHui.Year, aujourdHui.Month);
         Apparence = apparence ?? new ApparenceViewModel(null);
 
-        // Une erreur de lecture est remontée à l'appelant : on n'écrase jamais un fichier illisible.
-        var compte = depot.Charger(new PeriodeMois(aujourdHui.Year, aujourdHui.Month));
+        ChargerCompte(depot);
+    }
+
+    /// <summary>Ouvre les données d'un compte. Une erreur de lecture est remontée : on n'écrase jamais un fichier illisible.</summary>
+    private void ChargerCompte(DepotSqlite depot)
+    {
+        var compte = depot.Charger(_moisDuJour);
+        _depot = depot;
+        Import = null;
         if (compte is null)
         {
-            _compte = new CompteBancaire(ConfigurationParDefaut.Creer(new PeriodeMois(aujourdHui.Year, aujourdHui.Month)));
+            _compte = new CompteBancaire(ConfigurationParDefaut.Creer(_moisDuJour));
+            _indexMois = -1;
             Enregistrer();
             OngletSelectionne = OngletConfiguration;
             Statut = "Bienvenue ! Vérifiez la configuration, puis créez le premier mois depuis l'onglet « Mois ».";
@@ -46,16 +74,188 @@ public sealed partial class MainViewModel : ObservableObject
         else
         {
             _compte = compte;
-            var moisDuJour = new PeriodeMois(aujourdHui.Year, aujourdHui.Month);
-            var index = _compte.Mois.ToList().FindIndex(m => m.Periode == moisDuJour);
+            var index = _compte.Mois.ToList().FindIndex(m => m.Periode == _moisDuJour);
             _indexMois = index >= 0 ? index : _compte.Mois.Count - 1;
+            if (OngletSelectionne == OngletImport)
+                OngletSelectionne = OngletMois;
             Statut = $"Données chargées depuis {depot.CheminFichier}";
         }
 
         Reconstruire();
+        NotifierComptes();
     }
 
     private readonly PeriodeMois _moisDuJour;
+
+    // ---- Comptes ----
+
+    /// <summary>Le choix du compte est proposé (application Windows ; pas en mode compte unique).</summary>
+    public bool GestionComptes => _registre is not null;
+
+    public bool PlusieursComptes => _registre is { Comptes.Count: > 1 };
+
+    public IReadOnlyList<string> NomsComptes =>
+        _registre?.Comptes.Select(c => c.Nom).ToList() ?? new List<string> { RegistreComptes.NomPrincipal };
+
+    /// <summary>Nom du compte ouvert ; le changer ouvre l'autre compte.</summary>
+    public string CompteActif
+    {
+        get => _registre?.Actif.Nom ?? RegistreComptes.NomPrincipal;
+        set
+        {
+            var cible = _registre?.Comptes.FirstOrDefault(c => c.Nom == value);
+            if (cible is null || cible == _registre!.Actif)
+                return;
+            ChangerDeCompte(cible);
+        }
+    }
+
+    [ObservableProperty] private VueEnsembleViewModel? _ensemble;
+
+    partial void OnOngletSelectionneChanged(int value)
+    {
+        if (value == OngletEnsemble)
+            Ensemble = CalculerEnsemble();
+    }
+
+    private void NotifierComptes()
+    {
+        OnPropertyChanged(nameof(NomsComptes));
+        OnPropertyChanged(nameof(CompteActif));
+        OnPropertyChanged(nameof(PlusieursComptes));
+        OnPropertyChanged(nameof(GestionComptes));
+        RenommerCompteCommand.NotifyCanExecuteChanged();
+        SupprimerCompteCommand.NotifyCanExecuteChanged();
+        if (OngletSelectionne == OngletEnsemble)
+        {
+            if (PlusieursComptes)
+                Ensemble = CalculerEnsemble();
+            else
+                OngletSelectionne = OngletMois;
+        }
+    }
+
+    private void ChangerDeCompte(EntreeCompte cible)
+    {
+        Enregistrer();
+        var depot = new DepotSqlite(_registre!.Chemin(cible));
+        try
+        {
+            depot.Charger(_moisDuJour);
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"Le compte « {cible.Nom} » n'a pas pu être ouvert.\n\n{e.Message}");
+            OnPropertyChanged(nameof(CompteActif));
+            return;
+        }
+
+        _registre.DefinirActif(cible);
+        ChargerCompte(depot);
+        Statut = $"Compte « {cible.Nom} » ouvert.";
+    }
+
+    /// <summary>Compte de la liste, lu depuis son fichier (le compte ouvert est pris en mémoire).</summary>
+    private CompteBancaire? LireCompte(EntreeCompte entree) =>
+        entree == _registre?.Actif ? _compte : new DepotSqlite(_registre!.Chemin(entree)).Charger(_moisDuJour);
+
+    [RelayCommand(CanExecute = nameof(GestionComptes))]
+    private void NouveauCompte()
+    {
+        var demande = _dialogues.DemanderNouveauCompte(NomsComptes, CompteActif);
+        if (demande is null)
+            return;
+        if (!_registre!.NomDisponible(demande.Nom))
+        {
+            _dialogues.Erreur(string.IsNullOrWhiteSpace(demande.Nom)
+                ? "Donnez un nom au compte."
+                : $"Un compte s'appelle déjà « {demande.Nom.Trim()} ».");
+            return;
+        }
+
+        ConfigurationBudget configuration;
+        try
+        {
+            var modele = demande.CopierDe is null ? null : _registre.Comptes.FirstOrDefault(c => c.Nom == demande.CopierDe);
+            configuration = modele is null
+                ? ConfigurationParDefaut.Creer(_moisDuJour)
+                : (LireCompte(modele)?.Configuration ?? ConfigurationParDefaut.Creer(_moisDuJour)).CopierPourNouveauCompte(_moisDuJour);
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"La configuration à copier n'a pas pu être lue.\n\n{e.Message}");
+            return;
+        }
+
+        Enregistrer();
+        var entree = _registre.Ajouter(demande.Nom);
+        new DepotSqlite(_registre.Chemin(entree)).Enregistrer(new CompteBancaire(configuration));
+        ChangerDeCompte(entree);
+        OngletSelectionne = OngletConfiguration;
+        Statut = $"Compte « {entree.Nom} » créé : vérifiez le premier mois et le solde de départ, puis créez le premier mois.";
+    }
+
+    [RelayCommand(CanExecute = nameof(GestionComptes))]
+    private void RenommerCompte()
+    {
+        var actif = _registre!.Actif;
+        var nom = _dialogues.DemanderNom("Renommer le compte", "Nouveau nom du compte :", actif.Nom);
+        if (nom is null || nom.Trim() == actif.Nom)
+            return;
+        if (!_registre.NomDisponible(nom, actif))
+        {
+            _dialogues.Erreur(string.IsNullOrWhiteSpace(nom) ? "Donnez un nom au compte." : $"Un compte s'appelle déjà « {nom.Trim()} ».");
+            return;
+        }
+
+        _registre.Renommer(actif, nom);
+        NotifierComptes();
+        Statut = $"Compte renommé en « {_registre.Actif.Nom} ».";
+    }
+
+    [RelayCommand(CanExecute = nameof(PlusieursComptes))]
+    private void SupprimerCompte()
+    {
+        var actif = _registre!.Actif;
+        if (!_dialogues.Confirmer("Supprimer un compte",
+                $"Supprimer définitivement le compte « {actif.Nom} » et toutes ses données " +
+                "(mois, configuration, copies de sécurité) ?\n\n" +
+                "Pour les garder, annulez et faites d'abord « Enregistrer une copie… »."))
+            return;
+
+        try
+        {
+            _registre.Supprimer(actif);
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"Le compte n'a pas pu être supprimé.\n\n{e.Message}");
+            return;
+        }
+
+        ChargerCompte(new DepotSqlite(_registre.Chemin(_registre.Actif)));
+        Statut = $"Compte « {actif.Nom} » supprimé ; compte « {_registre.Actif.Nom} » ouvert.";
+    }
+
+    private VueEnsembleViewModel CalculerEnsemble()
+    {
+        var comptes = new List<CompteEnsemble>();
+        var illisibles = new List<string>();
+        foreach (var entree in _registre?.Comptes ?? (IReadOnlyList<EntreeCompte>)Array.Empty<EntreeCompte>())
+        {
+            try
+            {
+                if (LireCompte(entree) is { } compte)
+                    comptes.Add(new CompteEnsemble(entree.Nom, compte, entree == _registre!.Actif));
+            }
+            catch (Exception)
+            {
+                illisibles.Add(entree.Nom);
+            }
+        }
+
+        return new VueEnsembleViewModel(comptes, _moisDuJour, illisibles);
+    }
 
     public string CheminDonnees => _depot.CheminFichier;
 
@@ -279,13 +479,21 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (!_dialogues.Confirmer("Tout effacer",
                 "Dernière confirmation : toutes les données vont être définitivement effacées de ce PC " +
-                "(mois, configuration, règles, opérations prévues, objectifs, copies de sécurité automatiques " +
+                "(tous les comptes : mois, configuration, règles, opérations prévues, objectifs, copies de sécurité automatiques " +
                 "et apparence).\n\nL'application repartira d'une configuration vierge. Continuer ?"))
             return;
 
         try
         {
-            _depot.EffacerTout();
+            if (_registre is not null)
+            {
+                _registre.EffacerTout();
+                _depot = new DepotSqlite(_registre.Chemin(_registre.Actif));
+            }
+            else
+            {
+                _depot.EffacerTout();
+            }
         }
         catch (Exception e)
         {
@@ -295,6 +503,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         Apparence.Reinitialiser();
         Repartir(new CompteBancaire(ConfigurationParDefaut.Creer(_moisDuJour)));
+        NotifierComptes();
         Statut = "Toutes les données ont été effacées. Bienvenue ! Vérifiez la configuration, puis créez le premier mois.";
     }
 
@@ -357,6 +566,10 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
+        if (!VerifierCompteDuReleve(releve.Compte))
+            return;
+
+        _compteReleve = releve.Compte;
         var plan = ImportReleve.Preparer(_compte, releve);
         if (OngletSelectionne != OngletImport)
             _ongletAvantImport = OngletSelectionne;
@@ -364,8 +577,59 @@ public sealed partial class MainViewModel : ObservableObject
         OngletSelectionne = OngletImport;
     }
 
+    /// <summary>
+    /// Vérifie que le relevé est bien celui du compte ouvert (numéro ACCTID) ; propose d'ouvrir le bon compte sinon.
+    /// Renvoie false si l'import est abandonné.
+    /// </summary>
+    private bool VerifierCompteDuReleve(string? numero)
+    {
+        if (numero is null)
+            return true;
+
+        EntreeCompte? proprietaire = null;
+        if (_registre is not null)
+        {
+            foreach (var entree in _registre.Comptes.Where(c => c != _registre.Actif))
+            {
+                try
+                {
+                    if (LireCompte(entree)?.IdentifiantBanque == numero)
+                    {
+                        proprietaire = entree;
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Un compte illisible est ignoré ici ; l'erreur apparaîtra à son ouverture.
+                }
+            }
+        }
+
+        if (proprietaire is not null)
+        {
+            if (!_dialogues.Confirmer("Relevé d'un autre compte",
+                    $"Ce relevé (compte bancaire n° {Masquer(numero)}) correspond au compte « {proprietaire.Nom} ».\n\n" +
+                    $"Ouvrir « {proprietaire.Nom} » pour l'importer ?"))
+                return false;
+            ChangerDeCompte(proprietaire);
+            return _registre!.Actif == proprietaire;
+        }
+
+        return _compte.IdentifiantBanque is not { } attendu || attendu == numero
+               || _dialogues.Confirmer("Relevé d'un autre compte bancaire",
+                   $"Ce relevé vient du compte bancaire n° {Masquer(numero)}, alors que « {CompteActif} » reçoit " +
+                   $"d'habitude les relevés du n° {Masquer(attendu)}.\n\nL'importer quand même dans « {CompteActif} » ?");
+    }
+
+    /// <summary>Numéro de compte abrégé (4 derniers caractères) pour les messages.</summary>
+    private static string Masquer(string numero) => numero.Length <= 4 ? numero : "…" + numero[^4..];
+
     private void ImportTermine(ResultatImport resultat)
     {
+        // Le premier relevé importé fixe le numéro de compte bancaire attendu pour ce compte.
+        _compte.IdentifiantBanque ??= _compteReleve;
+
         var soldeBanque = Import?.SoldeBanque;
         var soldePointe = Import?.SoldePointeApres ?? 0m;
         Import = null;

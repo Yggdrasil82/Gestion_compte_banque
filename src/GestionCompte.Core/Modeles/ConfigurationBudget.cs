@@ -26,6 +26,21 @@ public sealed class ConfigurationBudget
 
     /// <summary>Règles de classement des opérations importées : mot-clé du libellé → enveloppe.</summary>
     public List<RegleClassement> Regles { get; } = new();
+
+    /// <summary>
+    /// Copie pour un nouveau compte : mêmes revenus, enveloppes, charges, comptes cumulés et règles,
+    /// mais nouveau premier mois, solde de départ et montants déjà cumulés à zéro.
+    /// </summary>
+    public ConfigurationBudget CopierPourNouveauCompte(PeriodeMois premierMois)
+    {
+        var copie = new ConfigurationBudget { PremierMois = premierMois, SoldeInitial = 0m };
+        copie.Revenus.AddRange(Revenus);
+        copie.Enveloppes.AddRange(Enveloppes);
+        copie.Charges.AddRange(Charges);
+        copie.ComptesCumul.AddRange(ComptesCumul.Select(c => c with { MontantInitial = 0m }));
+        copie.Regles.AddRange(Regles);
+        return copie;
+    }
 }
 
 /// <param name="MotCle">Texte cherché dans le libellé bancaire (sans tenir compte des majuscules ni des accents).</param>
