@@ -44,7 +44,7 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="440" />
+                <ColumnDefinition Width="460" />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -105,8 +105,8 @@
                             </Style.Triggers>
                         </Style>
                     </Border.Style>
-                    <StackPanel Orientation="Horizontal">
-                        <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent2Clair}">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Left" Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent2Clair}">
                             <TextBlock FontSize="18">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource Icone}">
@@ -122,11 +122,11 @@
                                 </TextBlock.Style>
                             </TextBlock>
                         </Border>
-                        <StackPanel VerticalAlignment="Center" MaxWidth="210">
+                        <StackPanel VerticalAlignment="Center">
                             <TextBlock Style="{StaticResource LibelleTuile}" Text="Alerte découvert" />
                             <TextBlock Text="{Binding Alerte}" TextWrapping="Wrap" FontWeight="SemiBold" />
                         </StackPanel>
-                    </StackPanel>
+                    </DockPanel>
                 </Border>
             </UniformGrid>
 
@@ -311,7 +311,7 @@
                                Text="Vacances, prime, taxe… Elles sont ajoutées automatiquement au mois quand vous le créez." />
                     <DataGrid ItemsSource="{Binding OperationsPrevues.Elements}" SelectedItem="{Binding OperationsPrevues.Selection}">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Mois" Width="130">
+                            <DataGridTemplateColumn Header="Mois" Width="125">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox Style="{StaticResource ListeCellule}"
@@ -320,12 +320,12 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="Libellé" Binding="{Binding Libelle}" Width="*"
+                            <DataGridTextColumn Header="Libellé" Binding="{Binding Libelle}" Width="*" MinWidth="120"
                                                 ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
-                            <DataGridTextColumn Header="Débit" Width="80"
+                            <DataGridTextColumn Header="Débit" Width="68"
                                                 Binding="{Binding Debit, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                                 ElementStyle="{StaticResource CelluleMontant}" EditingElementStyle="{StaticResource EditionMontant}" />
-                            <DataGridTextColumn Header="Crédit" Width="80"
+                            <DataGridTextColumn Header="Crédit" Width="68"
                                                 Binding="{Binding Credit, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                                 EditingElementStyle="{StaticResource EditionMontant}">
                                 <DataGridTextColumn.ElementStyle>
