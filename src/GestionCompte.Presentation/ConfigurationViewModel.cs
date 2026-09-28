@@ -11,11 +11,23 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     private readonly ConfigurationBudget _configuration;
     private readonly Action _modifiee;
 
-    public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee)
+    /// <param name="moisDuJour">Premier mois proposé dans la colonne « À partir de » des charges (par défaut, le premier mois).</param>
+    public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee,
+        PeriodeMois? moisDuJour = null)
     {
         _configuration = configuration;
         _modifiee = modifiee;
         PremierMoisModifiable = premierMoisModifiable;
+
+        // 24 mois à partir d'aujourd'hui, plus les mois de départ déjà choisis.
+        var mois = new List<PeriodeMois> { moisDuJour ?? configuration.PremierMois };
+        while (mois.Count < 24)
+            mois.Add(mois[^1].Suivant());
+        MoisDepart = mois
+            .Concat(configuration.Charges.Where(c => c.Depart is not null).Select(c => c.Depart!.Value))
+            .Distinct()
+            .Order()
+            .ToList();
 
         Revenus = new ListeEditable<ElementConfigViewModel>(
             configuration.Revenus.Select(r => new ElementConfigViewModel(r.Nom, r.MontantParDefaut, Synchroniser)),
@@ -28,8 +40,8 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             Synchroniser);
 
         Charges = new ListeEditable<ChargeConfigViewModel>(
-            configuration.Charges.Select(c => new ChargeConfigViewModel(c, Synchroniser)),
-            () => new ChargeConfigViewModel(new ModeleCharge("Nouvelle charge", 0m), Synchroniser),
+            configuration.Charges.Select(c => new ChargeConfigViewModel(c, Synchroniser, MoisDepart[0])),
+            () => new ChargeConfigViewModel(new ModeleCharge("Nouvelle charge", 0m), Synchroniser, MoisDepart[0]),
             Synchroniser);
 
         ComptesCumul = new ListeEditable<CompteCumulConfigViewModel>(
@@ -85,6 +97,12 @@ public sealed partial class ConfigurationViewModel : ObservableObject
 
     /// <summary>Choix de la colonne « Catégorie » (règle 50/30/20).</summary>
     public static IReadOnlyList<ChoixCategorie> Categories => ChoixCategorie.Tous;
+
+    /// <summary>Choix de la colonne « Fréquence » des charges.</summary>
+    public static IReadOnlyList<ChoixFrequence> Frequences => ChoixFrequence.Toutes;
+
+    /// <summary>Choix de la colonne « À partir de » des charges qui ne sont pas prélevées tous les mois.</summary>
+    public IReadOnlyList<PeriodeMois> MoisDepart { get; }
 
     public ListeEditable<ElementConfigViewModel> Revenus { get; }
 
@@ -168,16 +186,49 @@ public sealed class ChargeConfigViewModel : ObservableObject
     private decimal _credit;
     private string? _compteCumul;
     private ChoixCategorie _categorie;
+    private ChoixFrequence _frequence;
+    private PeriodeMois? _depart;
+    private readonly PeriodeMois _departParDefaut;
 
-    public ChargeConfigViewModel(ModeleCharge charge, Action modifie)
+    public ChargeConfigViewModel(ModeleCharge charge, Action modifie, PeriodeMois departParDefaut)
     {
         _nom = charge.Nom;
         _debit = charge.Debit;
         _credit = charge.Credit;
         _compteCumul = charge.CompteCumul;
         _categorie = ChoixCategorie.De(charge.Categorie);
+        _frequence = ChoixFrequence.De(charge.Frequence);
+        _depart = charge.Depart;
+        _departParDefaut = departParDefaut;
         _modifie = modifie;
     }
+
+    public ChoixFrequence Frequence
+    {
+        get => _frequence;
+        set
+        {
+            if (value is null || !SetProperty(ref _frequence, value))
+                return;
+            // Une charge non mensuelle a besoin d'un mois de repère.
+            if (value.Mois > 1 && _depart is null)
+            {
+                _depart = _departParDefaut;
+                OnPropertyChanged(nameof(Depart));
+            }
+            OnPropertyChanged(nameof(DepartModifiable));
+            _modifie();
+        }
+    }
+
+    /// <summary>Un mois où la charge est prélevée ; les suivants s'en déduisent avec la fréquence.</summary>
+    public PeriodeMois? Depart
+    {
+        get => _depart;
+        set { if (value is not null && SetProperty(ref _depart, value)) _modifie(); }
+    }
+
+    public bool DepartModifiable => _frequence.Mois > 1;
 
     public ChoixCategorie Categorie
     {
@@ -210,7 +261,7 @@ public sealed class ChargeConfigViewModel : ObservableObject
         set { if (SetProperty(ref _compteCumul, OperationViewModel.VideVersNull(value))) _modifie(); }
     }
 
-    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur);
+    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur, _frequence.Mois, _depart);
 }
 
 public sealed class CompteCumulConfigViewModel : ObservableObject
@@ -291,4 +342,23 @@ public sealed class RegleConfigViewModel : ObservableObject
         get => _enveloppe;
         set { if (SetProperty(ref _enveloppe, value ?? "")) _modifie(); }
     }
+}
+
+/// <summary>Fréquence de prélèvement d'une charge, affichée en français.</summary>
+public sealed record ChoixFrequence(int Mois, string Nom)
+{
+    public static IReadOnlyList<ChoixFrequence> Toutes { get; } = new[]
+    {
+        new ChoixFrequence(1, "Tous les mois"),
+        new ChoixFrequence(2, "Tous les 2 mois"),
+        new ChoixFrequence(3, "Tous les 3 mois"),
+        new ChoixFrequence(6, "Tous les 6 mois"),
+        new ChoixFrequence(12, "Une fois par an"),
+    };
+
+    /// <summary>Fréquence correspondant à un nombre de mois (une valeur inconnue est gardée telle quelle).</summary>
+    public static ChoixFrequence De(int mois) =>
+        Toutes.FirstOrDefault(f => f.Mois == mois) ?? new ChoixFrequence(mois, $"Tous les {mois} mois");
+
+    public override string ToString() => Nom;
 }

@@ -31,6 +31,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         _depot = depot;
         _dialogues = dialogues;
+        _moisDuJour = new PeriodeMois(aujourdHui.Year, aujourdHui.Month);
         Apparence = apparence ?? new ApparenceViewModel(null);
 
         // Une erreur de lecture est remontée à l'appelant : on n'écrase jamais un fichier illisible.
@@ -53,6 +54,8 @@ public sealed partial class MainViewModel : ObservableObject
 
         Reconstruire();
     }
+
+    private readonly PeriodeMois _moisDuJour;
 
     public string CheminDonnees => _depot.CheminFichier;
 
@@ -312,7 +315,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Recrée les écrans après un changement de structure (mois créé, supprimé, restauré…).</summary>
     private void Reconstruire()
     {
-        Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee);
+        Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour);
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }

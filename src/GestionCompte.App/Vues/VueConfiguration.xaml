@@ -31,6 +31,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Démarrage -->
@@ -56,7 +57,7 @@
                 </StackPanel>
             </Border>
 
-            <StackPanel Grid.Row="1" Grid.Column="0">
+            <StackPanel Grid.Row="2" Grid.Column="0">
                 <!-- Revenus -->
                 <Border Style="{StaticResource Carte}">
                     <DockPanel>
@@ -113,6 +114,9 @@
                     </DockPanel>
                 </Border>
 
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Grid.Column="1">
                 <!-- Comptes cumulés -->
                 <Border Style="{StaticResource Carte}">
                     <DockPanel>
@@ -141,22 +145,51 @@
                         </DataGrid>
                     </DockPanel>
                 </Border>
+
+                <!-- Règles de classement des relevés importés -->
+                <Border Style="{StaticResource Carte}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top">
+                            <ContentControl DockPanel.Dock="Right" Content="{Binding Regles}" ContentTemplate="{StaticResource BoutonsListe}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                                <TextBlock Text="Règles de classement" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
+                                   Text="À l'import d'un relevé, une dépense dont le libellé contient le mot-clé est rangée dans l'enveloppe choisie (majuscules et accents ignorés)." />
+                        <DataGrid ItemsSource="{Binding Regles.Elements}" SelectedItem="{Binding Regles.Selection}" MinHeight="150" MaxHeight="320">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Mot-clé du libellé" Binding="{Binding MotCle}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                    EditingElementStyle="{StaticResource EditionTexte}" />
+                                <DataGridTemplateColumn Header="Enveloppe" Width="160">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Style="{StaticResource ListeCellule}"
+                                                      ItemsSource="{Binding DataContext.NomsEnveloppes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Enveloppe, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="1">
-            <!-- Charges mensuelles -->
-            <Border Style="{StaticResource Carte}">
+            <!-- Charges -->
+            <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Carte}">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <ContentControl DockPanel.Dock="Right" Content="{Binding Charges}" ContentTemplate="{StaticResource BoutonsListe}" />
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
-                            <TextBlock Text="Charges mensuelles" Style="{StaticResource TitreCarte}" />
+                            <TextBlock Text="Charges" Style="{StaticResource TitreCarte}" />
                         </StackPanel>
                     </DockPanel>
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
-                               Text="Ajoutées automatiquement à chaque nouveau mois, dans cet ordre." />
-                    <DataGrid ItemsSource="{Binding Charges.Elements}" SelectedItem="{Binding Charges.Selection}" MinHeight="300">
+                               Text="Ajoutées automatiquement à chaque nouveau mois, dans cet ordre. Pour une charge qui ne passe pas tous les mois (poubelles tous les 2 mois…), choisissez sa fréquence et un mois où elle est prélevée : elle ne sera ajoutée que les mois concernés." />
+                    <DataGrid ItemsSource="{Binding Charges.Elements}" SelectedItem="{Binding Charges.Selection}" MinHeight="200">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Charge" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
                                                     EditingElementStyle="{StaticResource EditionTexte}" />
@@ -176,6 +209,25 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Fréquence" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Style="{StaticResource ListeCellule}" ItemsSource="{x:Static vm:ConfigurationViewModel.Frequences}"
+                                                  SelectedItem="{Binding Frequence, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Prélevée en" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  Visibility="{Binding DepartModifiable, Converter={StaticResource Visible}}"
+                                                  ItemsSource="{Binding DataContext.MoisDepart, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding Depart, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="Un mois où la charge est prélevée ; les suivants s'en déduisent avec la fréquence." />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="Compte cumulé" Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -190,36 +242,6 @@
                 </DockPanel>
             </Border>
 
-            <!-- Règles de classement des relevés importés -->
-            <Border Style="{StaticResource Carte}">
-                <DockPanel>
-                    <DockPanel DockPanel.Dock="Top">
-                        <ContentControl DockPanel.Dock="Right" Content="{Binding Regles}" ContentTemplate="{StaticResource BoutonsListe}" />
-                        <StackPanel Orientation="Horizontal">
-                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
-                            <TextBlock Text="Règles de classement" Style="{StaticResource TitreCarte}" />
-                        </StackPanel>
-                    </DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
-                               Text="À l'import d'un relevé, une dépense dont le libellé contient le mot-clé est rangée dans l'enveloppe choisie (majuscules et accents ignorés)." />
-                    <DataGrid ItemsSource="{Binding Regles.Elements}" SelectedItem="{Binding Regles.Selection}" MinHeight="150" MaxHeight="320">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Mot-clé du libellé" Binding="{Binding MotCle}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
-                                                EditingElementStyle="{StaticResource EditionTexte}" />
-                            <DataGridTemplateColumn Header="Enveloppe" Width="160">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox Style="{StaticResource ListeCellule}"
-                                                  ItemsSource="{Binding DataContext.NomsEnveloppes, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  SelectedItem="{Binding Enveloppe, UpdateSourceTrigger=PropertyChanged}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </Border>
-            </StackPanel>
         </Grid>
     </ScrollViewer>
 </UserControl>

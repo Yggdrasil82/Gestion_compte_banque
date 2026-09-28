@@ -59,7 +59,7 @@ public sealed class CompteBancaire
         foreach (var enveloppe in Configuration.Enveloppes)
             mois.Enveloppes.Add(new LigneEnveloppe(enveloppe.Nom, enveloppe.BudgetParDefaut));
 
-        foreach (var charge in Configuration.Charges)
+        foreach (var charge in Configuration.Charges.Where(c => c.TombeEn(periode)))
             mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
 
         foreach (var prevue in OperationsPrevues.Where(o => o.Periode == periode))
@@ -81,7 +81,8 @@ public sealed class CompteBancaire
     /// <summary>
     /// Applique la configuration actuelle à un mois existant :
     /// les montants des charges et les budgets des enveloppes sont remplacés par ceux de la configuration,
-    /// les charges, enveloppes et revenus absents du mois sont ajoutés.
+    /// les charges, enveloppes et revenus absents du mois sont ajoutés (une charge qui n'est pas prélevée
+    /// tous les mois n'est ajoutée que les mois où elle tombe).
     /// Les revenus déjà présents et les autres opérations ne sont pas modifiés ; rien n'est supprimé.
     /// </summary>
     public void AppliquerConfiguration(MoisBudget mois)
@@ -110,7 +111,8 @@ public sealed class CompteBancaire
             var existante = mois.Operations.Find(o => o.Enveloppe is null && CalculateurMois.MemeNom(o.Libelle, charge.Nom));
             if (existante is null)
             {
-                mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
+                if (charge.TombeEn(mois.Periode))
+                    mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
             }
             else
             {

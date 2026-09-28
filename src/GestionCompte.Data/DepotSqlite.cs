@@ -17,8 +17,9 @@ public sealed class DepotSqlite
     /// Version 2 : opérations prévues. Version 3 : catégories 50/30/20 et objectifs d'épargne.
     /// Version 4 : import des relevés (identifiant bancaire, revenus reçus, règles de classement).
     /// Version 5 : même schéma ; marque la correction des revenus « reçus » des mois pas encore commencés.
+    /// Version 6 : fréquence des charges (tous les 2 mois, trimestrielle…).
     /// </remarks>
-    public const int VersionSchema = 5;
+    public const int VersionSchema = 6;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -66,10 +67,15 @@ public sealed class DepotSqlite
             l => configuration.Enveloppes.Add(new ModeleEnveloppe(
                 l.GetString(0), LireDecimal(l.GetString(1)), LireCategorie(l, 2, Categorie.Essentiel))));
         var categorieCharge = ColonneExiste(connexion, "modele_charge", "categorie") ? "categorie" : "NULL";
-        Lire(connexion, $"SELECT nom, debit, credit, compte_cumul, {categorieCharge} FROM modele_charge ORDER BY ordre",
+        // Colonnes absentes des fichiers aux formats 1 à 5 : charge mensuelle.
+        var frequence = ColonneExiste(connexion, "modele_charge", "frequence")
+            ? "frequence, depart_annee, depart_mois" : "1, NULL, NULL";
+        Lire(connexion, $"SELECT nom, debit, credit, compte_cumul, {categorieCharge}, {frequence} FROM modele_charge ORDER BY ordre",
             l => configuration.Charges.Add(new ModeleCharge(
                 l.GetString(0), LireDecimal(l.GetString(1)), LireDecimal(l.GetString(2)), TexteOuNull(l, 3),
-                LireCategorie(l, 4, Categorie.NonClassee))));
+                LireCategorie(l, 4, Categorie.NonClassee),
+                Math.Max(1, l.GetInt32(5)),
+                l.IsDBNull(6) || l.IsDBNull(7) ? null : new PeriodeMois(l.GetInt32(6), l.GetInt32(7)))));
         Lire(connexion, "SELECT nom, montant_initial, objectif FROM compte_cumul ORDER BY ordre",
             l => configuration.ComptesCumul.Add(new CompteCumul(
                 l.GetString(0), LireDecimal(l.GetString(1)), l.IsDBNull(2) ? null : LireDecimal(l.GetString(2)))));
@@ -184,9 +190,11 @@ public sealed class DepotSqlite
 
         foreach (var (charge, ordre) in configuration.Charges.Select((c, i) => (c, i)))
             Executer(connexion,
-                "INSERT INTO modele_charge (ordre, nom, debit, credit, compte_cumul, categorie) VALUES ($o, $n, $d, $c, $cc, $cat)",
+                "INSERT INTO modele_charge (ordre, nom, debit, credit, compte_cumul, categorie, frequence, depart_annee, depart_mois) " +
+                "VALUES ($o, $n, $d, $c, $cc, $cat, $f, $da, $dm)",
                 ("$o", ordre), ("$n", charge.Nom), ("$d", EcrireDecimal(charge.Debit)), ("$c", EcrireDecimal(charge.Credit)),
-                ("$cc", charge.CompteCumul), ("$cat", charge.Categorie.ToString()));
+                ("$cc", charge.CompteCumul), ("$cat", charge.Categorie.ToString()), ("$f", charge.Frequence),
+                ("$da", charge.Depart?.Annee), ("$dm", charge.Depart?.Mois));
 
         foreach (var (cumul, ordre) in configuration.ComptesCumul.Select((c, i) => (c, i)))
             Executer(connexion, "INSERT INTO compte_cumul (ordre, nom, montant_initial, objectif) VALUES ($o, $n, $m, $obj)",
@@ -308,6 +316,12 @@ public sealed class DepotSqlite
         // Mise à jour des fichiers aux formats 1 et 2.
         if (!ColonneExiste(connexion, "modele_charge", "categorie"))
             Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN categorie TEXT");
+        if (!ColonneExiste(connexion, "modele_charge", "frequence"))
+        {
+            Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN frequence INTEGER NOT NULL DEFAULT 1");
+            Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN depart_annee INTEGER");
+            Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN depart_mois INTEGER");
+        }
         if (!ColonneExiste(connexion, "modele_enveloppe", "categorie"))
             Executer(connexion, "ALTER TABLE modele_enveloppe ADD COLUMN categorie TEXT");
         if (!ColonneExiste(connexion, "operation", "identifiant_banque"))

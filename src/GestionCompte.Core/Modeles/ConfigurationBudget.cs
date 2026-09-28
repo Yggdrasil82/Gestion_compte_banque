@@ -46,8 +46,23 @@ public sealed record ModeleEnveloppe(string Nom, decimal BudgetParDefaut, Catego
 
 /// <param name="CompteCumul">Nom du compte cumulé alimenté par cette charge (ex. « Épargne »), ou null.</param>
 /// <param name="Categorie">Catégorie pour la répartition 50/30/20.</param>
+/// <param name="Frequence">Nombre de mois entre deux prélèvements : 1 = tous les mois, 2 = un mois sur deux…</param>
+/// <param name="Depart">Un mois où la charge est prélevée (sert de repère quand <paramref name="Frequence"/> &gt; 1).</param>
 public sealed record ModeleCharge(
-    string Nom, decimal Debit, decimal Credit = 0m, string? CompteCumul = null, Categorie Categorie = Categorie.NonClassee);
+    string Nom, decimal Debit, decimal Credit = 0m, string? CompteCumul = null, Categorie Categorie = Categorie.NonClassee,
+    int Frequence = 1, PeriodeMois? Depart = null)
+{
+    /// <summary>Vrai si la charge est prélevée ce mois-ci.</summary>
+    public bool TombeEn(PeriodeMois periode)
+    {
+        if (Frequence <= 1 || Depart is not { } depart)
+            return true;
+        return depart.MoisJusqua(periode) % Frequence == 0;
+    }
+
+    /// <summary>Coût net ramené à un mois (ex. 61,18 € tous les 2 mois = 30,59 € par mois).</summary>
+    public decimal NetMensuel => Frequence <= 1 ? Debit - Credit : decimal.Round((Debit - Credit) / Frequence, 2);
+}
 
 /// <summary>Catégories de la règle 50/30/20 : 50 % essentiel, 30 % confort, 20 % épargne.</summary>
 public enum Categorie

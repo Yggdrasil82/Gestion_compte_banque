@@ -119,6 +119,11 @@ public static class ConfigurationParDefaut
             new Operation("Remboursement mutuelle", credit: 42.30m),
         });
 
+        // Poubelles prélevées un mois sur deux (novembre, janvier, mars…).
+        var charges = compte.Configuration.Charges;
+        var poubelle = charges.FindIndex(c => c.Nom == "Poubelle");
+        charges[poubelle] = charges[poubelle] with { Frequence = 2, Depart = novembre.Periode };
+
         return compte;
     }
 }

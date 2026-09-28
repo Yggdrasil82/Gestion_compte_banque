@@ -97,7 +97,7 @@ public static class AideBudget
         var revenus = RevenusMensuels(configuration);
 
         var charges = configuration.Charges
-            .Select(c => (Charge: c, Net: c.Debit - c.Credit))
+            .Select(c => (Charge: c, Net: c.NetMensuel))
             .Where(c => c.Net > 0)
             .OrderByDescending(c => c.Net)
             .Select(c => new ChargeAnalysee(c.Charge.Nom, c.Net, c.Net * 12, Part(c.Net, revenus), c.Charge.Categorie))
@@ -123,7 +123,7 @@ public static class AideBudget
 
         var montants = new Dictionary<Categorie, decimal>();
         foreach (var charge in configuration.Charges)
-            montants[charge.Categorie] = montants.GetValueOrDefault(charge.Categorie) + charge.Debit - charge.Credit;
+            montants[charge.Categorie] = montants.GetValueOrDefault(charge.Categorie) + charge.NetMensuel;
         foreach (var enveloppe in configuration.Enveloppes)
             montants[enveloppe.Categorie] = montants.GetValueOrDefault(enveloppe.Categorie) + enveloppe.BudgetParDefaut;
 
@@ -205,7 +205,7 @@ public static class AideBudget
             simule.AjouterMoisExistant(mois);
         simule.OperationsPrevues.AddRange(compte.OperationsPrevues);
 
-        decimal Mensuel(ConfigurationBudget c) => c.Charges.Sum(x => x.Debit - x.Credit) + c.Enveloppes.Sum(x => x.BudgetParDefaut);
+        decimal Mensuel(ConfigurationBudget c) => c.Charges.Sum(x => x.NetMensuel) + c.Enveloppes.Sum(x => x.BudgetParDefaut);
 
         return new ResultatSimulation(
             Mensuel(actuelle) - Mensuel(configuration),
