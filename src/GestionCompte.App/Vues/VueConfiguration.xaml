@@ -91,10 +91,10 @@
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding ComptesCumul}" ContentTemplate="{StaticResource BoutonsListe}" />
-                            <TextBlock Text="Comptes cumulés (épargne, remboursements)" Style="{StaticResource TitreCarte}" />
+                            <TextBlock Text="Comptes cumulés" Style="{StaticResource TitreCarte}" />
                         </DockPanel>
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
-                                   Text="Additionnent chaque mois les débits des charges et opérations qui leur sont liées. Objectif : montant total à atteindre (facultatif)." />
+                                   Text="Épargne, remboursements… : additionnent chaque mois les débits des charges et opérations qui leur sont liées. Objectif : montant total à atteindre (facultatif)." />
                         <DataGrid ItemsSource="{Binding ComptesCumul.Elements}" SelectedItem="{Binding ComptesCumul.Selection}" MinHeight="90">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Compte" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />

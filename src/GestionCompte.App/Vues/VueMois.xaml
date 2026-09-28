@@ -14,8 +14,8 @@
         <!-- Revenus et enveloppes, côte à côte. -->
         <Grid Grid.Row="0" Grid.Column="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="4*" />
+                <ColumnDefinition Width="7*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource Carte}">
@@ -45,19 +45,19 @@
                     <TextBlock DockPanel.Dock="Top" Text="Enveloppes" Style="{StaticResource TitreCarte}" />
                     <DataGrid ItemsSource="{Binding Enveloppes}" Height="150">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Enveloppe" Binding="{Binding Nom, Mode=OneWay}" Width="*" IsReadOnly="True"
+                            <DataGridTextColumn Header="Enveloppe" Binding="{Binding Nom, Mode=OneWay}" Width="*" MinWidth="85" IsReadOnly="True"
                                                 ElementStyle="{StaticResource CelluleTexte}" />
-                            <DataGridTextColumn Header="Budget" Width="90"
+                            <DataGridTextColumn Header="Budget" Width="72"
                                                 Binding="{Binding Budget, Converter={StaticResource Montant}}"
                                                 ElementStyle="{StaticResource CelluleMontant}"
                                                 EditingElementStyle="{StaticResource EditionMontant}" />
-                            <DataGridTextColumn Header="Dépensé" Width="90" IsReadOnly="True"
+                            <DataGridTextColumn Header="Dépensé" Width="72" IsReadOnly="True"
                                                 Binding="{Binding Depense, Mode=OneWay, Converter={StaticResource Montant}}"
                                                 ElementStyle="{StaticResource CelluleMontant}" />
-                            <DataGridTextColumn Header="Reste" Width="90" IsReadOnly="True"
+                            <DataGridTextColumn Header="Reste" Width="72" IsReadOnly="True"
                                                 Binding="{Binding Reste, Mode=OneWay, Converter={StaticResource Montant}}"
                                                 ElementStyle="{StaticResource CelluleMontant}" />
-                            <DataGridTemplateColumn Header="Utilisation" Width="120" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="Utilisation" Width="*" MinWidth="60" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <ProgressBar Value="{Binding Progression, Mode=OneWay}" Maximum="100" Height="12" Margin="6,0">
@@ -99,7 +99,7 @@
 
                 <DataGrid ItemsSource="{Binding Operations.Elements}" SelectedItem="{Binding Operations.Selection}">
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Pointé" Width="60">
+                        <DataGridTemplateColumn Header="Pointé" Width="68">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox IsChecked="{Binding Pointee, UpdateSourceTrigger=PropertyChanged}"
@@ -109,7 +109,7 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Libellé" Binding="{Binding Libelle}" Width="*" MinWidth="160"
                                             ElementStyle="{StaticResource CelluleTexte}" />
-                        <DataGridTemplateColumn Header="Enveloppe" Width="120">
+                        <DataGridTemplateColumn Header="Enveloppe" Width="115">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <ComboBox ItemsSource="{Binding DataContext.NomsEnveloppes, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -118,7 +118,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Compte cumulé" Width="130">
+                        <DataGridTemplateColumn Header="Compte cumulé" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <ComboBox ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
