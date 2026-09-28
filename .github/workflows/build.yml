@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows:
@@ -43,13 +43,22 @@ jobs:
           if (Test-Path "$dossier/erreur.txt") { Get-Content "$dossier/erreur.txt" }
           if ($processus.ExitCode -ne 0) { throw "Captures en échec (code $($processus.ExitCode))" }
           Get-ChildItem $dossier
-          # Images aussi écrites dans le journal (base64), pour pouvoir les récupérer sans télécharger d'artefact.
-          foreach ($image in Get-ChildItem "$dossier/*.png") {
-            "CAPTURE-DEBUT $($image.Name)"
-            $base64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($image.FullName))
-            for ($i = 0; $i -lt $base64.Length; $i += 4000) { $base64.Substring($i, [Math]::Min(4000, $base64.Length - $i)) }
-            "CAPTURE-FIN"
-          }
+
+      # Les captures sont aussi déposées dans la branche « captures » (un seul commit, remplacé à chaque fois)
+      # pour pouvoir les consulter sans télécharger d'artefact.
+      - name: Captures dans la branche « captures »
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Set-Location captures
+          git init -q -b captures
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add *.png
+          git commit -q -m "Captures d'écran de $env:GITHUB_REF_NAME ($env:GITHUB_SHA)"
+          git push -q --force "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" captures
 
       - name: Publication du .exe
         uses: actions/upload-artifact@v4
