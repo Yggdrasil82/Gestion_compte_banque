@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>GestionCompte</AssemblyName>
+    <Product>Gestion Compte Banque</Product>
+    <Version>0.1.0</Version>
+    <!-- Permet de compiler (sans exécuter) l'application WPF depuis Linux. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GestionCompte.Core\GestionCompte.Core.csproj" />
+    <ProjectReference Include="..\GestionCompte.Data\GestionCompte.Data.csproj" />
+    <ProjectReference Include="..\GestionCompte.Presentation\GestionCompte.Presentation.csproj" />
+  </ItemGroup>
+
+</Project>

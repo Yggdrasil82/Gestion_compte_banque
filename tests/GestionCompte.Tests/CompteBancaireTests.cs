@@ -150,6 +150,72 @@ public class CompteBancaireTests
     }
 
     [Fact]
+    public void SupprimerDernierMois_PermetDeLeRecreer()
+    {
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
+        compte.CreerMoisSuivant();
+        compte.CreerMoisSuivant();
+
+        Assert.True(compte.SupprimerDernierMois());
+        Assert.Equal(new PeriodeMois(2026, 11), compte.CreerMoisSuivant().Periode);
+    }
+
+    [Fact]
+    public void SupprimerDernierMois_SansMois_RenvoieFaux()
+    {
+        Assert.False(new CompteBancaire(DonneesExcel.ConfigurationOctobre2026()).SupprimerDernierMois());
+    }
+
+    [Fact]
+    public void AppliquerConfiguration_MetAJourChargesEtBudgetsSansToucherAuReste()
+    {
+        var configuration = DonneesExcel.ConfigurationOctobre2026();
+        var compte = new CompteBancaire(configuration);
+        var octobre = compte.CreerMoisSuivant();
+        octobre.Revenus[0].Montant = 3100m;
+        octobre.Operations.Add(new Operation("Loyer", debit: 20m) { Enveloppe = "Courses" });
+        octobre.Operations.Add(new Operation("Cadeau", debit: 35m));
+
+        configuration.Charges[0] = new ModeleCharge("Loyer", 850m);
+        configuration.Charges.Add(new ModeleCharge("Netflix", 13.49m));
+        configuration.Enveloppes[0] = new ModeleEnveloppe("Courses", 450m);
+        configuration.Enveloppes.Add(new ModeleEnveloppe("Loisirs", 80m));
+        configuration.Revenus.Add(new ModeleRevenu("Prime", 150m));
+
+        compte.AppliquerConfiguration(octobre);
+
+        Assert.Equal(850m, octobre.Operations[0].Debit);
+        Assert.Equal(20m, octobre.Operations.Single(o => o.Enveloppe == "Courses").Debit);
+        Assert.Equal(35m, octobre.Operations.Single(o => o.Libelle == "Cadeau").Debit);
+        Assert.Equal(13.49m, octobre.Operations.Single(o => o.Libelle == "Netflix").Debit);
+        Assert.Equal(450m, octobre.Enveloppes.Single(e => e.Nom == "Courses").Budget);
+        Assert.Equal(80m, octobre.Enveloppes.Single(e => e.Nom == "Loisirs").Budget);
+        Assert.Equal(3100m, octobre.Revenus[0].Montant);
+        Assert.Equal(150m, octobre.Revenus.Single(r => r.Nom == "Prime").Montant);
+    }
+
+    [Fact]
+    public void AppliquerConfiguration_DeuxFois_NeDupliqueRien()
+    {
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
+        var octobre = compte.CreerMoisSuivant();
+
+        compte.AppliquerConfiguration(octobre);
+        compte.AppliquerConfiguration(octobre);
+
+        Assert.Equal(compte.Configuration.Charges.Count, octobre.Operations.Count);
+        Assert.Equal(622.18m, compte.Calculer(octobre.Periode).SoldeFinPrevisionnel);
+    }
+
+    [Fact]
+    public void AppliquerConfiguration_MoisDUnAutreCompte_EstRefuse()
+    {
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
+
+        Assert.Throws<ArgumentException>(() => compte.AppliquerConfiguration(new MoisBudget(new PeriodeMois(2026, 10))));
+    }
+
+    [Fact]
     public void CompteCumulSansObjectif_NaPasDeReste()
     {
         var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());

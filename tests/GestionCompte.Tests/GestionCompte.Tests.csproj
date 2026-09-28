@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\GestionCompte.Core\GestionCompte.Core.csproj" />
     <ProjectReference Include="..\..\src\GestionCompte.Data\GestionCompte.Data.csproj" />
+    <ProjectReference Include="..\..\src\GestionCompte.Presentation\GestionCompte.Presentation.csproj" />
   </ItemGroup>
 
 </Project>

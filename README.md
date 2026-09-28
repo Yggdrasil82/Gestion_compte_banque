@@ -9,6 +9,8 @@ du classeur Excel `compte Romain_3_type.xlsm`.
 |---|---|
 | `src/GestionCompte.Core` | Moteur de calcul : configuration, mois, soldes, enveloppes, comptes cumulés |
 | `src/GestionCompte.Data` | Enregistrement dans un fichier SQLite (par défaut `Documents\GestionCompte\compte.db`) et sauvegarde |
+| `src/GestionCompte.Presentation` | Logique des écrans (navigation, saisie, enregistrement automatique), testable sans Windows |
+| `src/GestionCompte.App` | Interface Windows WPF (fenêtres, tableaux) |
 | `tests/GestionCompte.Tests` | Tests automatiques des calculs (reproduisent les chiffres d'Octobre 2026 du fichier Excel) |
 
 ## Règles de calcul
@@ -20,11 +22,20 @@ du classeur Excel `compte Romain_3_type.xlsm`.
 - **Comptes cumulés** (épargne, remboursements) : somme des débits des opérations liées, de mois en mois,
   avec un reste à atteindre si un objectif est défini.
 
+## Télécharger l'application
+
+À chaque envoi de code, GitHub Actions compile l'application sous Windows, lance les tests et prend des
+captures d'écran. Le fichier `GestionCompte.exe` (aucune installation nécessaire) se télécharge dans l'onglet
+**Actions** du dépôt → dernière exécution réussie → section **Artifacts** → `GestionCompte-windows`.
+
+Les données sont enregistrées automatiquement dans `Documents\GestionCompte\compte.db`.
+
 ## Développement
 
 Outils gratuits : [SDK .NET 8](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ```
-dotnet build
-dotnet test
+dotnet test tests/GestionCompte.Tests
 ```
+
+L'interface WPF (`src/GestionCompte.App`) ne se compile que sous Windows.

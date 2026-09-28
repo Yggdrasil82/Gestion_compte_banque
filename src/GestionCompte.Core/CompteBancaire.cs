@@ -48,6 +48,59 @@ public sealed class CompteBancaire
         return mois;
     }
 
+    /// <summary>Supprime le dernier mois (pour annuler une création par erreur). Renvoie false s'il n'y a aucun mois.</summary>
+    public bool SupprimerDernierMois()
+    {
+        if (_mois.Count == 0)
+            return false;
+
+        _mois.RemoveAt(_mois.Count - 1);
+        return true;
+    }
+
+    /// <summary>
+    /// Applique la configuration actuelle à un mois existant :
+    /// les montants des charges et les budgets des enveloppes sont remplacés par ceux de la configuration,
+    /// les charges, enveloppes et revenus absents du mois sont ajoutés.
+    /// Les revenus déjà présents et les autres opérations ne sont pas modifiés ; rien n'est supprimé.
+    /// </summary>
+    public void AppliquerConfiguration(MoisBudget mois)
+    {
+        ArgumentNullException.ThrowIfNull(mois);
+        if (!_mois.Contains(mois))
+            throw new ArgumentException("Ce mois n'appartient pas au compte.", nameof(mois));
+
+        foreach (var revenu in Configuration.Revenus)
+        {
+            if (!mois.Revenus.Any(r => CalculateurMois.MemeNom(r.Nom, revenu.Nom)))
+                mois.Revenus.Add(new LigneRevenu(revenu.Nom, revenu.MontantParDefaut));
+        }
+
+        foreach (var enveloppe in Configuration.Enveloppes)
+        {
+            var existante = mois.Enveloppes.Find(e => CalculateurMois.MemeNom(e.Nom, enveloppe.Nom));
+            if (existante is null)
+                mois.Enveloppes.Add(new LigneEnveloppe(enveloppe.Nom, enveloppe.BudgetParDefaut));
+            else
+                existante.Budget = enveloppe.BudgetParDefaut;
+        }
+
+        foreach (var charge in Configuration.Charges)
+        {
+            var existante = mois.Operations.Find(o => o.Enveloppe is null && CalculateurMois.MemeNom(o.Libelle, charge.Nom));
+            if (existante is null)
+            {
+                mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
+            }
+            else
+            {
+                existante.Debit = charge.Debit;
+                existante.Credit = charge.Credit;
+                existante.CompteCumul = charge.CompteCumul;
+            }
+        }
+    }
+
     /// <summary>
     /// Ajoute un mois déjà existant (chargé depuis le stockage).
     /// Les mois doivent être ajoutés dans l'ordre et sans trou.

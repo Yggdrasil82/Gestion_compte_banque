@@ -1,0 +1,66 @@
+name: Application Windows
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Tests, .exe et captures d'écran
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Tests
+        run: dotnet test tests/GestionCompte.Tests -c Release
+
+      - name: Création du .exe
+        run: >
+          dotnet publish src/GestionCompte.App/GestionCompte.App.csproj -c Release -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -o publication
+
+      - name: Captures d'écran
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $dossier = Join-Path $PWD 'captures'
+          $processus = Start-Process -FilePath 'publication/GestionCompte.exe' -ArgumentList '--captures', "`"$dossier`"" -PassThru -Wait
+          if (Test-Path "$dossier/erreur.txt") { Get-Content "$dossier/erreur.txt" }
+          if ($processus.ExitCode -ne 0) { throw "Captures en échec (code $($processus.ExitCode))" }
+          Get-ChildItem $dossier
+          # Images aussi écrites dans le journal (base64), pour pouvoir les récupérer sans télécharger d'artefact.
+          foreach ($image in Get-ChildItem "$dossier/*.png") {
+            "CAPTURE-DEBUT $($image.Name)"
+            $base64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($image.FullName))
+            for ($i = 0; $i -lt $base64.Length; $i += 4000) { $base64.Substring($i, [Math]::Min(4000, $base64.Length - $i)) }
+            "CAPTURE-FIN"
+          }
+
+      - name: Publication du .exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: GestionCompte-windows
+          path: publication/GestionCompte.exe
+
+      - name: Publication des captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: captures-ecran
+          path: captures/
+          if-no-files-found: ignore
