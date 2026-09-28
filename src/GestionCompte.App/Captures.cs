@@ -76,7 +76,14 @@ internal static class Captures
             ("9-configuration-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false),
             ("10-aide-ocean", Ambiance.Ocean, false, MainViewModel.OngletAide, false),
             ("11-aide-nuit", Ambiance.Nuit, false, MainViewModel.OngletAide, false),
+            ("12-import-ocean", Ambiance.Ocean, false, MainViewModel.OngletImport, false),
+            ("13-import-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletImport, false),
         };
+
+        // Aperçu d'import sur un relevé d'exemple (rien n'est validé).
+        var releve = Path.Combine(Path.GetTempPath(), $"gestioncompte-releve-{Guid.NewGuid():N}.ofx");
+        File.WriteAllText(releve, ConfigurationParDefaut.ReleveDemo());
+        vm.OuvrirImport(releve);
 
         app.Dispatcher.InvokeAsync(async () =>
         {
@@ -98,6 +105,7 @@ internal static class Captures
             }
 
             File.Delete(depot.CheminFichier);
+            File.Delete(releve);
             app.Shutdown(0);
         });
     }

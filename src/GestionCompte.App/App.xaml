@@ -492,5 +492,9 @@
         <DataTemplate DataType="{x:Type vm:ConfigurationViewModel}">
             <vues:VueConfiguration />
         </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ImportViewModel}">
+            <vues:VueImport />
+        </DataTemplate>
     </Application.Resources>
 </Application>

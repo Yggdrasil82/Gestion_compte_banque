@@ -60,6 +60,17 @@ public sealed class Dialogues : IDialogues
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
     }
 
+    public string? ChoisirReleve()
+    {
+        var dialogue = new OpenFileDialog
+        {
+            Title = "Importer un relevé bancaire",
+            Filter = "Relevé bancaire OFX (*.ofx;*.qfx)|*.ofx;*.qfx",
+            CheckFileExists = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
     public void OuvrirDossier(string dossier) =>
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dossier}\"") { UseShellExecute = true });
 }

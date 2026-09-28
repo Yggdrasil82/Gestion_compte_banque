@@ -52,7 +52,29 @@ public static class ConfigurationParDefaut
             new ModeleCharge("Poubelle", 61.18m, Categorie: Categorie.Essentiel),
         });
 
+        configuration.Regles.AddRange(RegleClassement.ParDefaut);
+
         return configuration;
+    }
+
+    /// <summary>Relevé OFX d'exemple (décembre 2026, mois pas encore créé), pour les captures d'écran de l'import.</summary>
+    public static string ReleveDemo()
+    {
+        static string Ligne(string type, string date, string montant, string id, string libelle) =>
+            $"<STMTTRN>\n<TRNTYPE>{type}\n<DTPOSTED>{date}\n<TRNAMT>{montant}\n<FITID>{id}\n<NAME>{libelle}\n</STMTTRN>\n";
+
+        return "OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:1252\n<OFX>\n<BANKMSGSRSV1>\n<STMTTRNRS>\n<STMTRS>\n<CURDEF>EUR\n<BANKTRANLIST>\n"
+            + Ligne("XFER", "20261202", "-801.00", "DEMO01", "PRLV SEPA LOYER SCI LES TILLEULS")
+            + Ligne("XFER", "20261205", "-9.99", "DEMO02", "PRLV SEPA FREE MOBILE")
+            + Ligne("DEBIT", "20261206", "-58.40", "DEMO03", "CB LECLERC DRIVE 05/12/26")
+            + Ligne("XFER", "20261208", "-152.30", "DEMO04", "PRLV SEPA EDF ELECTRICITE")
+            + Ligne("DEBIT", "20261210", "-41.42", "DEMO05", "CB  COFIDIS AMAZON   09/12/26")
+            + Ligne("DEBIT", "20261212", "-52.10", "DEMO06", "CB ESSO EXPRESS 11/12/26")
+            + Ligne("XFER", "20261215", "-18.99", "DEMO07", "PRLV SEPA SPOTIFY")
+            + Ligne("DEBIT", "20261218", "-23.80", "DEMO08", "CB BOULANGERIE DU MARCHE 17/12/26")
+            + Ligne("CREDIT", "20261227", "+2812.35", "DEMO09", "VIR SALAIRE ROMAIN")
+            + Ligne("CREDIT", "20261228", "+12.50", "DEMO10", "VIREMENT CPMS")
+            + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>1843.27\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
     }
 
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>

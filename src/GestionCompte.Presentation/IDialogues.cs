@@ -13,6 +13,9 @@ public interface IDialogues
     /// <summary>Demande où enregistrer un export Excel ; null si l'utilisateur annule.</summary>
     string? ChoisirFichierExport(string nomParDefaut);
 
+    /// <summary>Demande quel relevé bancaire (.ofx) importer ; null si l'utilisateur annule.</summary>
+    string? ChoisirReleve();
+
     /// <summary>Demande quelle sauvegarde restaurer ; null si l'utilisateur annule.</summary>
     string? ChoisirFichierARestaurer();
 

@@ -28,6 +28,17 @@ du classeur Excel d'origine.
   (catégories Essentiel / Confort / Épargne), suivi réel des enveloppes sur les derniers mois terminés,
   simulateur « Et si… ? », objectifs d'épargne (mensualité et faisabilité selon l'excédent prévu) et alertes.
   Tous les calculs sont faits sur le PC, sans service extérieur.
+- **Import des relevés (OFX)** : le fichier est lu sur le PC uniquement. Chaque opération bancaire est rapprochée
+  d'une opération prévue du mois (même montant ou libellé proche, montant corrigé si besoin) ou d'un revenu,
+  puis pointée ; les autres sont ajoutées, rangées dans une enveloppe grâce aux règles de classement
+  (mot-clé du libellé → enveloppe). Les opérations déjà importées (identifiant FITID) sont ignorées, les mois
+  manquants sont créés après confirmation, et le solde de la banque est comparé au solde pointé.
+  **Ne jamais ajouter de vrai relevé dans ce dépôt (public).**
+
+## Versions
+
+- **1.0.0** : mois, prévisionnel, aide au budget, apparences.
+- **1.1.0** : import des relevés bancaires OFX.
 
 ## Télécharger l'application
 

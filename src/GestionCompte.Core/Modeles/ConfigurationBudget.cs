@@ -23,6 +23,20 @@ public sealed class ConfigurationBudget
 
     /// <summary>Comptes cumulés d'un mois sur l'autre : épargne, remboursement…</summary>
     public List<CompteCumul> ComptesCumul { get; } = new();
+
+    /// <summary>Règles de classement des opérations importées : mot-clé du libellé → enveloppe.</summary>
+    public List<RegleClassement> Regles { get; } = new();
+}
+
+/// <param name="MotCle">Texte cherché dans le libellé bancaire (sans tenir compte des majuscules ni des accents).</param>
+public sealed record RegleClassement(string MotCle, string Enveloppe)
+{
+    /// <summary>Règles proposées au départ : grandes surfaces et stations-service.</summary>
+    public static IReadOnlyList<RegleClassement> ParDefaut { get; } =
+        new[] { "LECLERC", "CARREFOUR", "LIDL", "AUCHAN", "INTERMARCHE", "SUPER U", "ALDI" }
+            .Select(m => new RegleClassement(m, "Courses"))
+            .Concat(new[] { "TOTAL", "ESSO", "BP", "SHELL", "AVIA" }.Select(m => new RegleClassement(m, "Carburant")))
+            .ToList();
 }
 
 public sealed record ModeleRevenu(string Nom, decimal MontantParDefaut);

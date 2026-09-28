@@ -1,6 +1,8 @@
+using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionCompte.Core;
+using GestionCompte.Core.Import;
 using GestionCompte.Core.Modeles;
 using GestionCompte.Data;
 
@@ -13,6 +15,9 @@ public sealed partial class MainViewModel : ObservableObject
     public const int OngletPrevisionnel = 1;
     public const int OngletAide = 2;
     public const int OngletConfiguration = 3;
+
+    /// <summary>Aperçu d'un import de relevé (pas d'entrée dans la barre de gauche).</summary>
+    public const int OngletImport = 4;
 
     private readonly DepotSqlite _depot;
     private readonly IDialogues _dialogues;
@@ -59,6 +64,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private AideBudgetViewModel _aideBudget = null!;
 
+    /// <summary>Import de relevé en cours d'aperçu, ou null.</summary>
+    [ObservableProperty] private ImportViewModel? _import;
+
+    private int _ongletAvantImport = OngletMois;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AucunMois), nameof(TitreMois))]
     private MoisViewModel? _moisCourant;
@@ -66,6 +76,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private int _ongletSelectionne = OngletMois;
 
     [ObservableProperty] private string _statut = "";
+
+    /// <summary>Numéro de version de l'application (celui du .exe), affiché dans la barre de gauche.</summary>
+    public string Version { get; } = "Version " + (Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "");
 
     public bool AucunMois => _compte.Mois.Count == 0;
 
@@ -218,6 +231,70 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     private bool PeutExporterMois() => _indexMois >= 0;
+
+    [RelayCommand]
+    private void ImporterReleve()
+    {
+        var chemin = _dialogues.ChoisirReleve();
+        if (chemin is not null)
+            OuvrirImport(chemin);
+    }
+
+    /// <summary>Lit un relevé OFX et affiche l'aperçu de l'import (rien n'est modifié avant validation).</summary>
+    public void OuvrirImport(string chemin)
+    {
+        ReleveBancaire releve;
+        try
+        {
+            releve = ReleveOfx.Lire(chemin);
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"Ce relevé n'a pas pu être lu. Vérifiez qu'il s'agit bien d'un fichier OFX (« Money »).\n\n{e.Message}");
+            return;
+        }
+
+        if (releve.Operations.Count == 0)
+        {
+            _dialogues.Erreur("Ce relevé ne contient aucune opération.");
+            return;
+        }
+
+        var plan = ImportReleve.Preparer(_compte, releve);
+        if (OngletSelectionne != OngletImport)
+            _ongletAvantImport = OngletSelectionne;
+        Import = new ImportViewModel(_compte, plan, Path.GetFileName(chemin), _dialogues, ImportTermine, ImportAnnule);
+        OngletSelectionne = OngletImport;
+    }
+
+    private void ImportTermine(ResultatImport resultat)
+    {
+        var soldeBanque = Import?.SoldeBanque;
+        Import = null;
+
+        // Affiche le dernier mois concerné par l'import.
+        var derniere = resultat.MoisCrees.Count > 0 ? resultat.MoisCrees[^1] : (PeriodeMois?)null;
+        _indexMois = derniere is { } p ? _compte.Mois.ToList().FindIndex(m => m.Periode == p) : Math.Max(_indexMois, _compte.Mois.Count - 1);
+
+        Enregistrer();
+        Reconstruire();
+        OngletSelectionne = OngletMois;
+
+        var texte = $"Import terminé : {resultat.Rapprochees} rapprochée(s), {resultat.Ajustees} ajustée(s), " +
+                    $"{resultat.RevenusRecus} revenu(s) reçu(s), {resultat.Nouvelles} nouvelle(s)";
+        if (resultat.MoisCrees.Count > 0)
+            texte += $", mois créé(s) : {string.Join(", ", resultat.MoisCrees.Select(m => m.Libelle))}";
+        if (soldeBanque is { } solde)
+            texte += $". Solde banque : {Montants.Formater(solde)} €, solde pointé : {Montants.Formater(ImportReleve.SoldePointe(_compte))} €";
+        Statut = texte + ".";
+    }
+
+    private void ImportAnnule()
+    {
+        Import = null;
+        OngletSelectionne = _ongletAvantImport;
+        Statut = "Import annulé : aucune donnée modifiée.";
+    }
 
     [RelayCommand]
     private void OuvrirDossierDonnees() => _dialogues.OuvrirDossier(Path.GetDirectoryName(_depot.CheminFichier)!);

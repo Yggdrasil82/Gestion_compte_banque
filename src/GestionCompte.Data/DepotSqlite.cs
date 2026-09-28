@@ -13,8 +13,11 @@ namespace GestionCompte.Data;
 public sealed class DepotSqlite
 {
     /// <summary>Version du format du fichier ; à incrémenter à chaque changement de schéma.</summary>
-    /// <remarks>Version 2 : opérations prévues. Version 3 : catégories 50/30/20 et objectifs d'épargne.</remarks>
-    public const int VersionSchema = 3;
+    /// <remarks>
+    /// Version 2 : opérations prévues. Version 3 : catégories 50/30/20 et objectifs d'épargne.
+    /// Version 4 : import des relevés (identifiant bancaire, revenus reçus, règles de classement).
+    /// </remarks>
+    public const int VersionSchema = 4;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -78,18 +81,29 @@ public sealed class DepotSqlite
             moisParId.Add(l.GetInt64(0), mois);
         });
 
-        Lire(connexion, "SELECT mois_id, nom, montant FROM mois_revenu ORDER BY mois_id, ordre",
-            l => moisParId[l.GetInt64(0)].Revenus.Add(new LigneRevenu(l.GetString(1), LireDecimal(l.GetString(2)))));
+        // Colonnes absentes des fichiers aux formats 1 à 3.
+        var format4 = ColonneExiste(connexion, "mois_revenu", "recu");
+        Lire(connexion,
+            format4
+                ? "SELECT mois_id, nom, montant, recu, identifiant_banque FROM mois_revenu ORDER BY mois_id, ordre"
+                : "SELECT mois_id, nom, montant, 0, NULL FROM mois_revenu ORDER BY mois_id, ordre",
+            l => moisParId[l.GetInt64(0)].Revenus.Add(new LigneRevenu(l.GetString(1), LireDecimal(l.GetString(2)))
+            {
+                Recu = l.GetInt64(3) != 0,
+                IdentifiantBanque = TexteOuNull(l, 4),
+            }));
         Lire(connexion, "SELECT mois_id, nom, budget FROM mois_enveloppe ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Enveloppes.Add(new LigneEnveloppe(l.GetString(1), LireDecimal(l.GetString(2)))));
         Lire(connexion,
-            "SELECT mois_id, libelle, debit, credit, pointee, enveloppe, compte_cumul FROM operation ORDER BY mois_id, ordre",
+            "SELECT mois_id, libelle, debit, credit, pointee, enveloppe, compte_cumul, " +
+            (format4 ? "identifiant_banque" : "NULL") + " FROM operation ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Operations.Add(
                 new Operation(l.GetString(1), LireDecimal(l.GetString(2)), LireDecimal(l.GetString(3)))
                 {
                     Pointee = l.GetInt64(4) != 0,
                     Enveloppe = TexteOuNull(l, 5),
                     CompteCumul = TexteOuNull(l, 6),
+                    IdentifiantBanque = TexteOuNull(l, 7),
                 }));
 
         // Table absente des fichiers au format 1.
@@ -103,6 +117,13 @@ public sealed class DepotSqlite
                         CompteCumul = TexteOuNull(l, 5),
                     }));
         }
+
+        // Règles de classement : absentes avant le format 4, les règles de base sont alors proposées.
+        if (TableExiste(connexion, "regle_classement"))
+            Lire(connexion, "SELECT mot_cle, enveloppe FROM regle_classement ORDER BY ordre",
+                l => configuration.Regles.Add(new RegleClassement(l.GetString(0), l.GetString(1))));
+        else
+            configuration.Regles.AddRange(RegleClassement.ParDefaut);
 
         // Table absente des fichiers aux formats 1 et 2.
         if (TableExiste(connexion, "objectif_epargne"))
@@ -128,7 +149,7 @@ public sealed class DepotSqlite
 
         using var transaction = connexion.BeginTransaction();
 
-        foreach (var table in new[] { "objectif_epargne", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
+        foreach (var table in new[] { "regle_classement", "objectif_epargne", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
                                       "modele_charge", "modele_enveloppe", "modele_revenu", "parametres" })
             Executer(connexion, $"DELETE FROM {table}");
 
@@ -165,8 +186,10 @@ public sealed class DepotSqlite
                 ("$a", mois.Periode.Annee), ("$m", mois.Periode.Mois))!;
 
             foreach (var (revenu, ordre) in mois.Revenus.Select((r, i) => (r, i)))
-                Executer(connexion, "INSERT INTO mois_revenu (mois_id, ordre, nom, montant) VALUES ($id, $o, $n, $m)",
-                    ("$id", moisId), ("$o", ordre), ("$n", revenu.Nom), ("$m", EcrireDecimal(revenu.Montant)));
+                Executer(connexion,
+                    "INSERT INTO mois_revenu (mois_id, ordre, nom, montant, recu, identifiant_banque) VALUES ($id, $o, $n, $m, $r, $ib)",
+                    ("$id", moisId), ("$o", ordre), ("$n", revenu.Nom), ("$m", EcrireDecimal(revenu.Montant)),
+                    ("$r", revenu.Recu ? 1 : 0), ("$ib", revenu.IdentifiantBanque));
 
             foreach (var (enveloppe, ordre) in mois.Enveloppes.Select((e, i) => (e, i)))
                 Executer(connexion, "INSERT INTO mois_enveloppe (mois_id, ordre, nom, budget) VALUES ($id, $o, $n, $b)",
@@ -174,11 +197,11 @@ public sealed class DepotSqlite
 
             foreach (var (operation, ordre) in mois.Operations.Select((o, i) => (o, i)))
                 Executer(connexion,
-                    "INSERT INTO operation (mois_id, ordre, libelle, debit, credit, pointee, enveloppe, compte_cumul) " +
-                    "VALUES ($id, $o, $l, $d, $c, $p, $e, $cc)",
+                    "INSERT INTO operation (mois_id, ordre, libelle, debit, credit, pointee, enveloppe, compte_cumul, identifiant_banque) " +
+                    "VALUES ($id, $o, $l, $d, $c, $p, $e, $cc, $ib)",
                     ("$id", moisId), ("$o", ordre), ("$l", operation.Libelle), ("$d", EcrireDecimal(operation.Debit)),
                     ("$c", EcrireDecimal(operation.Credit)), ("$p", operation.Pointee ? 1 : 0),
-                    ("$e", operation.Enveloppe), ("$cc", operation.CompteCumul));
+                    ("$e", operation.Enveloppe), ("$cc", operation.CompteCumul), ("$ib", operation.IdentifiantBanque));
         }
 
         foreach (var (prevue, ordre) in compte.OperationsPrevues.Select((o, i) => (o, i)))
@@ -186,6 +209,10 @@ public sealed class DepotSqlite
                 "INSERT INTO operation_prevue (ordre, annee, mois, libelle, debit, credit, compte_cumul) VALUES ($o, $a, $m, $l, $d, $c, $cc)",
                 ("$o", ordre), ("$a", prevue.Periode.Annee), ("$m", prevue.Periode.Mois), ("$l", prevue.Libelle),
                 ("$d", EcrireDecimal(prevue.Debit)), ("$c", EcrireDecimal(prevue.Credit)), ("$cc", prevue.CompteCumul));
+
+        foreach (var (regle, ordre) in configuration.Regles.Select((r, i) => (r, i)))
+            Executer(connexion, "INSERT INTO regle_classement (ordre, mot_cle, enveloppe) VALUES ($o, $m, $e)",
+                ("$o", ordre), ("$m", regle.MotCle), ("$e", regle.Enveloppe));
 
         foreach (var (objectif, ordre) in compte.ObjectifsEpargne.Select((o, i) => (o, i)))
             Executer(connexion,
@@ -257,6 +284,7 @@ public sealed class DepotSqlite
             CREATE TABLE IF NOT EXISTS operation_prevue (
                 ordre INTEGER NOT NULL, annee INTEGER NOT NULL, mois INTEGER NOT NULL, libelle TEXT NOT NULL,
                 debit TEXT NOT NULL, credit TEXT NOT NULL, compte_cumul TEXT);
+            CREATE TABLE IF NOT EXISTS regle_classement (ordre INTEGER NOT NULL, mot_cle TEXT NOT NULL, enveloppe TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS objectif_epargne (
                 ordre INTEGER NOT NULL, nom TEXT NOT NULL, montant TEXT NOT NULL,
                 annee INTEGER NOT NULL, mois INTEGER NOT NULL, deja_epargne TEXT NOT NULL);
@@ -267,6 +295,13 @@ public sealed class DepotSqlite
             Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN categorie TEXT");
         if (!ColonneExiste(connexion, "modele_enveloppe", "categorie"))
             Executer(connexion, "ALTER TABLE modele_enveloppe ADD COLUMN categorie TEXT");
+        if (!ColonneExiste(connexion, "operation", "identifiant_banque"))
+            Executer(connexion, "ALTER TABLE operation ADD COLUMN identifiant_banque TEXT");
+        if (!ColonneExiste(connexion, "mois_revenu", "recu"))
+        {
+            Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN recu INTEGER NOT NULL DEFAULT 0");
+            Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN identifiant_banque TEXT");
+        }
         Executer(connexion, $"PRAGMA user_version = {VersionSchema}");
     }
 

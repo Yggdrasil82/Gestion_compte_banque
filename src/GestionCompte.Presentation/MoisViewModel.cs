@@ -141,6 +141,13 @@ public sealed class RevenuMoisViewModel : ObservableObject
         get => Modele.Montant;
         set { if (SetProperty(Modele.Montant, value, Modele, (m, v) => m.Montant = v)) _modifie(); }
     }
+
+    /// <summary>Revenu vu sur le relevé (coché automatiquement à l'import).</summary>
+    public bool Recu
+    {
+        get => Modele.Recu;
+        set { if (SetProperty(Modele.Recu, value, Modele, (m, v) => m.Recu = v)) _modifie(); }
+    }
 }
 
 public sealed partial class EnveloppeMoisViewModel : ObservableObject
@@ -237,6 +244,9 @@ public sealed partial class OperationViewModel : ObservableObject
     private decimal _solde;
 
     public bool SoldeNegatif => Solde < 0;
+
+    /// <summary>Opération venue d'un relevé importé.</summary>
+    public bool Importee => Modele.IdentifiantBanque is not null;
 
     internal static string? VideVersNull(string? texte) => string.IsNullOrWhiteSpace(texte) ? null : texte;
 }

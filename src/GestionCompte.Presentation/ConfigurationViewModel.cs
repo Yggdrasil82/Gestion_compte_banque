@@ -36,6 +36,11 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             configuration.ComptesCumul.Select(c => new CompteCumulConfigViewModel(c, Synchroniser)),
             () => new CompteCumulConfigViewModel(new CompteCumul("Nouveau compte"), Synchroniser),
             Synchroniser);
+
+        Regles = new ListeEditable<RegleConfigViewModel>(
+            configuration.Regles.Select(r => new RegleConfigViewModel(r, Synchroniser)),
+            () => new RegleConfigViewModel(new RegleClassement("MOT-CLÉ", configuration.Enveloppes.FirstOrDefault()?.Nom ?? ""), Synchroniser),
+            Synchroniser);
     }
 
     public static IReadOnlyList<string> NomsMois { get; } =
@@ -89,6 +94,12 @@ public sealed partial class ConfigurationViewModel : ObservableObject
 
     public ListeEditable<CompteCumulConfigViewModel> ComptesCumul { get; }
 
+    /// <summary>Règles de classement des opérations importées (mot-clé du libellé → enveloppe).</summary>
+    public ListeEditable<RegleConfigViewModel> Regles { get; }
+
+    /// <summary>Choix de la colonne « Enveloppe » des règles.</summary>
+    public IReadOnlyList<string> NomsEnveloppes => Enveloppes.Elements.Select(e => e.Nom).ToList();
+
     /// <summary>Choix possibles dans la colonne « Compte cumulé » des charges (vide = aucun).</summary>
     public IReadOnlyList<string> NomsComptesCumul =>
         new[] { "" }.Concat(ComptesCumul.Elements.Select(c => c.Nom)).ToList();
@@ -103,8 +114,13 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         _configuration.Charges.AddRange(Charges.Elements.Select(c => c.VersModele()));
         _configuration.ComptesCumul.Clear();
         _configuration.ComptesCumul.AddRange(ComptesCumul.Elements.Select(c => c.VersModele()));
+        _configuration.Regles.Clear();
+        _configuration.Regles.AddRange(Regles.Elements
+            .Where(r => !string.IsNullOrWhiteSpace(r.MotCle) && !string.IsNullOrWhiteSpace(r.Enveloppe))
+            .Select(r => new RegleClassement(r.MotCle.Trim(), r.Enveloppe)));
 
         OnPropertyChanged(nameof(NomsComptesCumul));
+        OnPropertyChanged(nameof(NomsEnveloppes));
         _modifiee();
     }
 }
@@ -248,4 +264,31 @@ public sealed record ChoixCategorie(Categorie Valeur, string Nom)
     public static ChoixCategorie De(Categorie categorie) => Tous.First(c => c.Valeur == categorie);
 
     public override string ToString() => Nom;
+}
+
+public sealed class RegleConfigViewModel : ObservableObject
+{
+    private readonly Action _modifie;
+    private string _motCle;
+    private string _enveloppe;
+
+    public RegleConfigViewModel(RegleClassement regle, Action modifie)
+    {
+        _motCle = regle.MotCle;
+        _enveloppe = regle.Enveloppe;
+        _modifie = modifie;
+    }
+
+    /// <summary>Texte cherché dans le libellé bancaire, ex. « CARREFOUR ».</summary>
+    public string MotCle
+    {
+        get => _motCle;
+        set { if (SetProperty(ref _motCle, value ?? "")) _modifie(); }
+    }
+
+    public string Enveloppe
+    {
+        get => _enveloppe;
+        set { if (SetProperty(ref _enveloppe, value ?? "")) _modifie(); }
+    }
 }

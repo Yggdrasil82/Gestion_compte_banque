@@ -482,3 +482,11 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Données personnelles : relevés bancaires, exports et fichiers de compte ne doivent jamais être envoyés (dépôt public).
+*.ofx
+*.qfx
+*.csv
+*.xlsx
+*.xlsm
+*.db

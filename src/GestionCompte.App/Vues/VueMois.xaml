@@ -125,6 +125,15 @@
                     </DockPanel>
                     <DataGrid ItemsSource="{Binding Revenus.Elements}" SelectedItem="{Binding Revenus.Selection}" Height="150">
                         <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Reçu" Width="50">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Recu, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  ToolTip="Revenu vu sur le relevé bancaire" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Revenu" Binding="{Binding Nom}" Width="*"
                                                 ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
                             <DataGridTextColumn Header="Montant" Width="100"
@@ -234,8 +243,12 @@
                         <DataGridTemplateColumn Header="Pointé" Width="70">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox IsChecked="{Binding Pointee, UpdateSourceTrigger=PropertyChanged}"
-                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <CheckBox IsChecked="{Binding Pointee, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" />
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE896;" FontSize="11" Margin="6,0,0,0"
+                                                   Foreground="{DynamicResource Accent1}" ToolTip="Importée du relevé bancaire"
+                                                   Visibility="{Binding Importee, Converter={StaticResource Visible}}" />
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

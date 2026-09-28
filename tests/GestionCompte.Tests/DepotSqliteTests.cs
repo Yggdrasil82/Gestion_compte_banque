@@ -39,6 +39,10 @@ public sealed class DepotSqliteTests : IDisposable
         compte.Configuration.Charges[1] = compte.Configuration.Charges[1] with { Categorie = Categorie.Confort };
         compte.Configuration.Enveloppes[1] = compte.Configuration.Enveloppes[1] with { Categorie = Categorie.Confort };
         compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances", 1500.50m, new PeriodeMois(2027, 6), dejaEpargne: 200m));
+        compte.Configuration.Regles.Add(new RegleClassement("BOULANGERIE", "Courses"));
+        octobre.Operations[0].IdentifiantBanque = "FITID-123";
+        octobre.Revenus[0].Recu = true;
+        octobre.Revenus[0].IdentifiantBanque = "FITID-456";
         return compte;
     }
 
@@ -201,6 +205,30 @@ public sealed class DepotSqliteTests : IDisposable
     }
 
     [Fact]
+    public void FichierAuFormat3_SansImport_EstLuAvecLesReglesDeBase()
+    {
+        var depot = new DepotSqlite(Chemin());
+        depot.Enregistrer(CompteAvecTroisMois());
+        using (var connexion = new SqliteConnection($"Data Source={depot.CheminFichier};Pooling=False"))
+        {
+            connexion.Open();
+            using var commande = connexion.CreateCommand();
+            commande.CommandText = "ALTER TABLE operation DROP COLUMN identifiant_banque; ALTER TABLE mois_revenu DROP COLUMN recu; " +
+                                   "ALTER TABLE mois_revenu DROP COLUMN identifiant_banque; DROP TABLE regle_classement; PRAGMA user_version = 3;";
+            commande.ExecuteNonQuery();
+        }
+
+        var compte = depot.Charger()!;
+        Assert.Equal(RegleClassement.ParDefaut, compte.Configuration.Regles);
+        Assert.All(compte.Mois.SelectMany(m => m.Operations), o => Assert.Null(o.IdentifiantBanque));
+        Assert.All(compte.Mois.SelectMany(m => m.Revenus), r => Assert.False(r.Recu));
+
+        compte.Mois[0].Operations[0].IdentifiantBanque = "F1";
+        depot.Enregistrer(compte);
+        Assert.Equal("F1", depot.Charger()!.Mois[0].Operations[0].IdentifiantBanque);
+    }
+
+    [Fact]
     public void Sauvegarder_CreeUneCopieRechargeable()
     {
         var original = CompteAvecTroisMois();
@@ -246,6 +274,7 @@ public sealed class DepotSqliteTests : IDisposable
         Assert.Equal(a.Enveloppes, o.Enveloppes);
         Assert.Equal(a.Charges, o.Charges);
         Assert.Equal(a.ComptesCumul, o.ComptesCumul);
+        Assert.Equal(a.Regles, o.Regles);
 
         Assert.Equal(
             attendu.OperationsPrevues.Select(x => (x.Periode, x.Libelle, x.Debit, x.Credit, x.CompteCumul)),
@@ -259,11 +288,12 @@ public sealed class DepotSqliteTests : IDisposable
         foreach (var (moisA, moisO) in attendu.Mois.Zip(obtenu.Mois))
         {
             Assert.Equal(moisA.Periode, moisO.Periode);
-            Assert.Equal(moisA.Revenus.Select(r => (r.Nom, r.Montant)), moisO.Revenus.Select(r => (r.Nom, r.Montant)));
+            Assert.Equal(moisA.Revenus.Select(r => (r.Nom, r.Montant, r.Recu, r.IdentifiantBanque)),
+                         moisO.Revenus.Select(r => (r.Nom, r.Montant, r.Recu, r.IdentifiantBanque)));
             Assert.Equal(moisA.Enveloppes.Select(e => (e.Nom, e.Budget)), moisO.Enveloppes.Select(e => (e.Nom, e.Budget)));
             Assert.Equal(
-                moisA.Operations.Select(x => (x.Libelle, x.Debit, x.Credit, x.Pointee, x.Enveloppe, x.CompteCumul)),
-                moisO.Operations.Select(x => (x.Libelle, x.Debit, x.Credit, x.Pointee, x.Enveloppe, x.CompteCumul)));
+                moisA.Operations.Select(x => (x.Libelle, x.Debit, x.Credit, x.Pointee, x.Enveloppe, x.CompteCumul, x.IdentifiantBanque)),
+                moisO.Operations.Select(x => (x.Libelle, x.Debit, x.Credit, x.Pointee, x.Enveloppe, x.CompteCumul, x.IdentifiantBanque)));
         }
     }
 

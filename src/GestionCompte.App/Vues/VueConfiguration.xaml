@@ -143,8 +143,9 @@
                 </Border>
             </StackPanel>
 
+            <StackPanel Grid.Row="1" Grid.Column="1">
             <!-- Charges mensuelles -->
-            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Carte}">
+            <Border Style="{StaticResource Carte}">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <ContentControl DockPanel.Dock="Right" Content="{Binding Charges}" ContentTemplate="{StaticResource BoutonsListe}" />
@@ -188,6 +189,37 @@
                     </DataGrid>
                 </DockPanel>
             </Border>
+
+            <!-- Règles de classement des relevés importés -->
+            <Border Style="{StaticResource Carte}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top">
+                        <ContentControl DockPanel.Dock="Right" Content="{Binding Regles}" ContentTemplate="{StaticResource BoutonsListe}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                            <TextBlock Text="Règles de classement" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                    </DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
+                               Text="À l'import d'un relevé, une dépense dont le libellé contient le mot-clé est rangée dans l'enveloppe choisie (majuscules et accents ignorés)." />
+                    <DataGrid ItemsSource="{Binding Regles.Elements}" SelectedItem="{Binding Regles.Selection}" MinHeight="150" MaxHeight="320">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mot-clé du libellé" Binding="{Binding MotCle}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                EditingElementStyle="{StaticResource EditionTexte}" />
+                            <DataGridTemplateColumn Header="Enveloppe" Width="160">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  ItemsSource="{Binding DataContext.NomsEnveloppes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding Enveloppe, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+            </StackPanel>
         </Grid>
     </ScrollViewer>
 </UserControl>

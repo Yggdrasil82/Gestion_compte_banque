@@ -324,6 +324,8 @@ public sealed class MainViewModelTests : IDisposable
         public string? FichierExport { get; set; }
 
         public string? ChoisirFichierARestaurer() => FichierARestaurer;
+        public string? ChoisirReleve() => Releve;
+        public string? Releve { get; set; }
 
         public void OuvrirDossier(string dossier) { }
     }

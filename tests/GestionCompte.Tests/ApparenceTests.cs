@@ -104,6 +104,8 @@ public sealed class ApparenceTests : IDisposable
         public string? ChoisirFichierSauvegarde(string nomParDefaut) => null;
         public string? ChoisirFichierExport(string nomParDefaut) => null;
         public string? ChoisirFichierARestaurer() => null;
+        public string? ChoisirReleve() => Releve;
+        public string? Releve { get; set; }
         public void OuvrirDossier(string dossier) { }
     }
 }

@@ -30,6 +30,12 @@ public sealed class LigneRevenu
 
     public string Nom { get; set; }
     public decimal Montant { get; set; }
+
+    /// <summary>Revenu vu sur le relevé bancaire (import ou coche manuelle).</summary>
+    public bool Recu { get; set; }
+
+    /// <summary>Identifiant de l'opération bancaire importée (FITID du fichier OFX), ou null.</summary>
+    public string? IdentifiantBanque { get; set; }
 }
 
 public sealed class LigneEnveloppe
@@ -65,4 +71,7 @@ public sealed class Operation
 
     /// <summary>Compte cumulé alimenté par le débit de cette opération (ex. « Épargne »), ou null.</summary>
     public string? CompteCumul { get; set; }
+
+    /// <summary>Identifiant de l'opération bancaire importée (FITID du fichier OFX), ou null si saisie à la main.</summary>
+    public string? IdentifiantBanque { get; set; }
 }

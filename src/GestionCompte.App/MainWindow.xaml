@@ -21,8 +21,10 @@
                 <StackPanel DockPanel.Dock="Top">
                     <StackPanel Orientation="Horizontal" Margin="8,0,0,22">
                         <Image Source="/Ressources/icone.png" Width="34" Height="34" />
-                        <TextBlock Text="Mon Budget" FontSize="18" FontWeight="Bold" Margin="10,0,0,0"
-                                   VerticalAlignment="Center" Foreground="{DynamicResource BarreTexte}" />
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Mon Budget" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BarreTexte}" />
+                            <TextBlock Text="{Binding Version}" FontSize="11" Opacity="0.7" Foreground="{DynamicResource BarreTexte}" />
+                        </StackPanel>
                     </StackPanel>
 
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Mois"
@@ -50,6 +52,12 @@
 
                     <TextBlock Text="DONNÉES" FontSize="11" FontWeight="SemiBold" Opacity="0.7" Margin="8,0,0,6"
                                Foreground="{DynamicResource BarreTexte}" />
+                    <Button Style="{StaticResource BoutonBarre}" Command="{Binding ImporterReleveCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE8B5;" Margin="0,0,10,0" />
+                            <TextBlock Text="Importer un relevé…" />
+                        </StackPanel>
+                    </Button>
                     <Button Style="{StaticResource BoutonBarre}" Command="{Binding SauvegarderCopieCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icone}" Text="&#xE74E;" Margin="0,0,10,0" />
@@ -97,6 +105,13 @@
                                 </Button>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource BoutonEntete}" Command="{Binding ImporterReleveCommand}"
+                                        ToolTip="Importer un relevé bancaire (OFX) et pointer les opérations">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE8B5;" Margin="0,0,8,0" />
+                                        <TextBlock Text="Relevé" />
+                                    </StackPanel>
+                                </Button>
                                 <Button Style="{StaticResource BoutonEntete}" Command="{Binding AppliquerConfigurationCommand}"
                                         ToolTip="Met à jour ce mois avec les montants de la configuration">
                                     <StackPanel Orientation="Horizontal">
@@ -151,6 +166,10 @@
                 <!-- Écran Configuration -->
                 <ContentControl Content="{Binding Configuration}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=3}" />
+
+                <!-- Aperçu d'un import de relevé -->
+                <ContentControl Content="{Binding Import}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=4}" />
             </Grid>
         </DockPanel>
     </Grid>
