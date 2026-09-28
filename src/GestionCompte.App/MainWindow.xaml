@@ -33,7 +33,7 @@
 
         <TabControl SelectedIndex="{Binding OngletSelectionne}" Margin="6" Padding="0" Background="{StaticResource Fond}">
             <TabItem Header="  Mois  " FontSize="14">
-                <DockPanel FontSize="13">
+                <DockPanel TextElement.FontSize="13">
                     <!-- Barre de navigation entre les mois. -->
                     <Border DockPanel.Dock="Top" Style="{StaticResource Carte}" Padding="10,8">
                         <DockPanel>
