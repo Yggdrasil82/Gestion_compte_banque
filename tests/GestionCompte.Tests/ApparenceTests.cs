@@ -102,6 +102,7 @@ public sealed class ApparenceTests : IDisposable
         public bool Confirmer(string titre, string message) => false;
         public void Erreur(string message) { }
         public string? ChoisirFichierSauvegarde(string nomParDefaut) => null;
+        public string? ChoisirFichierExport(string nomParDefaut) => null;
         public string? ChoisirFichierARestaurer() => null;
         public void OuvrirDossier(string dossier) { }
     }

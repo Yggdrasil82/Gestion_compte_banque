@@ -36,6 +36,19 @@ public sealed class Dialogues : IDialogues
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
     }
 
+    public string? ChoisirFichierExport(string nomParDefaut)
+    {
+        var dialogue = new SaveFileDialog
+        {
+            Title = "Exporter le mois vers Excel",
+            FileName = nomParDefaut,
+            Filter = "Classeur Excel (*.xlsx)|*.xlsx",
+            DefaultExt = ".xlsx",
+            OverwritePrompt = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
     public string? ChoisirFichierARestaurer()
     {
         var dialogue = new OpenFileDialog

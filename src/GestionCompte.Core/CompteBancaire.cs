@@ -26,13 +26,28 @@ public sealed class CompteBancaire
 
     public MoisBudget? Trouver(PeriodeMois periode) => _mois.Find(m => m.Periode == periode);
 
+    /// <summary>Opérations ponctuelles prévues pour des mois pas encore créés.</summary>
+    public List<OperationPrevue> OperationsPrevues { get; } = new();
+
+    /// <summary>Mois qui sera créé ensuite : le suivant du dernier mois, ou le premier mois de la configuration.</summary>
+    public PeriodeMois ProchainMois => _mois.Count == 0 ? Configuration.PremierMois : _mois[^1].Periode.Suivant();
+
     /// <summary>
     /// Crée le mois suivant le dernier mois existant (ou le premier mois de la configuration),
-    /// prérempli avec les revenus, enveloppes et charges de la configuration.
+    /// prérempli avec les revenus, enveloppes et charges de la configuration,
+    /// et avec les opérations prévues pour ce mois (qui quittent alors la liste des opérations prévues).
     /// </summary>
     public MoisBudget CreerMoisSuivant()
     {
-        var periode = _mois.Count == 0 ? Configuration.PremierMois : _mois[^1].Periode.Suivant();
+        var mois = Generer(ProchainMois);
+        OperationsPrevues.RemoveAll(o => o.Periode == mois.Periode);
+        _mois.Add(mois);
+        return mois;
+    }
+
+    /// <summary>Mois tel qu'il serait créé (configuration + opérations prévues), sans l'ajouter au compte.</summary>
+    internal MoisBudget Generer(PeriodeMois periode)
+    {
         var mois = new MoisBudget(periode);
 
         foreach (var revenu in Configuration.Revenus)
@@ -44,7 +59,9 @@ public sealed class CompteBancaire
         foreach (var charge in Configuration.Charges)
             mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
 
-        _mois.Add(mois);
+        foreach (var prevue in OperationsPrevues.Where(o => o.Periode == periode))
+            mois.Operations.Add(prevue.VersOperation());
+
         return mois;
     }
 

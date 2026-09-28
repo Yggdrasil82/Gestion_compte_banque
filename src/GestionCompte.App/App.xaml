@@ -481,6 +481,10 @@
             <vues:VueMois />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:PrevisionnelViewModel}">
+            <vues:VuePrevisionnel />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ConfigurationViewModel}">
             <vues:VueConfiguration />
         </DataTemplate>

@@ -319,6 +319,10 @@ public sealed class MainViewModelTests : IDisposable
 
         public string? ChoisirFichierSauvegarde(string nomParDefaut) => FichierSauvegarde;
 
+        public string? ChoisirFichierExport(string nomParDefaut) => FichierExport;
+
+        public string? FichierExport { get; set; }
+
         public string? ChoisirFichierARestaurer() => FichierARestaurer;
 
         public void OuvrirDossier(string dossier) { }

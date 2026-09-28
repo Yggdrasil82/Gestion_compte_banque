@@ -21,6 +21,9 @@ du classeur Excel `compte Romain_3_type.xlsm`.
 - **Solde courant** ligne par ligne : `solde précédent − débit + crédit`.
 - **Comptes cumulés** (épargne, remboursements) : somme des débits des opérations liées, de mois en mois,
   avec un reste à atteindre si un objectif est défini.
+- **Prévisionnel** : les mois suivant le dernier mois créé sont simulés avec la configuration (revenus habituels,
+  charges, budgets complets des enveloppes) et les opérations ponctuelles prévues ; ces dernières sont ajoutées
+  au mois lors de sa création. La date d'atteinte des objectifs des comptes cumulés est cherchée sur 10 ans.
 
 ## Télécharger l'application
 

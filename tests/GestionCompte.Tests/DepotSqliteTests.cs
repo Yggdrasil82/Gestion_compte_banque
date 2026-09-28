@@ -33,6 +33,8 @@ public sealed class DepotSqliteTests : IDisposable
         novembre.Operations.Add(new Operation("Remboursement mutuelle", credit: 32.10m));
 
         compte.CreerMoisSuivant();
+        compte.OperationsPrevues.Add(new OperationPrevue(new PeriodeMois(2027, 7), "Vacances", debit: 1200.50m));
+        compte.OperationsPrevues.Add(new OperationPrevue(new PeriodeMois(2027, 3), "Prime", credit: 500m) { CompteCumul = DonneesExcel.Epargne });
         return compte;
     }
 
@@ -145,6 +147,28 @@ public sealed class DepotSqliteTests : IDisposable
     }
 
     [Fact]
+    public void FichierAuFormat1_SansOperationsPrevues_EstLuPuisMisAJour()
+    {
+        var depot = new DepotSqlite(Chemin());
+        depot.Enregistrer(CompteAvecTroisMois());
+        using (var connexion = new SqliteConnection($"Data Source={depot.CheminFichier};Pooling=False"))
+        {
+            connexion.Open();
+            using var commande = connexion.CreateCommand();
+            commande.CommandText = "DROP TABLE operation_prevue; PRAGMA user_version = 1;";
+            commande.ExecuteNonQuery();
+        }
+
+        var compte = depot.Charger()!;
+        Assert.Equal(3, compte.Mois.Count);
+        Assert.Empty(compte.OperationsPrevues);
+
+        compte.OperationsPrevues.Add(new OperationPrevue(new PeriodeMois(2027, 1), "Soldes", debit: 80m));
+        depot.Enregistrer(compte);
+        Assert.Single(depot.Charger()!.OperationsPrevues);
+    }
+
+    [Fact]
     public void Sauvegarder_CreeUneCopieRechargeable()
     {
         var original = CompteAvecTroisMois();
@@ -190,6 +214,10 @@ public sealed class DepotSqliteTests : IDisposable
         Assert.Equal(a.Enveloppes, o.Enveloppes);
         Assert.Equal(a.Charges, o.Charges);
         Assert.Equal(a.ComptesCumul, o.ComptesCumul);
+
+        Assert.Equal(
+            attendu.OperationsPrevues.Select(x => (x.Periode, x.Libelle, x.Debit, x.Credit, x.CompteCumul)),
+            obtenu.OperationsPrevues.Select(x => (x.Periode, x.Libelle, x.Debit, x.Credit, x.CompteCumul)));
 
         Assert.Equal(attendu.Mois.Count, obtenu.Mois.Count);
         foreach (var (moisA, moisO) in attendu.Mois.Zip(obtenu.Mois))

@@ -28,9 +28,12 @@
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Mois"
                                  Tag="&#xE787;" Background="{DynamicResource Accent1}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=0}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Prévisionnel"
+                                 Tag="&#xEAFC;" Background="{DynamicResource Accent4}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=1}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Configuration"
                                  Tag="&#xE713;" Background="{DynamicResource Accent3}"
-                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=1}" />
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=3}" />
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom">
@@ -98,6 +101,13 @@
                                         <TextBlock Text="Appliquer la configuration" />
                                     </StackPanel>
                                 </Button>
+                                <Button Style="{StaticResource BoutonEntete}" Command="{Binding ExporterMoisCommand}"
+                                        ToolTip="Exporter ce mois vers Excel">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE896;" Margin="0,0,8,0" />
+                                        <TextBlock Text="Excel" />
+                                    </StackPanel>
+                                </Button>
                                 <Button Style="{StaticResource BoutonEntete}" Command="{Binding SupprimerDernierMoisCommand}"
                                         ToolTip="Supprimer le dernier mois" Padding="0" Width="34" Height="34">
                                     <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" />
@@ -127,9 +137,13 @@
                     </Grid>
                 </DockPanel>
 
+                <!-- Écran Prévisionnel -->
+                <ContentControl Content="{Binding Previsionnel}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=1}" />
+
                 <!-- Écran Configuration -->
                 <ContentControl Content="{Binding Configuration}"
-                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=1}" />
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=3}" />
             </Grid>
         </DockPanel>
     </Grid>

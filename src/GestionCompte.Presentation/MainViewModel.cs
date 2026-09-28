@@ -10,7 +10,9 @@ namespace GestionCompte.Presentation;
 public sealed partial class MainViewModel : ObservableObject
 {
     public const int OngletMois = 0;
-    public const int OngletConfiguration = 1;
+    public const int OngletPrevisionnel = 1;
+    public const int OngletAide = 2;
+    public const int OngletConfiguration = 3;
 
     private readonly DepotSqlite _depot;
     private readonly IDialogues _dialogues;
@@ -52,6 +54,8 @@ public sealed partial class MainViewModel : ObservableObject
     public ApparenceViewModel Apparence { get; }
 
     [ObservableProperty] private ConfigurationViewModel _configuration = null!;
+
+    [ObservableProperty] private PrevisionnelViewModel _previsionnel = null!;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AucunMois), nameof(TitreMois))]
@@ -192,6 +196,27 @@ public sealed partial class MainViewModel : ObservableObject
         Statut = $"Sauvegarde restaurée depuis {source}";
     }
 
+    [RelayCommand(CanExecute = nameof(PeutExporterMois))]
+    private void ExporterMois()
+    {
+        var periode = _compte.Mois[_indexMois].Periode;
+        var destination = _dialogues.ChoisirFichierExport($"Budget {periode.Libelle}.xlsx");
+        if (destination is null)
+            return;
+
+        try
+        {
+            ExportExcel.ExporterMois(_compte, periode, destination);
+            Statut = $"{periode.Libelle} exporté : {destination}";
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"Le fichier Excel n'a pas pu être créé (est-il ouvert dans Excel ?).\n\n{e.Message}");
+        }
+    }
+
+    private bool PeutExporterMois() => _indexMois >= 0;
+
     [RelayCommand]
     private void OuvrirDossierDonnees() => _dialogues.OuvrirDossier(Path.GetDirectoryName(_depot.CheminFichier)!);
 
@@ -208,7 +233,14 @@ public sealed partial class MainViewModel : ObservableObject
     private void Reconstruire()
     {
         Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee);
+        ReconstruirePrevisionnel();
         AfficherMoisCourant();
+    }
+
+    private void ReconstruirePrevisionnel()
+    {
+        var horizon = Previsionnel?.Horizon ?? 12;
+        Previsionnel = new PrevisionnelViewModel(_compte, Enregistrer) { Horizon = horizon };
     }
 
     private void AfficherMoisCourant()
@@ -220,14 +252,20 @@ public sealed partial class MainViewModel : ObservableObject
         MoisSuivantCommand.NotifyCanExecuteChanged();
         SupprimerDernierMoisCommand.NotifyCanExecuteChanged();
         AppliquerConfigurationCommand.NotifyCanExecuteChanged();
+        ExporterMoisCommand.NotifyCanExecuteChanged();
     }
 
-    private void MoisModifie() => Enregistrer();
+    private void MoisModifie()
+    {
+        Enregistrer();
+        Previsionnel.Recalculer();
+    }
 
     private void ConfigurationModifiee()
     {
         Enregistrer();
-        // Le solde initial et les comptes cumulés changent les chiffres du mois affiché.
+        // Le solde initial, les charges et les comptes cumulés changent les chiffres du mois affiché et du prévisionnel.
+        ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }
 

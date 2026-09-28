@@ -58,8 +58,17 @@ public static class ConfigurationParDefaut
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>
     public static CompteBancaire CreerDemo()
     {
-        var compte = new CompteBancaire(Creer(new PeriodeMois(2026, 10)));
-        compte.Configuration.SoldeInitial = 350m;
+        var configuration = Creer(new PeriodeMois(2026, 10));
+        configuration.SoldeInitial = 350m;
+        configuration.ComptesCumul[1] = new CompteCumul(RembPascale, Objectif: 1500m);
+        var compte = new CompteBancaire(configuration);
+        compte.OperationsPrevues.AddRange(new[]
+        {
+            new OperationPrevue(new PeriodeMois(2026, 12), "Cadeaux de Noël", debit: 450m),
+            new OperationPrevue(new PeriodeMois(2026, 12), "Prime de fin d'année", credit: 600m),
+            new OperationPrevue(new PeriodeMois(2027, 7), "Vacances d'été", debit: 1800m),
+            new OperationPrevue(new PeriodeMois(2027, 9), "Taxe foncière", debit: 950m),
+        });
 
         var octobre = compte.CreerMoisSuivant();
         octobre.Operations.ForEach(o => o.Pointee = true);

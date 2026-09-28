@@ -13,7 +13,8 @@ namespace GestionCompte.Data;
 public sealed class DepotSqlite
 {
     /// <summary>Version du format du fichier ; à incrémenter à chaque changement de schéma.</summary>
-    public const int VersionSchema = 1;
+    /// <remarks>Version 2 : ajout des opérations prévues.</remarks>
+    public const int VersionSchema = 2;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -86,6 +87,18 @@ public sealed class DepotSqlite
                     CompteCumul = TexteOuNull(l, 6),
                 }));
 
+        // Table absente des fichiers au format 1.
+        if (TableExiste(connexion, "operation_prevue"))
+        {
+            Lire(connexion, "SELECT annee, mois, libelle, debit, credit, compte_cumul FROM operation_prevue ORDER BY ordre",
+                l => compte.OperationsPrevues.Add(
+                    new OperationPrevue(new PeriodeMois(l.GetInt32(0), l.GetInt32(1)), l.GetString(2),
+                        LireDecimal(l.GetString(3)), LireDecimal(l.GetString(4)))
+                    {
+                        CompteCumul = TexteOuNull(l, 5),
+                    }));
+        }
+
         return compte;
     }
 
@@ -102,7 +115,7 @@ public sealed class DepotSqlite
 
         using var transaction = connexion.BeginTransaction();
 
-        foreach (var table in new[] { "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
+        foreach (var table in new[] { "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
                                       "modele_charge", "modele_enveloppe", "modele_revenu", "parametres" })
             Executer(connexion, $"DELETE FROM {table}");
 
@@ -153,6 +166,12 @@ public sealed class DepotSqlite
                     ("$c", EcrireDecimal(operation.Credit)), ("$p", operation.Pointee ? 1 : 0),
                     ("$e", operation.Enveloppe), ("$cc", operation.CompteCumul));
         }
+
+        foreach (var (prevue, ordre) in compte.OperationsPrevues.Select((o, i) => (o, i)))
+            Executer(connexion,
+                "INSERT INTO operation_prevue (ordre, annee, mois, libelle, debit, credit, compte_cumul) VALUES ($o, $a, $m, $l, $d, $c, $cc)",
+                ("$o", ordre), ("$a", prevue.Periode.Annee), ("$m", prevue.Periode.Mois), ("$l", prevue.Libelle),
+                ("$d", EcrireDecimal(prevue.Debit)), ("$c", EcrireDecimal(prevue.Credit)), ("$cc", prevue.CompteCumul));
 
         transaction.Commit();
     }
@@ -215,6 +234,9 @@ public sealed class DepotSqlite
             CREATE TABLE IF NOT EXISTS operation (
                 mois_id INTEGER NOT NULL REFERENCES mois(id), ordre INTEGER NOT NULL, libelle TEXT NOT NULL,
                 debit TEXT NOT NULL, credit TEXT NOT NULL, pointee INTEGER NOT NULL, enveloppe TEXT, compte_cumul TEXT);
+            CREATE TABLE IF NOT EXISTS operation_prevue (
+                ordre INTEGER NOT NULL, annee INTEGER NOT NULL, mois INTEGER NOT NULL, libelle TEXT NOT NULL,
+                debit TEXT NOT NULL, credit TEXT NOT NULL, compte_cumul TEXT);
             """);
         Executer(connexion, $"PRAGMA user_version = {VersionSchema}");
     }

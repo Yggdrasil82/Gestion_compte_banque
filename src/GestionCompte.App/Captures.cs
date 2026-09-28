@@ -67,8 +67,10 @@ internal static class Captures
             ("3-mois-pastel", Ambiance.Pastel, false, MainViewModel.OngletMois, false),
             ("4-mois-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletMois, false),
             ("5-mois-nuit-octobre", Ambiance.Nuit, false, MainViewModel.OngletMois, true),
-            ("6-configuration-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false),
-            ("7-configuration-nuit", Ambiance.Nuit, false, MainViewModel.OngletConfiguration, false),
+            ("6-previsionnel-ocean", Ambiance.Ocean, false, MainViewModel.OngletPrevisionnel, false),
+            ("7-previsionnel-nuit", Ambiance.Nuit, false, MainViewModel.OngletPrevisionnel, false),
+            ("8-previsionnel-pastel", Ambiance.Pastel, false, MainViewModel.OngletPrevisionnel, false),
+            ("9-configuration-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false),
         };
 
         app.Dispatcher.InvokeAsync(async () =>
