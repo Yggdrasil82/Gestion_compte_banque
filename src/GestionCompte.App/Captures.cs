@@ -1,5 +1,7 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -9,11 +11,14 @@ using GestionCompte.Presentation;
 namespace GestionCompte.App;
 
 /// <summary>
-/// Ouvre l'application sur des données d'exemple, enregistre une image PNG de chaque écran puis quitte.
+/// Ouvre l'application sur des données d'exemple, enregistre une image PNG de chaque écran et de chaque apparence, puis quitte.
 /// Utilisé par GitHub Actions (option « --captures dossier ») pour montrer l'interface sans PC Windows.
 /// </summary>
 internal static class Captures
 {
+    private const double Largeur = 1400;
+    private const double Hauteur = 880;
+
     public static void Lancer(App app, string dossier)
     {
         dossier = Path.GetFullPath(dossier);
@@ -28,7 +33,7 @@ internal static class Captures
         };
 
         // Sécurité : ne jamais bloquer le serveur de compilation.
-        var delaiMaximum = new DispatcherTimer { Interval = TimeSpan.FromSeconds(90) };
+        var delaiMaximum = new DispatcherTimer { Interval = TimeSpan.FromSeconds(120) };
         delaiMaximum.Tick += (_, _) =>
         {
             File.WriteAllText(fichierErreur, "Délai dépassé pendant les captures.");
@@ -39,60 +44,69 @@ internal static class Captures
         var depot = new DepotSqlite(Path.Combine(Path.GetTempPath(), $"gestioncompte-demo-{Guid.NewGuid():N}.db"));
         depot.Enregistrer(ConfigurationParDefaut.CreerDemo());
         var vm = new MainViewModel(depot, new Dialogues(), new DateTime(2026, 11, 15));
+        vm.Apparence.Changee += (_, _) => Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
+        Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
 
-        var fenetre = new MainWindow
+        // Le contenu de la fenêtre est rendu hors écran, à taille fixe :
+        // l'écran du serveur de compilation est trop petit pour la fenêtre réelle.
+        var fenetre = new MainWindow();
+        var contenu = (UIElement)fenetre.Content;
+        fenetre.Content = null;
+        var hote = new Border { Child = contenu, DataContext = vm, Width = Largeur, Height = Hauteur };
+        hote.SetResourceReference(Border.BackgroundProperty, "Fond");
+        hote.SetResourceReference(TextElement.ForegroundProperty, "Texte");
+        TextElement.SetFontFamily(hote, new FontFamily("Segoe UI"));
+        TextElement.SetFontSize(hote, 13);
+
+        var etapes = new (string Nom, Ambiance Ambiance, bool Sombre, int Onglet, bool MoisPrecedent)[]
         {
-            DataContext = vm,
-            WindowStartupLocation = WindowStartupLocation.Manual,
-            Left = 0,
-            Top = 0,
-            Width = 1400,
-            Height = 860,
-            ShowActivated = false,
+            ("1-mois-ocean", Ambiance.Ocean, false, MainViewModel.OngletMois, false),
+            ("2-mois-ocean-sombre", Ambiance.Ocean, true, MainViewModel.OngletMois, false),
+            ("3-mois-pastel", Ambiance.Pastel, false, MainViewModel.OngletMois, false),
+            ("4-mois-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletMois, false),
+            ("5-mois-nuit-octobre", Ambiance.Nuit, false, MainViewModel.OngletMois, true),
+            ("6-configuration-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false),
+            ("7-configuration-nuit", Ambiance.Nuit, false, MainViewModel.OngletConfiguration, false),
         };
-        app.MainWindow = fenetre;
 
-        fenetre.ContentRendered += async (_, _) =>
+        app.Dispatcher.InvokeAsync(async () =>
         {
-            var etapes = new (string Nom, Action Preparer)[]
+            foreach (var etape in etapes)
             {
-                ("1-mois-novembre-2026", () => vm.OngletSelectionne = MainViewModel.OngletMois),
-                ("2-mois-octobre-2026", () => vm.MoisPrecedentCommand.Execute(null)),
-                ("3-configuration", () => vm.OngletSelectionne = MainViewModel.OngletConfiguration),
-            };
+                vm.Apparence.Ambiance = etape.Ambiance;
+                vm.Apparence.ModeSombre = etape.Sombre;
+                vm.OngletSelectionne = etape.Onglet;
+                if (etape.MoisPrecedent)
+                    vm.MoisPrecedentCommand.Execute(null);
 
-            foreach (var (nom, preparer) in etapes)
-            {
-                preparer();
-                await Task.Delay(700);
-                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
-                Enregistrer(fenetre, Path.Combine(dossier, nom + ".png"));
+                await MettreEnPage(hote);
+                Enregistrer(hote, Path.Combine(dossier, etape.Nom + ".png"));
+
+                if (etape.MoisPrecedent)
+                    vm.MoisSuivantCommand.Execute(null);
             }
 
             File.Delete(depot.CheminFichier);
             app.Shutdown(0);
-        };
-
-        fenetre.Show();
+        });
     }
 
-    private static void Enregistrer(Window fenetre, string chemin)
+    private static async Task MettreEnPage(FrameworkElement element)
     {
-        var contenu = (FrameworkElement)fenetre.Content;
-        contenu.UpdateLayout();
-        var largeur = (int)Math.Ceiling(contenu.ActualWidth);
-        var hauteur = (int)Math.Ceiling(contenu.ActualHeight);
-
-        // Le fond de la fenêtre n'appartient pas au contenu : on le dessine d'abord.
-        var dessin = new DrawingVisual();
-        using (var contexte = dessin.RenderOpen())
+        for (var passe = 0; passe < 3; passe++)
         {
-            contexte.DrawRectangle(fenetre.Background, null, new Rect(0, 0, largeur, hauteur));
-            contexte.DrawRectangle(new VisualBrush(contenu), null, new Rect(0, 0, largeur, hauteur));
+            element.Measure(new Size(Largeur, Hauteur));
+            element.Arrange(new Rect(0, 0, Largeur, Hauteur));
+            element.UpdateLayout();
+            await Task.Delay(250);
+            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         }
+    }
 
-        var image = new RenderTargetBitmap(largeur, hauteur, 96, 96, PixelFormats.Pbgra32);
-        image.Render(dessin);
+    private static void Enregistrer(FrameworkElement element, string chemin)
+    {
+        var image = new RenderTargetBitmap((int)Largeur, (int)Hauteur, 96, 96, PixelFormats.Pbgra32);
+        image.Render(element);
 
         var encodeur = new PngBitmapEncoder();
         encodeur.Frames.Add(BitmapFrame.Create(image));

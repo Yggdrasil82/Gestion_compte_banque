@@ -32,10 +32,16 @@ public partial class App : Application
 
         DispatcherUnhandledException += ErreurNonPrevue;
 
+        // Apparence mémorisée à côté des données (Documents\GestionCompte\preferences.json).
+        var apparence = new ApparenceViewModel(
+            Path.Combine(Path.GetDirectoryName(DepotSqlite.CheminParDefaut)!, "preferences.json"));
+        Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
+        apparence.Changee += (_, _) => Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
+
         MainViewModel vm;
         try
         {
-            vm = new MainViewModel(new DepotSqlite(DepotSqlite.CheminParDefaut), new Dialogues(), DateTime.Today);
+            vm = new MainViewModel(new DepotSqlite(DepotSqlite.CheminParDefaut), new Dialogues(), DateTime.Today, apparence);
         }
         catch (Exception ex)
         {
@@ -48,6 +54,7 @@ public partial class App : Application
         }
 
         var fenetre = new MainWindow { DataContext = vm };
+        fenetre.SourceInitialized += (_, _) => Themes.BarreDeTitreSombre(fenetre, apparence.Sombre);
         MainWindow = fenetre;
         fenetre.Show();
     }

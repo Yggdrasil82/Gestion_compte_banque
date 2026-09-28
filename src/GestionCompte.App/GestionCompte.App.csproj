@@ -11,7 +11,13 @@
     <Version>0.1.0</Version>
     <!-- Permet de compiler (sans exécuter) l'application WPF depuis Linux. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationIcon>Ressources\icone.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Ressources\icone.ico" />
+    <Resource Include="Ressources\icone.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\GestionCompte.Core\GestionCompte.Core.csproj" />

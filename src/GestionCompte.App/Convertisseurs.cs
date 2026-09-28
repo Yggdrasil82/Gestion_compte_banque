@@ -34,3 +34,25 @@ public sealed class EurosConvertisseur : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         DependencyProperty.UnsetValue;
 }
+
+/// <summary>Vrai si la valeur (entier) vaut le paramètre ; sert aux boutons de navigation liés à l'onglet affiché.</summary>
+public sealed class EgalConvertisseur : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is int valeur && int.TryParse(parameter as string, out var attendu) && valeur == attendu;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true && int.TryParse(parameter as string, out var attendu) ? attendu : Binding.DoNothing;
+}
+
+/// <summary>Visible si la valeur (entier) vaut le paramètre ; sert à afficher l'écran de l'onglet choisi.</summary>
+public sealed class VisibleSiEgalConvertisseur : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is int valeur && int.TryParse(parameter as string, out var attendu) && valeur == attendu
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        DependencyProperty.UnsetValue;
+}

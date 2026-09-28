@@ -6,10 +6,18 @@
         <!-- Boutons + / − / ▲ / ▼ d'une liste (le DataContext est la ListeEditable). -->
         <DataTemplate x:Key="BoutonsListe">
             <StackPanel Orientation="Horizontal">
-                <Button Content="+" ToolTip="Ajouter" Command="{Binding AjouterCommand}" />
-                <Button Content="−" ToolTip="Supprimer la ligne sélectionnée" Command="{Binding SupprimerCommand}" />
-                <Button Content="▲" ToolTip="Monter" Command="{Binding MonterCommand}" />
-                <Button Content="▼" ToolTip="Descendre" Command="{Binding DescendreCommand}" Margin="0" />
+                <Button ToolTip="Ajouter" Command="{Binding AjouterCommand}" Padding="0" Width="28" Height="28">
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" />
+                </Button>
+                <Button ToolTip="Supprimer la ligne sélectionnée" Command="{Binding SupprimerCommand}" Padding="0" Width="28" Height="28">
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" FontSize="12" />
+                </Button>
+                <Button ToolTip="Monter" Command="{Binding MonterCommand}" Padding="0" Width="28" Height="28">
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE70E;" FontSize="11" />
+                </Button>
+                <Button ToolTip="Descendre" Command="{Binding DescendreCommand}" Padding="0" Width="28" Height="28" Margin="0">
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE70D;" FontSize="11" />
+                </Button>
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
@@ -28,16 +36,19 @@
             <!-- Démarrage -->
             <Border Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource Carte}">
                 <StackPanel>
-                    <TextBlock Text="Démarrage" Style="{StaticResource TitreCarte}" />
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                        <TextBlock Text="Démarrage" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Premier mois :" VerticalAlignment="Center" Margin="0,0,8,0" />
                         <ComboBox ItemsSource="{x:Static vm:ConfigurationViewModel.NomsMois}" SelectedIndex="{Binding IndexMoisDebut}"
                                   IsEnabled="{Binding PremierMoisModifiable}" Width="120" />
                         <TextBox Text="{Binding AnneeDebut}" IsEnabled="{Binding PremierMoisModifiable}" Width="70" Margin="6,0,24,0"
-                                 VerticalContentAlignment="Center" />
+                                 Height="26" />
                         <TextBlock Text="Solde du compte au départ :" VerticalAlignment="Center" Margin="0,0,8,0" />
                         <TextBox Text="{Binding SoldeInitial, Converter={StaticResource Montant}}" Width="110"
-                                 TextAlignment="Right" VerticalContentAlignment="Center" />
+                                 TextAlignment="Right" Height="26" />
                         <TextBlock Text="€" VerticalAlignment="Center" Margin="4,0,0,0" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
@@ -51,11 +62,15 @@
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding Revenus}" ContentTemplate="{StaticResource BoutonsListe}" />
-                            <TextBlock Text="Revenus" Style="{StaticResource TitreCarte}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                                <TextBlock Text="Revenus" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
                         </DockPanel>
                         <DataGrid ItemsSource="{Binding Revenus.Elements}" SelectedItem="{Binding Revenus.Selection}" MinHeight="120">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Revenu" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />
+                                <DataGridTextColumn Header="Revenu" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                    EditingElementStyle="{StaticResource EditionTexte}" />
                                 <DataGridTextColumn Header="Montant habituel" Width="130"
                                                     Binding="{Binding Montant, Converter={StaticResource Montant}}"
                                                     ElementStyle="{StaticResource CelluleMontant}"
@@ -70,13 +85,17 @@
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding Enveloppes}" ContentTemplate="{StaticResource BoutonsListe}" />
-                            <TextBlock Text="Enveloppes (budgets de dépenses)" Style="{StaticResource TitreCarte}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Avertissement}" />
+                                <TextBlock Text="Enveloppes" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
                         </DockPanel>
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
-                                   Text="Le budget est réservé dans le prévisionnel ; les dépenses saisies dans l'enveloppe en sont déduites." />
+                                   Text="Budgets de dépenses (courses, carburant…) : le budget est réservé dans le prévisionnel, les dépenses saisies dans l'enveloppe en sont déduites." />
                         <DataGrid ItemsSource="{Binding Enveloppes.Elements}" SelectedItem="{Binding Enveloppes.Selection}" MinHeight="90">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Enveloppe" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />
+                                <DataGridTextColumn Header="Enveloppe" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                    EditingElementStyle="{StaticResource EditionTexte}" />
                                 <DataGridTextColumn Header="Budget mensuel" Width="130"
                                                     Binding="{Binding Montant, Converter={StaticResource Montant}}"
                                                     ElementStyle="{StaticResource CelluleMontant}"
@@ -91,13 +110,17 @@
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding ComptesCumul}" ContentTemplate="{StaticResource BoutonsListe}" />
-                            <TextBlock Text="Comptes cumulés" Style="{StaticResource TitreCarte}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                                <TextBlock Text="Comptes cumulés" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
                         </DockPanel>
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
                                    Text="Épargne, remboursements… : additionnent chaque mois les débits des charges et opérations qui leur sont liées. Objectif : montant total à atteindre (facultatif)." />
                         <DataGrid ItemsSource="{Binding ComptesCumul.Elements}" SelectedItem="{Binding ComptesCumul.Selection}" MinHeight="90">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Compte" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />
+                                <DataGridTextColumn Header="Compte" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                    EditingElementStyle="{StaticResource EditionTexte}" />
                                 <DataGridTextColumn Header="Déjà cumulé" Width="110"
                                                     Binding="{Binding MontantInitial, Converter={StaticResource Montant}}"
                                                     ElementStyle="{StaticResource CelluleMontant}"
@@ -117,13 +140,17 @@
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <ContentControl DockPanel.Dock="Right" Content="{Binding Charges}" ContentTemplate="{StaticResource BoutonsListe}" />
-                        <TextBlock Text="Charges mensuelles" Style="{StaticResource TitreCarte}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                            <TextBlock Text="Charges mensuelles" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
                     </DockPanel>
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
                                Text="Ajoutées automatiquement à chaque nouveau mois, dans cet ordre." />
                     <DataGrid ItemsSource="{Binding Charges.Elements}" SelectedItem="{Binding Charges.Selection}" MinHeight="300">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Charge" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />
+                            <DataGridTextColumn Header="Charge" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                    EditingElementStyle="{StaticResource EditionTexte}" />
                             <DataGridTextColumn Header="Débit" Width="90"
                                                 Binding="{Binding Debit, Converter={StaticResource Montant}}"
                                                 ElementStyle="{StaticResource CelluleMontant}"
@@ -135,9 +162,9 @@
                             <DataGridTemplateColumn Header="Compte cumulé" Width="130">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}"
-                                                  BorderThickness="0" Background="Transparent" />
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

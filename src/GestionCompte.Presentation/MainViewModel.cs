@@ -19,10 +19,12 @@ public sealed partial class MainViewModel : ObservableObject
     private bool _erreurEnregistrementSignalee;
 
     /// <param name="aujourdHui">Date du jour : premier mois proposé et mois affiché au démarrage.</param>
-    public MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui)
+    /// <param name="apparence">Choix des couleurs ; par défaut, non enregistré.</param>
+    public MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null)
     {
         _depot = depot;
         _dialogues = dialogues;
+        Apparence = apparence ?? new ApparenceViewModel(null);
 
         // Une erreur de lecture est remontée à l'appelant : on n'écrase jamais un fichier illisible.
         var compte = depot.Charger();
@@ -46,6 +48,8 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     public string CheminDonnees => _depot.CheminFichier;
+
+    public ApparenceViewModel Apparence { get; }
 
     [ObservableProperty] private ConfigurationViewModel _configuration = null!;
 

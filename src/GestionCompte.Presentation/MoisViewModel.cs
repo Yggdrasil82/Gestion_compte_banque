@@ -58,6 +58,12 @@ public sealed partial class MoisViewModel : ObservableObject
     [ObservableProperty] private decimal _totalDebits;
     [ObservableProperty] private decimal _totalCredits;
     [ObservableProperty] private decimal _soldeFin;
+
+    /// <summary>Réservé pour les enveloppes + débits des opérations.</summary>
+    [ObservableProperty] private decimal _depensesPrevues;
+
+    [ObservableProperty] private int _nombrePointees;
+
     [ObservableProperty] private string _resumePointage = "";
     [ObservableProperty] private IReadOnlyList<CompteCumulViewModel> _comptesCumul = Array.Empty<CompteCumulViewModel>();
 
@@ -77,6 +83,7 @@ public sealed partial class MoisViewModel : ObservableObject
         TotalDebits = _mois.Operations.Sum(o => o.Debit);
         TotalCredits = _mois.Operations.Sum(o => o.Credit);
         SoldeFin = resultat.SoldeFinPrevisionnel;
+        DepensesPrevues = TotalReserveEnveloppes + TotalDebits;
 
         foreach (var (vm, etat) in Enveloppes.Zip(resultat.Enveloppes))
             vm.MettreAJour(etat);
@@ -85,11 +92,15 @@ public sealed partial class MoisViewModel : ObservableObject
         foreach (var (vm, solde) in Operations.Elements.Zip(soldesOperations))
             vm.Solde = solde;
 
-        var pointees = _mois.Operations.Count(o => o.Pointee);
-        ResumePointage = $"{pointees} / {_mois.Operations.Count} opérations pointées";
+        NombrePointees = _mois.Operations.Count(o => o.Pointee);
+        ResumePointage = $"{NombrePointees} / {_mois.Operations.Count} opérations pointées";
 
         ComptesCumul = _compte.ComptesCumulJusqua(_mois.Periode).Select(c => new CompteCumulViewModel(c)).ToList();
+        OnPropertyChanged(nameof(CompteCumulPrincipal));
     }
+
+    /// <summary>Premier compte cumulé (en général l'épargne), affiché dans une tuile ; null s'il n'y en a pas.</summary>
+    public CompteCumulViewModel? CompteCumulPrincipal => ComptesCumul.Count > 0 ? ComptesCumul[0] : null;
 
     private void ValeurModifiee()
     {
@@ -158,12 +169,16 @@ public sealed partial class EnveloppeMoisViewModel : ObservableObject
     /// <summary>Part du budget dépensée, de 0 à 100.</summary>
     [ObservableProperty] private double _progression;
 
+    /// <summary>Budget presque entièrement dépensé (80 % ou plus), sans être dépassé.</summary>
+    public bool PresqueAtteint => !Depassee && Progression >= 80;
+
     internal void MettreAJour(Core.Calculs.EtatEnveloppe etat)
     {
         Depense = etat.Depense;
         Reste = etat.Reste;
         Depassee = etat.Depassee;
         Progression = etat.Budget <= 0 ? (etat.Depense > 0 ? 100 : 0) : (double)Math.Clamp(etat.Depense / etat.Budget * 100, 0, 100);
+        OnPropertyChanged(nameof(PresqueAtteint));
     }
 }
 

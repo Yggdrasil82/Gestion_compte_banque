@@ -1,0 +1,14 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icône de l'application : portefeuille et pièce en euro. -->
+  <defs>
+    <linearGradient id="fond" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1565C0"/><stop offset="1" stop-color="#00A3A3"/></linearGradient>
+    <linearGradient id="or" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD24D"/><stop offset="1" stop-color="#F5A524"/></linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#fond)"/>
+  <rect x="48" y="74" width="160" height="118" rx="22" fill="#fff"/>
+  <path d="M60 74 L170 50 a10 10 0 0 1 12 8 L186 74 Z" fill="#CFE6F7"/>
+  <rect x="140" y="110" width="68" height="46" rx="14" fill="#E6F1FC"/>
+  <circle cx="164" cy="133" r="30" fill="url(#or)" stroke="#fff" stroke-width="6"/>
+  <path d="M175 121 a15 15 0 1 0 0 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <path d="M146 129 h22 M146 138 h22" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+</svg>

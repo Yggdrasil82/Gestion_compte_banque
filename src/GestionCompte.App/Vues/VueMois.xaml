@@ -1,37 +1,133 @@
 <UserControl x:Class="GestionCompte.App.Vues.VueMois"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <!-- Tuile de chiffre clé, avec un liseré de couleur à gauche. -->
+        <Style x:Key="Tuile" TargetType="Border" BasedOn="{StaticResource Carte}">
+            <Setter Property="BorderThickness" Value="5,1,1,1" />
+            <Setter Property="Padding" Value="14,12" />
+        </Style>
+        <Style x:Key="IconeTuile" TargetType="Border">
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="CornerRadius" Value="11" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+        </Style>
+        <Style x:Key="LibelleTuile" TargetType="TextBlock" BasedOn="{StaticResource Discret}">
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style x:Key="ValeurTuile" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="340" />
+            <ColumnDefinition Width="330" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Revenus et enveloppes, côte à côte. -->
-        <Grid Grid.Row="0" Grid.Column="0">
+        <!-- Chiffres clés -->
+        <UniformGrid Grid.Row="0" Grid.ColumnSpan="2" Columns="4">
+            <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}">
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent1Clair}">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE8C7;" FontSize="18" Foreground="{DynamicResource Accent1}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource LibelleTuile}" Text="Solde fin de mois" />
+                        <TextBlock Text="{Binding SoldeFin, Converter={StaticResource Euros}}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource ValeurTuile}">
+                                    <Setter Property="Foreground" Value="{DynamicResource Accent1}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SoldeFinNegatif}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}">
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent2Clair}">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="18" Foreground="{DynamicResource Accent2}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource LibelleTuile}" Text="Revenus" />
+                        <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent2}"
+                                   Text="{Binding TotalRevenus, Converter={StaticResource Euros}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent3}">
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent3Clair}">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE738;" FontSize="18" Foreground="{DynamicResource Accent3}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource LibelleTuile}" Text="Dépenses prévues" />
+                        <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent3}"
+                                   Text="{Binding DepensesPrevues, Converter={StaticResource Euros}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent4}">
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent4Clair}">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE734;" FontSize="18" Foreground="{DynamicResource Accent4}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource LibelleTuile}"
+                                   Text="{Binding CompteCumulPrincipal.Nom, StringFormat='{}{0} cumulée', FallbackValue=Épargne}" />
+                        <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent4}"
+                                   Text="{Binding CompteCumulPrincipal.Total, Converter={StaticResource Euros}, FallbackValue=—}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- Revenus et enveloppes -->
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="4*" />
-                <ColumnDefinition Width="7*" />
+                <ColumnDefinition Width="6*" />
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource Carte}">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
-                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Button Content="+" ToolTip="Ajouter un revenu (prime…)" Command="{Binding Revenus.AjouterCommand}" />
-                            <Button Content="−" ToolTip="Supprimer le revenu sélectionné" Command="{Binding Revenus.SupprimerCommand}" Margin="0" />
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Top">
+                            <Button ToolTip="Ajouter un revenu (prime…)" Command="{Binding Revenus.AjouterCommand}" Padding="0" Width="28" Height="28">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" />
+                            </Button>
+                            <Button ToolTip="Supprimer le revenu sélectionné" Command="{Binding Revenus.SupprimerCommand}"
+                                    Padding="0" Width="28" Height="28" Margin="0">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE738;" FontSize="11" />
+                            </Button>
                         </StackPanel>
-                        <TextBlock Text="Revenus du mois" Style="{StaticResource TitreCarte}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                            <TextBlock Text="Revenus du mois" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
                     </DockPanel>
                     <DataGrid ItemsSource="{Binding Revenus.Elements}" SelectedItem="{Binding Revenus.Selection}" Height="150">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Revenu" Binding="{Binding Nom}" Width="*"
-                                                ElementStyle="{StaticResource CelluleTexte}" />
-                            <DataGridTextColumn Header="Montant" Width="110"
+                                                ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
+                            <DataGridTextColumn Header="Montant" Width="100"
                                                 Binding="{Binding Montant, Converter={StaticResource Montant}}"
                                                 ElementStyle="{StaticResource CelluleMontant}"
                                                 EditingElementStyle="{StaticResource EditionMontant}" />
@@ -42,64 +138,100 @@
 
             <Border Grid.Column="1" Style="{StaticResource Carte}">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Enveloppes" Style="{StaticResource TitreCarte}" />
-                    <DataGrid ItemsSource="{Binding Enveloppes}" Height="150">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Enveloppe" Binding="{Binding Nom, Mode=OneWay}" Width="*" MinWidth="85" IsReadOnly="True"
-                                                ElementStyle="{StaticResource CelluleTexte}" />
-                            <DataGridTextColumn Header="Budget" Width="72"
-                                                Binding="{Binding Budget, Converter={StaticResource Montant}}"
-                                                ElementStyle="{StaticResource CelluleMontant}"
-                                                EditingElementStyle="{StaticResource EditionMontant}" />
-                            <DataGridTextColumn Header="Dépensé" Width="72" IsReadOnly="True"
-                                                Binding="{Binding Depense, Mode=OneWay, Converter={StaticResource Montant}}"
-                                                ElementStyle="{StaticResource CelluleMontant}" />
-                            <DataGridTextColumn Header="Reste" Width="72" IsReadOnly="True"
-                                                Binding="{Binding Reste, Mode=OneWay, Converter={StaticResource Montant}}"
-                                                ElementStyle="{StaticResource CelluleMontant}" />
-                            <DataGridTemplateColumn Header="Utilisation" Width="*" MinWidth="60" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ProgressBar Value="{Binding Progression, Mode=OneWay}" Maximum="100" Height="12" Margin="6,0">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                        <TextBlock Text="Enveloppes" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+                    <Grid DockPanel.Dock="Top" Margin="0,0,10,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1" Text="Budget" Style="{StaticResource Discret}" FontSize="12" HorizontalAlignment="Right" Margin="0,0,4,0" />
+                        <TextBlock Grid.Column="2" Text="Dépensé" Style="{StaticResource Discret}" FontSize="12" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="3" Text="Reste" Style="{StaticResource Discret}" FontSize="12" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Height="150">
+                        <ItemsControl ItemsSource="{Binding Enveloppes}" Margin="0,0,10,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,4,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="90" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="1" Text="{Binding Budget, Converter={StaticResource Montant}}"
+                                                     TextAlignment="Right" Width="80" HorizontalAlignment="Right"
+                                                     ToolTip="Budget de ce mois (modifiable)" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Depense, Converter={StaticResource Montant}}"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="3" Text="{Binding Reste, Converter={StaticResource Montant}}"
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" />
+                                        </Grid>
+                                        <ProgressBar Value="{Binding Progression, Mode=OneWay}" Maximum="100" Margin="0,6,0,0">
                                             <ProgressBar.Style>
-                                                <Style TargetType="ProgressBar">
-                                                    <Setter Property="Foreground" Value="{StaticResource Positif}" />
+                                                <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent2}" />
                                                     <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding PresqueAtteint}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Avertissement}" />
+                                                        </DataTrigger>
                                                         <DataTrigger Binding="{Binding Depassee}" Value="True">
-                                                            <Setter Property="Foreground" Value="{StaticResource Negatif}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </ProgressBar.Style>
                                         </ProgressBar>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </DockPanel>
             </Border>
         </Grid>
 
-        <!-- Opérations du mois. -->
-        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Carte}">
+        <!-- Opérations du mois -->
+        <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource Carte}">
             <DockPanel>
                 <DockPanel DockPanel.Dock="Top">
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                        <Button Content="Ajouter une opération" Command="{Binding Operations.AjouterCommand}"
-                                Style="{StaticResource BoutonPrincipal}" />
-                        <Button Content="Supprimer" Command="{Binding Operations.SupprimerCommand}" />
-                        <Button Content="▲" ToolTip="Monter" Command="{Binding Operations.MonterCommand}" />
-                        <Button Content="▼" ToolTip="Descendre" Command="{Binding Operations.DescendreCommand}" Margin="0" />
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Top">
+                        <Button Command="{Binding Operations.AjouterCommand}" Style="{StaticResource BoutonPrincipal}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" Margin="0,0,8,0" />
+                                <TextBlock Text="Ajouter une opération" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding Operations.SupprimerCommand}" ToolTip="Supprimer l'opération sélectionnée"
+                                Padding="0" Width="32" Height="30">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" />
+                        </Button>
+                        <Button Command="{Binding Operations.MonterCommand}" ToolTip="Monter" Padding="0" Width="32" Height="30">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70E;" />
+                        </Button>
+                        <Button Command="{Binding Operations.DescendreCommand}" ToolTip="Descendre" Padding="0" Width="32" Height="30" Margin="0">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70D;" />
+                        </Button>
                     </StackPanel>
-                    <TextBlock Text="Opérations" Style="{StaticResource TitreCarte}" />
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                        <TextBlock Text="Opérations" Style="{StaticResource TitreCarte}" />
+                        <TextBlock Text="{Binding ResumePointage}" Style="{StaticResource Discret}" Margin="14,0,0,8" VerticalAlignment="Center" />
+                    </StackPanel>
                 </DockPanel>
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
                            Text="Cochez « Pointé » quand l'opération apparaît sur le relevé. Choisissez une enveloppe pour les dépenses de courses, carburant… : elles sont déduites de son budget." />
 
                 <DataGrid ItemsSource="{Binding Operations.Elements}" SelectedItem="{Binding Operations.Selection}">
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Pointé" Width="68">
+                        <DataGridTemplateColumn Header="Pointé" Width="70">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox IsChecked="{Binding Pointee, UpdateSourceTrigger=PropertyChanged}"
@@ -108,41 +240,46 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Libellé" Binding="{Binding Libelle}" Width="*" MinWidth="160"
-                                            ElementStyle="{StaticResource CelluleTexte}" />
-                        <DataGridTemplateColumn Header="Enveloppe" Width="115">
+                                            ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
+                        <DataGridTemplateColumn Header="Enveloppe" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding DataContext.NomsEnveloppes, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                              SelectedItem="{Binding Enveloppe, UpdateSourceTrigger=PropertyChanged}"
-                                              BorderThickness="0" Background="Transparent" />
+                                    <ComboBox Style="{StaticResource ListeCellule}"
+                                              ItemsSource="{Binding DataContext.NomsEnveloppes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              SelectedItem="{Binding Enveloppe, UpdateSourceTrigger=PropertyChanged}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="Compte cumulé" Width="140">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                              SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}"
-                                              BorderThickness="0" Background="Transparent" />
+                                    <ComboBox Style="{StaticResource ListeCellule}"
+                                              ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Débit" Width="100"
+                        <DataGridTextColumn Header="Débit" Width="95"
                                             Binding="{Binding Debit, Converter={StaticResource Montant}}"
                                             ElementStyle="{StaticResource CelluleMontant}"
                                             EditingElementStyle="{StaticResource EditionMontant}" />
-                        <DataGridTextColumn Header="Crédit" Width="100"
+                        <DataGridTextColumn Header="Crédit" Width="95"
                                             Binding="{Binding Credit, Converter={StaticResource Montant}}"
-                                            ElementStyle="{StaticResource CelluleMontant}"
-                                            EditingElementStyle="{StaticResource EditionMontant}" />
-                        <DataGridTextColumn Header="Solde" Width="110" IsReadOnly="True"
+                                            EditingElementStyle="{StaticResource EditionMontant}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                    <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Solde" Width="105" IsReadOnly="True"
                                             Binding="{Binding Solde, Mode=OneWay, Converter={StaticResource Montant}}">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
-                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="FontWeight" Value="Bold" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding SoldeNegatif}" Value="True">
-                                            <Setter Property="Foreground" Value="{StaticResource Negatif}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -153,84 +290,88 @@
             </DockPanel>
         </Border>
 
-        <!-- Résumé à droite. -->
-        <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+        <!-- Colonne de droite : détail du solde et comptes cumulés -->
+        <ScrollViewer Grid.Row="1" Grid.RowSpan="2" Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <Border Style="{StaticResource Carte}">
                     <StackPanel>
-                        <TextBlock Text="Résumé du mois" Style="{StaticResource TitreCarte}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                            <TextBlock Text="Détail du solde" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="24" />
-                                <RowDefinition Height="24" />
-                                <RowDefinition Height="28" />
-                                <RowDefinition Height="24" />
-                                <RowDefinition Height="24" />
-                                <RowDefinition Height="24" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="30" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="26" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Ancien solde" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AncienSolde, Converter={StaticResource Euros}}" />
-                            <TextBlock Grid.Row="1" Text="+ Revenus" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalRevenus, Converter={StaticResource Euros}}" />
-                            <TextBlock Grid.Row="2" Text="= Solde de départ" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="0" Text="Ancien solde" Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AncienSolde, Converter={StaticResource Euros}}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="1" Text="+ Revenus" Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalRevenus, Converter={StaticResource Euros}}"
+                                       Foreground="{DynamicResource Positif}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="2" Text="= Solde de départ" FontWeight="Bold" VerticalAlignment="Center" />
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SoldeDepart, Converter={StaticResource Euros}}"
-                                       FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <TextBlock Grid.Row="3" Text="− Réservé pour les enveloppes" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TotalReserveEnveloppes, Converter={StaticResource Euros}}" />
-                            <TextBlock Grid.Row="4" Text="− Débits" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TotalDebits, Converter={StaticResource Euros}}" />
-                            <TextBlock Grid.Row="5" Text="+ Crédits" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TotalCredits, Converter={StaticResource Euros}}" />
+                                       FontWeight="Bold" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="3" Text="− Réservé (enveloppes)" Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding TotalReserveEnveloppes, Converter={StaticResource Euros}}"
+                                       Foreground="{DynamicResource Accent3}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="4" Text="− Débits" Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding TotalDebits, Converter={StaticResource Euros}}"
+                                       Foreground="{DynamicResource Accent3}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="5" Text="+ Crédits" Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding TotalCredits, Converter={StaticResource Euros}}"
+                                       Foreground="{DynamicResource Positif}" VerticalAlignment="Center" />
                         </Grid>
-
-                        <Border Background="{StaticResource AccentClair}" CornerRadius="6" Padding="12,10" Margin="0,10,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Solde prévisionnel de fin de mois" Foreground="{StaticResource TexteDiscret}" />
-                                <TextBlock Text="{Binding SoldeFin, Converter={StaticResource Euros}}" FontSize="28" FontWeight="Bold">
+                        <Border Background="{DynamicResource Accent1Clair}" CornerRadius="10" Padding="14,10" Margin="0,10,0,0">
+                            <DockPanel>
+                                <TextBlock Text="Fin de mois" VerticalAlignment="Center" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding SoldeFin, Converter={StaticResource Euros}}" HorizontalAlignment="Right" FontSize="20">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{StaticResource Positif}" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                            <Setter Property="Foreground" Value="{DynamicResource Accent1}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SoldeFinNegatif}" Value="True">
-                                                    <Setter Property="Foreground" Value="{StaticResource Negatif}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                            </StackPanel>
+                            </DockPanel>
                         </Border>
                     </StackPanel>
                 </Border>
 
                 <Border Style="{StaticResource Carte}">
                     <StackPanel>
-                        <TextBlock Text="Pointage" Style="{StaticResource TitreCarte}" />
-                        <TextBlock Text="{Binding ResumePointage}" />
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Carte}">
-                    <StackPanel>
-                        <TextBlock Text="Comptes cumulés" Style="{StaticResource TitreCarte}" />
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                            <TextBlock Text="Comptes cumulés" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource Aide}" Text="Total depuis le début, ce mois inclus." />
                         <ItemsControl ItemsSource="{Binding ComptesCumul}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Margin="0,0,0,12">
+                                    <StackPanel Margin="0,2,0,12">
                                         <DockPanel>
-                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Total, Converter={StaticResource Euros}}" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Nom}" />
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Total, Converter={StaticResource Euros}}"
+                                                       FontWeight="Bold" Foreground="{DynamicResource Accent4}" />
+                                            <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" />
                                         </DockPanel>
-                                        <ProgressBar Value="{Binding Progression, Mode=OneWay}" Maximum="100" Height="8" Margin="0,4,0,2"
-                                                     Foreground="{StaticResource Accent}"
+                                        <ProgressBar Value="{Binding Progression, Mode=OneWay}" Maximum="100" Height="8" Margin="0,6,0,3"
+                                                     Foreground="{DynamicResource Accent4}"
                                                      Visibility="{Binding AObjectif, Converter={StaticResource Visible}}" />
-                                        <TextBlock Text="{Binding Detail}" FontSize="12" Foreground="{StaticResource TexteDiscret}"
+                                        <TextBlock Text="{Binding Detail}" FontSize="12" Style="{StaticResource Discret}"
                                                    Visibility="{Binding AObjectif, Converter={StaticResource Visible}}" />
                                     </StackPanel>
                                 </DataTemplate>
