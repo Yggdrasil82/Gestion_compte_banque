@@ -22,6 +22,9 @@ internal static class Captures
     /// <summary>L'aide au budget est longue : elle est capturée en entier sur une image plus haute.</summary>
     private const double HauteurAide = 1720;
 
+    /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
+    private const double HauteurConfiguration = 1580;
+
     public static void Lancer(App app, string dossier)
     {
         dossier = Path.GetFullPath(dossier);
@@ -96,7 +99,12 @@ internal static class Captures
                 if (etape.MoisPrecedent)
                     vm.MoisPrecedentCommand.Execute(null);
 
-                var hauteur = etape.Onglet == MainViewModel.OngletAide ? HauteurAide : Hauteur;
+                var hauteur = etape.Onglet switch
+                {
+                    MainViewModel.OngletAide => HauteurAide,
+                    MainViewModel.OngletConfiguration => HauteurConfiguration,
+                    _ => Hauteur,
+                };
                 hote.Height = hauteur;
                 await MettreEnPage(hote, hauteur);
                 Enregistrer(hote, Path.Combine(dossier, etape.Nom + ".png"), hauteur);
