@@ -20,7 +20,7 @@
 
         <!-- Encadré utilisé pour chaque bloc d'un écran. -->
         <Style x:Key="Carte" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource Carte}" />
+            <Setter Property="Background" Value="{DynamicResource FondCarte}" />
             <Setter Property="BorderBrush" Value="{DynamicResource Bordure}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="12" />
@@ -63,7 +63,7 @@
 
         <!-- Boutons -->
         <Style TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource Carte}" />
+            <Setter Property="Background" Value="{DynamicResource FondCarte}" />
             <Setter Property="Foreground" Value="{DynamicResource Texte}" />
             <Setter Property="BorderBrush" Value="{DynamicResource Bordure}" />
             <Setter Property="BorderThickness" Value="1" />
@@ -286,7 +286,7 @@
                                               ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" />
                             <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade"
                                    IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                                <Border Background="{DynamicResource Carte}" BorderBrush="{DynamicResource Bordure}" BorderThickness="1"
+                                <Border Background="{DynamicResource FondCarte}" BorderBrush="{DynamicResource Bordure}" BorderThickness="1"
                                         CornerRadius="8" Padding="3" Margin="0,2,0,0"
                                         MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}">
@@ -414,8 +414,8 @@
             <Setter Property="HeadersVisibility" Value="Column" />
             <Setter Property="GridLinesVisibility" Value="Horizontal" />
             <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Bordure}" />
-            <Setter Property="Background" Value="{DynamicResource Carte}" />
-            <Setter Property="RowBackground" Value="{DynamicResource Carte}" />
+            <Setter Property="Background" Value="{DynamicResource FondCarte}" />
+            <Setter Property="RowBackground" Value="{DynamicResource FondCarte}" />
             <Setter Property="AlternatingRowBackground" Value="{DynamicResource LigneAlternee}" />
             <Setter Property="Foreground" Value="{DynamicResource Texte}" />
             <Setter Property="BorderThickness" Value="0" />
@@ -424,7 +424,7 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{DynamicResource Carte}" />
+            <Setter Property="Background" Value="{DynamicResource FondCarte}" />
             <Setter Property="Foreground" Value="{DynamicResource TexteDiscret}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontSize" Value="12" />

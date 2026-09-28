@@ -62,7 +62,7 @@ internal static class Themes
         public IEnumerable<(string Cle, Brush Pinceau)> Pinceaux()
         {
             yield return ("Fond", Uni(Fond));
-            yield return ("Carte", Uni(Carte));
+            yield return ("FondCarte", Uni(Carte));
             yield return ("Texte", Uni(Texte));
             yield return ("TexteDiscret", Uni(TexteDiscret));
             yield return ("Bordure", Uni(Bordure));
