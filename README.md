@@ -1,7 +1,7 @@
 # Gestion Compte Banque
 
 Application Windows (WPF / .NET 8) de budget prévisionnel mensuel, reprenant le fonctionnement
-du classeur Excel `compte Romain_3_type.xlsm`.
+du classeur Excel d'origine.
 
 ## Structure
 
