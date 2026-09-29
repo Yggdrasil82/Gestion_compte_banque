@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>GestionCompte</AssemblyName>
     <Product>Gestion Compte Banque</Product>
-    <Version>1.4.2</Version>
+    <Version>1.4.3</Version>
     <!-- Permet de compiler (sans exécuter) l'application WPF depuis Linux. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Ressources\icone.ico</ApplicationIcon>

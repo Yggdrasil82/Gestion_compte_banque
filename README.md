@@ -49,6 +49,7 @@ du classeur Excel d'origine.
 - **1.4.0** : simulation de crédit (immobilier, auto / moto, consommation) dans l'aide au budget : plusieurs simulations comparées, tableau d'amortissement, taux d'endettement, calcul inverse (combien emprunter), ajout des échéances au prévisionnel, export Excel.
 - **1.4.1** : enveloppe d'une opération remplie d'après son libellé (nom de l'enveloppe ou règle de classement) ; retouches de la simulation de crédit.
 - **1.4.2** : correction du plantage au choix d'un mois dans la liste déroulante.
+- **1.4.3** : nouvelle icône (canard grippe-sou sur son coffre-fort).
 
 ## Prochainement
 
