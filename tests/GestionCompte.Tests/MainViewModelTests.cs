@@ -188,7 +188,16 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(new[] { "Octobre 2026", "Novembre 2026", "Décembre 2026" }, vm.ListeMois.Select(m => m.Libelle));
         Assert.Equal("Décembre 2026", vm.MoisSelectionne!.Libelle);
 
+        // Choisir un mois ne recrée pas la liste (sinon la liste déroulante relance le choix en boucle).
+        var liste = vm.ListeMois;
+        var notifications = 0;
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.MoisSelectionne)) notifications++; };
         vm.MoisSelectionne = vm.ListeMois[0];
+        Assert.Same(liste, vm.ListeMois);
+        Assert.Same(vm.ListeMois[0], vm.MoisSelectionne);
+        Assert.Equal(1, notifications);
+        vm.MoisSelectionne = vm.ListeMois[0];
+        Assert.Equal(1, notifications);
         Assert.Equal("Octobre 2026", vm.TitreMois);
         Assert.True(vm.AllerAuMoisEnCoursCommand.CanExecute(null));
 

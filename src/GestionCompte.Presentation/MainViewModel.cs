@@ -302,17 +302,30 @@ public sealed partial class MainViewModel : ObservableObject
     private bool PeutAllerAuMoisSuivant() => _indexMois < _compte.Mois.Count - 1;
 
     /// <summary>Mois créés, proposés dans la liste déroulante du bandeau.</summary>
-    public IReadOnlyList<ChoixPeriode> ListeMois => _compte.Mois.Select(m => new ChoixPeriode(m.Periode)).ToList();
+    /// <remarks>
+    /// La liste n'est recréée que si les mois changent : la remplacer pendant un choix dans la liste déroulante
+    /// relançait la sélection en boucle et faisait planter l'application.
+    /// </remarks>
+    public IReadOnlyList<ChoixPeriode> ListeMois { get; private set; } = Array.Empty<ChoixPeriode>();
 
     /// <summary>Mois affiché, choisi dans la liste déroulante.</summary>
     public ChoixPeriode? MoisSelectionne
     {
-        get => _indexMois >= 0 ? new ChoixPeriode(_compte.Mois[_indexMois].Periode) : null;
+        get => _indexMois >= 0 && _indexMois < ListeMois.Count ? ListeMois[_indexMois] : null;
         set
         {
-            if (value is not null)
-                AllerAuMois(_compte.Mois.ToList().FindIndex(m => m.Periode == value.Periode));
+            var index = value is null ? -1 : _compte.Mois.ToList().FindIndex(m => m.Periode == value.Periode);
+            if (index >= 0 && index != _indexMois)
+                AllerAuMois(index);
         }
+    }
+
+    private void MettreAJourListeMois()
+    {
+        if (ListeMois.Select(c => c.Periode).SequenceEqual(_compte.Mois.Select(m => m.Periode)))
+            return;
+        ListeMois = _compte.Mois.Select(m => new ChoixPeriode(m.Periode)).ToList();
+        OnPropertyChanged(nameof(ListeMois));
     }
 
     /// <summary>Revient au mois du jour, s'il est créé.</summary>
@@ -737,7 +750,7 @@ public sealed partial class MainViewModel : ObservableObject
         MoisCourant = _indexMois >= 0 ? new MoisViewModel(_compte, _compte.Mois[_indexMois], MoisModifie) : null;
 
         OnPropertyChanged(nameof(TexteCreerMois));
-        OnPropertyChanged(nameof(ListeMois));
+        MettreAJourListeMois();
         OnPropertyChanged(nameof(MoisSelectionne));
         AllerAuMoisEnCoursCommand.NotifyCanExecuteChanged();
         MoisPrecedentCommand.NotifyCanExecuteChanged();
