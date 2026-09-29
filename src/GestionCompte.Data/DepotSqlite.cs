@@ -18,8 +18,9 @@ public sealed class DepotSqlite
     /// Version 4 : import des relevés (identifiant bancaire, revenus reçus, règles de classement).
     /// Version 5 : même schéma ; marque la correction des revenus « reçus » des mois pas encore commencés.
     /// Version 6 : fréquence des charges (tous les 2 mois, trimestrielle…).
+    /// Version 7 : objectifs d'épargne alimentés par un compte cumulé.
     /// </remarks>
-    public const int VersionSchema = 6;
+    public const int VersionSchema = 7;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -148,9 +149,13 @@ public sealed class DepotSqlite
         // Table absente des fichiers aux formats 1 et 2.
         if (TableExiste(connexion, "objectif_epargne"))
         {
-            Lire(connexion, "SELECT nom, montant, annee, mois, deja_epargne FROM objectif_epargne ORDER BY ordre",
+            var compteCumul = ColonneExiste(connexion, "objectif_epargne", "compte_cumul") ? "compte_cumul" : "NULL";
+            Lire(connexion, $"SELECT nom, montant, annee, mois, deja_epargne, {compteCumul} FROM objectif_epargne ORDER BY ordre",
                 l => compte.ObjectifsEpargne.Add(new ObjectifEpargne(
-                    l.GetString(0), LireDecimal(l.GetString(1)), new PeriodeMois(l.GetInt32(2), l.GetInt32(3)), LireDecimal(l.GetString(4)))));
+                    l.GetString(0), LireDecimal(l.GetString(1)), new PeriodeMois(l.GetInt32(2), l.GetInt32(3)), LireDecimal(l.GetString(4)))
+                {
+                    CompteCumul = l.IsDBNull(5) ? null : l.GetString(5),
+                }));
         }
 
         return compte;
@@ -240,9 +245,10 @@ public sealed class DepotSqlite
 
         foreach (var (objectif, ordre) in compte.ObjectifsEpargne.Select((o, i) => (o, i)))
             Executer(connexion,
-                "INSERT INTO objectif_epargne (ordre, nom, montant, annee, mois, deja_epargne) VALUES ($o, $n, $m, $a, $mo, $d)",
+                "INSERT INTO objectif_epargne (ordre, nom, montant, annee, mois, deja_epargne, compte_cumul) VALUES ($o, $n, $m, $a, $mo, $d, $c)",
                 ("$o", ordre), ("$n", objectif.Nom), ("$m", EcrireDecimal(objectif.Montant)),
-                ("$a", objectif.Echeance.Annee), ("$mo", objectif.Echeance.Mois), ("$d", EcrireDecimal(objectif.DejaEpargne)));
+                ("$a", objectif.Echeance.Annee), ("$mo", objectif.Echeance.Mois), ("$d", EcrireDecimal(objectif.DejaEpargne)),
+                ("$c", objectif.CompteCumul));
 
         transaction.Commit();
     }
@@ -333,7 +339,7 @@ public sealed class DepotSqlite
             CREATE TABLE IF NOT EXISTS regle_classement (ordre INTEGER NOT NULL, mot_cle TEXT NOT NULL, enveloppe TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS objectif_epargne (
                 ordre INTEGER NOT NULL, nom TEXT NOT NULL, montant TEXT NOT NULL,
-                annee INTEGER NOT NULL, mois INTEGER NOT NULL, deja_epargne TEXT NOT NULL);
+                annee INTEGER NOT NULL, mois INTEGER NOT NULL, deja_epargne TEXT NOT NULL, compte_cumul TEXT);
             """);
 
         // Mise à jour des fichiers aux formats 1 et 2.
@@ -354,6 +360,8 @@ public sealed class DepotSqlite
             Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN recu INTEGER NOT NULL DEFAULT 0");
             Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN identifiant_banque TEXT");
         }
+        if (!ColonneExiste(connexion, "objectif_epargne", "compte_cumul"))
+            Executer(connexion, "ALTER TABLE objectif_epargne ADD COLUMN compte_cumul TEXT");
         Executer(connexion, $"PRAGMA user_version = {VersionSchema}");
     }
 

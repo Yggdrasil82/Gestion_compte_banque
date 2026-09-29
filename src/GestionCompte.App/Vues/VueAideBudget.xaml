@@ -288,6 +288,16 @@
                                                     ElementStyle="{StaticResource CelluleMontant}" EditingElementStyle="{StaticResource EditionMontant}" />
                                 <DataGridTextColumn Header="Déjà" Width="70" Binding="{Binding DejaEpargne, Converter={StaticResource Montant}, ConverterParameter=vide}"
                                                     ElementStyle="{StaticResource CelluleMontant}" EditingElementStyle="{StaticResource EditionMontant}" />
+                                <DataGridTemplateColumn Header="Alimenté par" Width="110">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Style="{StaticResource ListeCellule}"
+                                                      ToolTip="Compte cumulé dont le total et les montants prévus comptent pour l'objectif"
+                                                      ItemsSource="{Binding DataContext.ComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="Pour" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>

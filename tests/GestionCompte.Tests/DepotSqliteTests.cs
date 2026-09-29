@@ -38,7 +38,7 @@ public sealed class DepotSqliteTests : IDisposable
         compte.Configuration.Charges[0] = compte.Configuration.Charges[0] with { Categorie = Categorie.Essentiel };
         compte.Configuration.Charges[1] = compte.Configuration.Charges[1] with { Categorie = Categorie.Confort };
         compte.Configuration.Enveloppes[1] = compte.Configuration.Enveloppes[1] with { Categorie = Categorie.Confort };
-        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances", 1500.50m, new PeriodeMois(2027, 6), dejaEpargne: 200m));
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances", 1500.50m, new PeriodeMois(2027, 6), dejaEpargne: 200m) { CompteCumul = DonneesExcel.Epargne });
         compte.Configuration.Regles.Add(new RegleClassement("BOULANGERIE", "Courses"));
         octobre.Operations[0].IdentifiantBanque = "FITID-123";
         octobre.Revenus[0].Recu = true;
@@ -332,8 +332,8 @@ public sealed class DepotSqliteTests : IDisposable
             obtenu.OperationsPrevues.Select(x => (x.Periode, x.Libelle, x.Debit, x.Credit, x.CompteCumul)));
 
         Assert.Equal(
-            attendu.ObjectifsEpargne.Select(x => (x.Nom, x.Montant, x.Echeance, x.DejaEpargne)),
-            obtenu.ObjectifsEpargne.Select(x => (x.Nom, x.Montant, x.Echeance, x.DejaEpargne)));
+            attendu.ObjectifsEpargne.Select(x => (x.Nom, x.Montant, x.Echeance, x.DejaEpargne, x.CompteCumul)),
+            obtenu.ObjectifsEpargne.Select(x => (x.Nom, x.Montant, x.Echeance, x.DejaEpargne, x.CompteCumul)));
 
         Assert.Equal(attendu.Mois.Count, obtenu.Mois.Count);
         foreach (var (moisA, moisO) in attendu.Mois.Zip(obtenu.Mois))

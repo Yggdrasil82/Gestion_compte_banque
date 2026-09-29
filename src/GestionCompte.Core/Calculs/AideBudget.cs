@@ -57,10 +57,17 @@ public enum Faisabilite
     Juste,
     Difficile,
     EcheancePassee,
+    /// <summary>Le reste est couvert par les montants déjà prévus dans les mois créés.</summary>
+    Couvert,
 }
 
+/// <param name="MoisRestants">Mois où il reste à épargner (sans montant déjà prévu sur le compte cumulé).</param>
+/// <param name="ResteAEpargner">Montant restant après le déjà épargné et les montants prévus.</param>
 /// <param name="Mensualite">Montant à mettre de côté chaque mois jusqu'à l'échéance.</param>
-public sealed record AnalyseObjectif(ObjectifEpargne Objectif, int MoisRestants, decimal ResteAEpargner, decimal Mensualite, Faisabilite Faisabilite);
+/// <param name="DejaEpargne">Déjà épargné : saisi, ou total du compte cumulé à la fin du mois en cours.</param>
+/// <param name="Prevu">Montants déjà saisis sur le compte cumulé dans les mois créés, jusqu'à l'échéance.</param>
+public sealed record AnalyseObjectif(ObjectifEpargne Objectif, int MoisRestants, decimal ResteAEpargner, decimal Mensualite,
+    Faisabilite Faisabilite, decimal DejaEpargne = 0m, decimal Prevu = 0m);
 
 /// <param name="CapaciteMensuelle">Excédent moyen prévu par mois (entrées − sorties) sur les 12 prochains mois.</param>
 public sealed record ResultatObjectifs(decimal CapaciteMensuelle, IReadOnlyList<AnalyseObjectif> Objectifs);
@@ -217,21 +224,69 @@ public static class AideBudget
     // ---- 5. Objectifs d'épargne ----
 
     /// <param name="premierMois">Premier mois où l'on épargne (le mois suivant le mois en cours) ; par défaut le prochain mois à créer.</param>
+    /// <remarks>
+    /// Un objectif alimenté par un compte cumulé prend son « déjà épargné » dans le total du compte avant le premier mois,
+    /// puis les montants saisis sur ce compte dans les mois créés jusqu'à l'échéance ; la mensualité porte sur le reste,
+    /// réparti sur les mois sans montant saisi. Plusieurs objectifs d'un même compte se le partagent dans l'ordre de la liste.
+    /// </remarks>
     public static ResultatObjectifs AnalyserObjectifs(CompteBancaire compte, PeriodeMois? premierMois = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
+        var depart = premierMois ?? compte.ProchainMois;
         var capacite = CapaciteMensuelle(compte);
         var engage = 0m;
 
+        // Total de chaque compte cumulé avant le premier mois, et montants saisis dans les mois créés suivants.
+        var comptes = compte.Configuration.ComptesCumul.DistinctBy(c => c.Nom.Trim().ToUpperInvariant()).ToList();
+        var disponibles = comptes.ToDictionary(c => c.Nom, c => c.MontantInitial);
+        var prevus = comptes.ToDictionary(c => c.Nom, _ => new Dictionary<PeriodeMois, decimal>());
+        foreach (var mois in compte.Mois)
+        {
+            if (mois.Periode < depart)
+            {
+                Previsionnel.AjouterAuxCumuls(disponibles, mois.Operations);
+                continue;
+            }
+            var montants = comptes.ToDictionary(c => c.Nom, _ => 0m);
+            Previsionnel.AjouterAuxCumuls(montants, mois.Operations);
+            foreach (var (nom, montant) in montants.Where(m => m.Value > 0))
+                prevus[nom][mois.Periode] = montant;
+        }
+
         var objectifs = compte.ObjectifsEpargne.Select(objectif =>
         {
-            var reste = Math.Max(0m, objectif.Montant - objectif.DejaEpargne);
-            var moisRestants = (premierMois ?? compte.ProchainMois).MoisJusqua(objectif.Echeance) + 1;
+            var moisRestants = depart.MoisJusqua(objectif.Echeance) + 1;
+            var nomCompte = objectif.CompteCumul is null ? null
+                : disponibles.Keys.FirstOrDefault(n => CalculateurMois.MemeNom(n, objectif.CompteCumul));
+
+            var deja = objectif.DejaEpargne;
+            var prevu = 0m;
+            if (nomCompte is not null)
+            {
+                deja = Math.Max(0m, Math.Min(disponibles[nomCompte], objectif.Montant));
+                disponibles[nomCompte] -= deja;
+
+                var parMois = prevus[nomCompte];
+                foreach (var periode in parMois.Keys.Where(p => p <= objectif.Echeance).Order().ToList())
+                {
+                    var pris = Math.Max(0m, Math.Min(parMois[periode], objectif.Montant - deja - prevu));
+                    parMois[periode] -= pris;
+                    prevu += pris;
+                }
+                // Les mois qui ont un montant saisi ne comptent plus pour la mensualité.
+                moisRestants -= prevus[nomCompte].Keys.Count(p => p <= objectif.Echeance);
+            }
+
+            var reste = Math.Max(0m, objectif.Montant - deja - prevu);
+            AnalyseObjectif Analyse(int mois, decimal mensualite, Faisabilite faisabilite) =>
+                new(objectif, mois, reste, mensualite, faisabilite, deja, prevu);
 
             if (reste == 0)
-                return new AnalyseObjectif(objectif, Math.Max(0, moisRestants), 0m, 0m, Faisabilite.Atteint);
+                return Analyse(Math.Max(0, moisRestants), 0m, prevu > 0 ? Faisabilite.Couvert : Faisabilite.Atteint);
+            if (depart.MoisJusqua(objectif.Echeance) < 0)
+                return Analyse(0, reste, Faisabilite.EcheancePassee);
             if (moisRestants <= 0)
-                return new AnalyseObjectif(objectif, 0, reste, reste, Faisabilite.EcheancePassee);
+                return Analyse(0, reste, Faisabilite.Difficile);
 
             var mensualite = Math.Ceiling(reste / moisRestants * 100) / 100;
             engage += mensualite;
@@ -239,7 +294,7 @@ public static class AideBudget
                 : engage <= capacite ? Faisabilite.Juste
                 : Faisabilite.Difficile;
 
-            return new AnalyseObjectif(objectif, moisRestants, reste, mensualite, faisabilite);
+            return Analyse(moisRestants, mensualite, faisabilite);
         }).ToList();
 
         return new ResultatObjectifs(capacite, objectifs);

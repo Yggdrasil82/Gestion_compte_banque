@@ -262,6 +262,73 @@ public class AideBudgetTests
         Assert.Equal(333.34m, objectif.Mensualite);
     }
 
+    [Fact]
+    public void Objectifs_AlimentesParUnCompteCumul_DejaEpargneEtMontantsPrevus()
+    {
+        // On est en novembre 2026 : octobre et novembre sont passés, décembre et janvier sont créés à l'avance.
+        var configuration = DonneesExcel.ConfigurationOctobre2026();
+        var nomCompte = configuration.ComptesCumul[0].Nom;
+        configuration.ComptesCumul[0] = configuration.ComptesCumul[0] with { MontantInitial = 100m };
+        var compte = new CompteBancaire(configuration);
+        foreach (var montant in new[] { 200m, 150m, 250m, 0m })
+        {
+            var mois = compte.CreerMoisSuivant();
+            foreach (var operation in mois.Operations.Where(o => CalculateurMois.MemeNom(o.CompteCumul, nomCompte)))
+            {
+                operation.Debit = 0m;
+                operation.Credit = 0m;
+            }
+            mois.Operations.First(o => CalculateurMois.MemeNom(o.CompteCumul, nomCompte)).Debit = montant;
+        }
+        // Déjà épargné : 100 + 200 + 150 = 450 ; prévu : 250 en décembre ; janvier sans montant.
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances", 1000m, new PeriodeMois(2027, 3), dejaEpargne: 999m) { CompteCumul = nomCompte });
+
+        var objectif = Assert.Single(AideBudget.AnalyserObjectifs(compte, new PeriodeMois(2026, 12)).Objectifs);
+
+        Assert.Equal(450m, objectif.DejaEpargne);
+        Assert.Equal(250m, objectif.Prevu);
+        Assert.Equal(300m, objectif.ResteAEpargner);
+        Assert.Equal(3, objectif.MoisRestants); // janvier, février, mars
+        Assert.Equal(100m, objectif.Mensualite);
+    }
+
+    [Fact]
+    public void Objectifs_MemeCompteCumul_PartageDansLOrdre()
+    {
+        var configuration = DonneesExcel.ConfigurationOctobre2026();
+        var nomCompte = configuration.ComptesCumul[0].Nom;
+        configuration.ComptesCumul[0] = configuration.ComptesCumul[0] with { MontantInitial = 800m };
+        var compte = new CompteBancaire(configuration);
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Premier", 500m, new PeriodeMois(2027, 3)) { CompteCumul = nomCompte });
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Second", 1000m, new PeriodeMois(2027, 3)) { CompteCumul = nomCompte });
+
+        var objectifs = AideBudget.AnalyserObjectifs(compte, new PeriodeMois(2026, 10)).Objectifs;
+
+        Assert.Equal(Faisabilite.Atteint, objectifs[0].Faisabilite);
+        Assert.Equal(500m, objectifs[0].DejaEpargne);
+        Assert.Equal(300m, objectifs[1].DejaEpargne);
+        Assert.Equal(700m, objectifs[1].ResteAEpargner);
+    }
+
+    [Fact]
+    public void Objectifs_ResteCouvertParLesMontantsPrevus()
+    {
+        var configuration = DonneesExcel.ConfigurationOctobre2026();
+        var nomCompte = configuration.ComptesCumul[0].Nom;
+        var compte = new CompteBancaire(configuration);
+        var mois = compte.CreerMoisSuivant();
+        foreach (var operation in mois.Operations.Where(o => CalculateurMois.MemeNom(o.CompteCumul, nomCompte)))
+            operation.Debit = 0m;
+        mois.Operations.First(o => CalculateurMois.MemeNom(o.CompteCumul, nomCompte)).Debit = 600m;
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Noël", 500m, new PeriodeMois(2026, 12)) { CompteCumul = nomCompte });
+
+        var objectif = Assert.Single(AideBudget.AnalyserObjectifs(compte, new PeriodeMois(2026, 10)).Objectifs);
+
+        Assert.Equal(Faisabilite.Couvert, objectif.Faisabilite);
+        Assert.Equal(500m, objectif.Prevu);
+        Assert.Equal(0m, objectif.Mensualite);
+    }
+
     // ---- 6. Alertes ----
 
     [Fact]

@@ -42,10 +42,18 @@ public sealed partial class AideBudgetViewModel : ObservableObject
         for (var (i, p) = (0, premier); i < MoisProposes; i++, p = p.Suivant())
             periodes.Add(new ChoixPeriode(p));
         Periodes = periodes;
+        ComptesCumul = new[] { ObjectifViewModel.Aucun }
+            .Concat(compte.Configuration.ComptesCumul.Select(c => c.Nom).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct())
+            .ToList();
+
+        // Un nouvel objectif est alimenté par défaut par le compte cumulé de la ligne d'épargne.
+        var compteEpargne = compte.Configuration.Charges
+            .FirstOrDefault(c => c.Categorie == Categorie.Epargne && !string.IsNullOrWhiteSpace(c.CompteCumul))?.CompteCumul;
 
         Objectifs = new ListeEditable<ObjectifViewModel>(
             compte.ObjectifsEpargne.Select(o => new ObjectifViewModel(o, Periodes, ObjectifModifie)),
-            () => new ObjectifViewModel(new ObjectifEpargne("Nouvel objectif", 1000m, periodes[Math.Min(11, periodes.Count - 1)].Periode),
+            () => new ObjectifViewModel(new ObjectifEpargne("Nouvel objectif", 1000m, periodes[Math.Min(11, periodes.Count - 1)].Periode)
+                { CompteCumul = compteEpargne },
                 Periodes, ObjectifModifie),
             ObjectifsReorganises);
 
@@ -59,6 +67,9 @@ public sealed partial class AideBudgetViewModel : ObservableObject
     }
 
     public IReadOnlyList<ChoixPeriode> Periodes { get; }
+
+    /// <summary>Choix de « Alimenté par » : « Aucun » (saisie manuelle) puis les comptes cumulés.</summary>
+    public IReadOnlyList<string> ComptesCumul { get; }
 
     // 6. Alertes
     [ObservableProperty] private IReadOnlyList<Alerte> _alertes = Array.Empty<Alerte>();
@@ -399,11 +410,38 @@ public sealed class ObjectifViewModel : ObservableObject
         set { if (SetProperty(Modele.Montant, value, Modele, (m, v) => m.Montant = v)) _modifie(); }
     }
 
+    public const string Aucun = "Aucun";
+
+    /// <summary>Saisi à la main, ou calculé depuis le compte cumulé qui alimente l'objectif.</summary>
     public decimal DejaEpargne
     {
-        get => Modele.DejaEpargne;
-        set { if (SetProperty(Modele.DejaEpargne, value, Modele, (m, v) => m.DejaEpargne = v)) _modifie(); }
+        get => EstAlimente ? _analyse?.DejaEpargne ?? 0m : Modele.DejaEpargne;
+        set
+        {
+            if (!EstAlimente && SetProperty(Modele.DejaEpargne, value, Modele, (m, v) => m.DejaEpargne = v))
+                _modifie();
+            else
+                OnPropertyChanged();
+        }
     }
+
+    /// <summary>Compte cumulé qui alimente l'objectif (ex. « Économie »), ou « Aucun ».</summary>
+    public string CompteCumul
+    {
+        get => Modele.CompteCumul ?? Aucun;
+        set
+        {
+            var nom = value is null or Aucun ? null : value;
+            if (nom == Modele.CompteCumul)
+                return;
+            Modele.CompteCumul = nom;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(EstAlimente));
+            _modifie();
+        }
+    }
+
+    public bool EstAlimente => Modele.CompteCumul is not null;
 
     /// <summary>Mois d'échéance, parmi les mois futurs proposés.</summary>
     public ChoixPeriode? Echeance
@@ -430,6 +468,7 @@ public sealed class ObjectifViewModel : ObservableObject
         Faisabilite.Juste => "Juste",
         Faisabilite.Difficile => "Difficile",
         Faisabilite.EcheancePassee => "Échéance passée",
+        Faisabilite.Couvert => "Couvert",
         _ => "",
     };
 
@@ -437,8 +476,13 @@ public sealed class ObjectifViewModel : ObservableObject
     {
         Faisabilite.Atteint => "Montant déjà réuni.",
         Faisabilite.EcheancePassee => "Choisissez une échéance à venir.",
-        _ => $"{Montants.Formater(_analyse.Mensualite)} € par mois pendant {_analyse.MoisRestants} mois",
+        Faisabilite.Couvert => $"Couvert par les {Montants.Formater(_analyse.Prevu)} € déjà prévus sur {Modele.CompteCumul}.",
+        _ when _analyse.MoisRestants == 0 =>
+            $"Il manque {Montants.Formater(_analyse.ResteAEpargner)} € : augmentez les montants prévus sur {Modele.CompteCumul}.",
+        _ => PrevuTexte + $"{Montants.Formater(_analyse.Mensualite)} € par mois pendant {_analyse.MoisRestants} mois",
     };
+
+    private string PrevuTexte => _analyse is { Prevu: > 0 } a ? $"{Montants.Formater(a.Prevu)} € déjà prévus, puis " : "";
 
     public bool EstDifficile => Faisabilite is Faisabilite.Difficile or Faisabilite.EcheancePassee;
 
@@ -448,6 +492,7 @@ public sealed class ObjectifViewModel : ObservableObject
     {
         _analyse = analyse;
         OnPropertyChanged(nameof(Mensualite));
+        OnPropertyChanged(nameof(DejaEpargne));
         OnPropertyChanged(nameof(Faisabilite));
         OnPropertyChanged(nameof(Statut));
         OnPropertyChanged(nameof(Detail));

@@ -105,7 +105,11 @@ public sealed class ObjectifEpargne
     /// <summary>Mois pour lequel le montant doit être réuni (inclus).</summary>
     public PeriodeMois Echeance { get; set; }
 
+    /// <summary>Saisi à la main ; ignoré quand l'objectif est alimenté par un compte cumulé.</summary>
     public decimal DejaEpargne { get; set; }
+
+    /// <summary>Compte cumulé (ex. « Économie ») qui alimente l'objectif, ou null pour une saisie manuelle.</summary>
+    public string? CompteCumul { get; set; }
 }
 
 /// <param name="MontantInitial">Montant déjà cumulé avant le premier mois.</param>

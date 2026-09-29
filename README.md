@@ -43,7 +43,7 @@ du classeur Excel d'origine.
 - **1.1.2** : fréquence des charges (tous les 2, 3, 6 ou 12 mois) : ajoutées seulement les mois concernés, coût ramené au mois dans l'aide au budget.
 - **1.2.0** : réinitialisation (effacer les mois ou tout effacer pour une nouvelle personne), configuration vierge au premier lancement, données d'exemple anonymes.
 - **1.3.0** : plusieurs comptes (un fichier par compte, configuration copiable), vue d'ensemble de tous les comptes, contrôle du numéro de compte à l'import.
-- **1.3.1** : objectifs d'épargne calculés à partir du mois suivant le mois en cours (et non après le dernier mois créé).
+- **1.3.1** : objectifs d'épargne calculés à partir du mois suivant le mois en cours ; un objectif peut être alimenté par un compte cumulé (ex. Économie) : déjà épargné et montants prévus comptés automatiquement.
 
 ## Télécharger l'application
 
