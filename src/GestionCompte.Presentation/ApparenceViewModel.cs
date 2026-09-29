@@ -19,6 +19,9 @@ public sealed class PreferencesAffichage
 
     public bool ModeSombre { get; set; }
 
+    /// <summary>Onglet « Crédits » affiché dans la barre de gauche.</summary>
+    public bool ModuleCredits { get; set; } = true;
+
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
     {
@@ -42,7 +45,7 @@ public sealed class PreferencesAffichage
     }
 }
 
-/// <summary>Choix de l'ambiance de couleurs et du mode sombre.</summary>
+/// <summary>Choix de l'ambiance de couleurs, du mode sombre et des modules affichés (réglages propres au PC).</summary>
 public sealed class ApparenceViewModel : ObservableObject
 {
     private readonly string? _chemin;
@@ -91,9 +94,26 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
-    /// <summary>Revient à l'apparence par défaut (Océan, clair).</summary>
+    /// <summary>Module « Crédits » affiché (simulations conservées même s'il est masqué).</summary>
+    public bool ModuleCredits
+    {
+        get => _preferences.ModuleCredits;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleCredits, value, _preferences, (p, v) => p.ModuleCredits = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Levé quand un module est affiché ou masqué.</summary>
+    public event EventHandler? ModulesChanges;
+
+    /// <summary>Revient à l'apparence par défaut (Océan, clair, tous les modules affichés).</summary>
     public void Reinitialiser()
     {
+        ModuleCredits = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }
@@ -106,6 +126,12 @@ public sealed class ApparenceViewModel : ObservableObject
 
     private void Appliquer()
     {
+        Enregistrer();
+        Changee?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Enregistrer()
+    {
         if (_chemin is not null)
         {
             try
@@ -117,8 +143,6 @@ public sealed class ApparenceViewModel : ObservableObject
                 // Une préférence d'affichage non enregistrée n'est pas grave : elle reste active jusqu'à la fermeture.
             }
         }
-
-        Changee?.Invoke(this, EventArgs.Empty);
     }
 }
 

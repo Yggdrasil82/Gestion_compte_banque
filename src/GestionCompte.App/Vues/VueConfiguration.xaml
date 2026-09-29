@@ -175,6 +175,20 @@
                         </DataGrid>
                     </DockPanel>
                 </Border>
+
+                <!-- Modules (réglage propre à ce PC) -->
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                            <TextBlock Text="Modules" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <CheckBox Content="Crédits : simulation et comparaison de crédits"
+                                  IsChecked="{Binding DataContext.Apparence.ModuleCredits, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
+                                   Text="Affiche ou masque l'onglet dans la barre de gauche. Réglage propre à ce PC : vos simulations sont conservées même si le module est masqué." />
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <!-- Charges -->

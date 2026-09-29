@@ -82,6 +82,33 @@ public sealed class ApparenceTests : IDisposable
     }
 
     [Fact]
+    public void ModuleCredits_ActifParDefautEtMemorise()
+    {
+        var apparence = new ApparenceViewModel(Chemin);
+        Assert.True(apparence.ModuleCredits);
+
+        apparence.ModuleCredits = false;
+        Assert.False(new ApparenceViewModel(Chemin).ModuleCredits);
+
+        apparence.Reinitialiser();
+        Assert.True(new ApparenceViewModel(Chemin).ModuleCredits);
+    }
+
+    [Fact]
+    public void ModuleCredits_MasqueQuandOnEstDessus_RetourALaConfiguration()
+    {
+        var depot = new DepotSqlite(Path.Combine(_dossier, "compte.db"));
+        depot.Enregistrer(ConfigurationParDefaut.CreerDemo());
+        var vm = new MainViewModel(depot, new SansDialogue(), new DateTime(2026, 11, 15), new ApparenceViewModel(null));
+        vm.OngletSelectionne = MainViewModel.OngletCredits;
+
+        vm.Apparence.ModuleCredits = false;
+
+        Assert.Equal(MainViewModel.OngletConfiguration, vm.OngletSelectionne);
+        Assert.Equal(3, vm.Credits.Liste.Elements.Count);
+    }
+
+    [Fact]
     public void Mois_TuilesDeDepensesEtDEpargne()
     {
         var depot = new DepotSqlite(Path.Combine(_dossier, "compte.db"));

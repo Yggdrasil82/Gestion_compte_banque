@@ -9,7 +9,7 @@ using GestionCompte.Data;
 namespace GestionCompte.Presentation;
 
 /// <summary>
-/// Simulations de crédit de l'aide au budget : plusieurs offres comparées côte à côte, le détail de la simulation
+/// Module « Crédits » : plusieurs offres comparées côte à côte, le détail de la simulation
 /// choisie (tableau d'amortissement, endettement), le calcul inverse et l'ajout des échéances au prévisionnel.
 /// </summary>
 public sealed partial class CreditsViewModel : ObservableObject

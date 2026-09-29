@@ -22,6 +22,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Soldes de tous les comptes (affiché quand il y a plusieurs comptes).</summary>
     public const int OngletEnsemble = 5;
 
+    /// <summary>Module « Crédits » (masquable dans la configuration).</summary>
+    public const int OngletCredits = 6;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -53,6 +56,11 @@ public sealed partial class MainViewModel : ObservableObject
         _dialogues = dialogues;
         _moisDuJour = new PeriodeMois(aujourdHui.Year, aujourdHui.Month);
         Apparence = apparence ?? new ApparenceViewModel(null);
+        Apparence.ModulesChanges += (_, _) =>
+        {
+            if (OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)
+                OngletSelectionne = OngletConfiguration;
+        };
 
         ChargerCompte(depot);
     }
@@ -266,6 +274,7 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private PrevisionnelViewModel _previsionnel = null!;
 
     [ObservableProperty] private AideBudgetViewModel _aideBudget = null!;
+    [ObservableProperty] private CreditsViewModel _credits = null!;
 
     /// <summary>Import de relevé en cours d'aperçu, ou null.</summary>
     [ObservableProperty] private ImportViewModel? _import;
@@ -718,15 +727,16 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var horizon = Previsionnel?.Horizon ?? 12;
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
-        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant(),
-            CreditAjouteOuRetire);
+        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
+        Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire);
     }
 
-    /// <summary>Échéances d'un crédit ajoutées ou retirées depuis l'aide au budget.</summary>
+    /// <summary>Échéances d'un crédit ajoutées ou retirées depuis le module Crédits.</summary>
     private void CreditAjouteOuRetire()
     {
         Enregistrer();
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = Previsionnel.Horizon };
+        AideBudget.Recalculer();
         AfficherMoisCourant();
         Statut = "Prévisionnel mis à jour avec la simulation de crédit.";
     }
@@ -735,6 +745,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Enregistrer();
         AideBudget.Recalculer();
+        Credits.RafraichirTout();
     }
 
     /// <summary>La configuration a été modifiée depuis l'aide au budget : tous les écrans sont recréés.</summary>
@@ -765,6 +776,7 @@ public sealed partial class MainViewModel : ObservableObject
         Enregistrer();
         Previsionnel.Recalculer();
         AideBudget.Recalculer();
+        Credits.RafraichirTout();
     }
 
     private void ConfigurationModifiee()

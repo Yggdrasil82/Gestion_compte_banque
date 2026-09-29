@@ -130,7 +130,7 @@ public sealed class AideBudgetViewModelTests : IDisposable
     public void Credits_ComparaisonInverseEtPrevisionnel()
     {
         var vm = OuvrirDemo();
-        var credits = vm.AideBudget.Credits;
+        var credits = vm.Credits;
         Assert.Equal(3, credits.Liste.Elements.Count);
         var maison20 = credits.Selection!;
         Assert.Equal("Maison 20 ans", maison20.Nom);

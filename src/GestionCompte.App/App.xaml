@@ -507,6 +507,10 @@
             <vues:VueAideBudget />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:CreditsViewModel}">
+            <vues:VueCredits />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ConfigurationViewModel}">
             <vues:VueConfiguration />
         </DataTemplate>

@@ -50,6 +50,7 @@ du classeur Excel d'origine.
 - **1.4.1** : enveloppe d'une opération remplie d'après son libellé (nom de l'enveloppe ou règle de classement) ; retouches de la simulation de crédit.
 - **1.4.2** : correction du plantage au choix d'un mois dans la liste déroulante.
 - **1.4.3** : nouvelle icône (canard grippe-sou sur son coffre-fort).
+- **1.5.0** : la simulation de crédit devient le module « Crédits », un onglet à part qu'on peut masquer dans la configuration (réglage propre au PC).
 
 ## Prochainement
 

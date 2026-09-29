@@ -28,9 +28,8 @@ public sealed partial class AideBudgetViewModel : ObservableObject
     /// <param name="donneesModifiees">Appelé après une modification des objectifs (à enregistrer).</param>
     /// <param name="configurationRemplacee">Appelé après une modification de la configuration depuis cet écran.</param>
     /// <param name="premierMois">Premier mois d'épargne des objectifs : le mois suivant le mois en cours.</param>
-    /// <param name="previsionnelModifie">Appelé après l'ajout ou le retrait des échéances d'un crédit au prévisionnel.</param>
     public AideBudgetViewModel(CompteBancaire compte, IDialogues dialogues, Action donneesModifiees, Action configurationRemplacee,
-        PeriodeMois? premierMois = null, Action? previsionnelModifie = null)
+        PeriodeMois? premierMois = null)
     {
         _compte = compte;
         _dialogues = dialogues;
@@ -64,18 +63,8 @@ public sealed partial class AideBudgetViewModel : ObservableObject
                 .Select(e => new LigneSimulationViewModel(e.Nom, e.BudgetParDefaut, estEnveloppe: true, LigneSimulationModifiee)))
             .ToList();
 
-        Credits = new CreditsViewModel(compte, Periodes, dialogues, donneesModifiees, () =>
-        {
-            (previsionnelModifie ?? donneesModifiees)();
-            RecalculerObjectifs();
-            Alertes = AideBudget.Alertes(_compte, _premierMois);
-        });
-
         Recalculer();
     }
-
-    // 7. Simulation de crédit
-    public CreditsViewModel Credits { get; }
 
     public IReadOnlyList<ChoixPeriode> Periodes { get; }
 
@@ -151,7 +140,6 @@ public sealed partial class AideBudgetViewModel : ObservableObject
         RecalculerObjectifs();
         RecalculerSimulation();
         Alertes = AideBudget.Alertes(_compte, _premierMois);
-        Credits.RafraichirTout();
     }
 
     private void RecalculerObjectifs()

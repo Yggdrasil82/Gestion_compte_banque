@@ -20,10 +20,13 @@ internal static class Captures
     private const double Hauteur = 880;
 
     /// <summary>L'aide au budget est longue : elle est capturée en entier sur une image plus haute.</summary>
-    private const double HauteurAide = 2480;
+    private const double HauteurAide = 1720;
+
+    /// <summary>Le module Crédits : comparaison, tableau d'amortissement et calcul inverse.</summary>
+    private const double HauteurCredits = 960;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
-    private const double HauteurConfiguration = 1580;
+    private const double HauteurConfiguration = 1700;
 
     public static void Lancer(App app, string dossier)
     {
@@ -85,6 +88,8 @@ internal static class Captures
             ("12-import-ocean", Ambiance.Ocean, false, MainViewModel.OngletImport, false),
             ("13-import-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletImport, false),
             ("14-ensemble-ocean", Ambiance.Ocean, false, MainViewModel.OngletEnsemble, false),
+            ("15-credits-ocean", Ambiance.Ocean, false, MainViewModel.OngletCredits, false),
+            ("16-credits-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletCredits, false),
         };
 
         // Aperçu d'import sur un relevé d'exemple (rien n'est validé).
@@ -106,6 +111,7 @@ internal static class Captures
                 var hauteur = etape.Onglet switch
                 {
                     MainViewModel.OngletAide => HauteurAide,
+                    MainViewModel.OngletCredits => HauteurCredits,
                     MainViewModel.OngletConfiguration => HauteurConfiguration,
                     _ => Hauteur,
                 };
