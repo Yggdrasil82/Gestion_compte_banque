@@ -104,6 +104,29 @@ public sealed class AideBudgetViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Objectifs_DeplacerChangeLaPriorite()
+    {
+        var vm = OuvrirDemo();
+        var aide = vm.AideBudget;
+        var compteEpargne = aide.ComptesCumul[1];
+        foreach (var objectif in aide.Objectifs.Elements)
+            objectif.CompteCumul = compteEpargne;
+        var vacances = aide.Objectifs.Elements[0];
+        var urgence = aide.Objectifs.Elements[1];
+        Assert.True(vacances.DejaEpargne > 0);
+        Assert.Equal(0m, urgence.DejaEpargne);
+
+        aide.Objectifs.Selection = urgence;
+        aide.Objectifs.MonterCommand.Execute(null);
+
+        Assert.Same(urgence, aide.Objectifs.Elements[0]);
+        Assert.True(urgence.DejaEpargne > 0);
+        Assert.Equal(0m, vacances.DejaEpargne);
+        Assert.Equal(new[] { urgence.Nom, vacances.Nom },
+            new DepotSqlite(Chemin).Charger()!.ObjectifsEpargne.Select(o => o.Nom));
+    }
+
+    [Fact]
     public void Objectifs_MensualitesEtEnregistrement()
     {
         var vm = OuvrirDemo();
