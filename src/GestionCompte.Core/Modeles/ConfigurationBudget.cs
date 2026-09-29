@@ -115,3 +115,51 @@ public sealed class ObjectifEpargne
 /// <param name="MontantInitial">Montant déjà cumulé avant le premier mois.</param>
 /// <param name="Objectif">Montant total à atteindre (ex. somme à rembourser), ou null s'il n'y en a pas.</param>
 public sealed record CompteCumul(string Nom, decimal MontantInitial = 0m, decimal? Objectif = null);
+
+public enum TypeAssurance
+{
+    /// <summary>Taux annuel appliqué au montant emprunté.</summary>
+    Pourcentage,
+
+    /// <summary>Montant fixe par mois.</summary>
+    ParMois,
+}
+
+public enum TypeCredit
+{
+    Immobilier,
+    AutoMoto,
+    Consommation,
+}
+
+/// <summary>Simulation de crédit enregistrée, pour comparer plusieurs offres (montant, taux, durée, assurance).</summary>
+public sealed class SimulationCredit
+{
+    public SimulationCredit(string nom, decimal montant, decimal tauxAnnuel, int dureeMois, PeriodeMois premiereEcheance,
+        decimal assurance = 0m, TypeAssurance typeAssurance = TypeAssurance.Pourcentage)
+    {
+        Nom = nom;
+        Montant = montant;
+        TauxAnnuel = tauxAnnuel;
+        DureeMois = dureeMois;
+        PremiereEcheance = premiereEcheance;
+        Assurance = assurance;
+        TypeAssurance = typeAssurance;
+    }
+
+    public string Nom { get; set; }
+    public decimal Montant { get; set; }
+
+    /// <summary>Taux nominal annuel en % (ex. 3,5).</summary>
+    public decimal TauxAnnuel { get; set; }
+
+    public int DureeMois { get; set; }
+    public PeriodeMois PremiereEcheance { get; set; }
+
+    /// <summary>Taux annuel en % du montant emprunté, ou montant par mois, selon <see cref="TypeAssurance"/>.</summary>
+    public decimal Assurance { get; set; }
+
+    public TypeAssurance TypeAssurance { get; set; }
+
+    public TypeCredit Type { get; set; } = TypeCredit.Immobilier;
+}

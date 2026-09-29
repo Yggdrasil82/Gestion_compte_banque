@@ -101,6 +101,66 @@ public static class ExportExcel
         classeur.SaveAs(chemin);
     }
 
+    /// <summary>Export d'une simulation de crédit : conditions, coût et tableau d'amortissement.</summary>
+    public static void ExporterCredit(SimulationCredit simulation, string chemin)
+    {
+        ArgumentNullException.ThrowIfNull(simulation);
+        var resultat = Credit.Calculer(simulation);
+
+        using var classeur = new XLWorkbook();
+        var feuille = classeur.Worksheets.Add("Crédit");
+        feuille.Cell(1, 1).Value = Credit.Libelle(simulation);
+        feuille.Cell(1, 1).Style.Font.SetBold().Font.SetFontSize(18).Font.SetFontColor(Bleu);
+        var ligne = 3;
+
+        ligne = Titre(feuille, ligne, "Conditions");
+        void Info(string libelle, XLCellValue valeur, bool euros = false)
+        {
+            feuille.Cell(ligne, 1).Value = libelle;
+            feuille.Cell(ligne, 2).Value = valeur;
+            if (euros)
+                feuille.Cell(ligne, 2).Style.NumberFormat.Format = FormatEuros;
+            ligne++;
+        }
+        Info("Type", simulation.Type switch
+        {
+            TypeCredit.AutoMoto => "Auto / moto",
+            TypeCredit.Consommation => "Consommation",
+            _ => "Immobilier",
+        });
+        Info("Montant emprunté", simulation.Montant, euros: true);
+        Info("Taux annuel (%)", simulation.TauxAnnuel);
+        Info("Durée (mois)", simulation.DureeMois);
+        Info("Première échéance", simulation.PremiereEcheance.Libelle);
+        Info("Mensualité hors assurance", resultat.MensualiteHorsAssurance, euros: true);
+        Info("Assurance par mois", resultat.AssuranceMensuelle, euros: true);
+        Info("Mensualité", resultat.Mensualite, euros: true);
+        Info("Coût des intérêts", resultat.CoutInterets, euros: true);
+        Info("Coût de l'assurance", resultat.CoutAssurance, euros: true);
+        Info("Coût total du crédit", resultat.CoutTotal, euros: true);
+        feuille.Range(ligne - 1, 1, ligne - 1, 2).Style.Font.SetBold().Fill.SetBackgroundColor(BleuClair);
+        ligne++;
+
+        ligne = Titre(feuille, ligne, "Tableau d'amortissement");
+        ligne = Entete(feuille, ligne, "N°", "Mois", "Mensualité", "Capital", "Intérêts", "Assurance", "Capital restant dû");
+        foreach (var echeance in resultat.Tableau)
+        {
+            feuille.Cell(ligne, 1).Value = echeance.Numero;
+            feuille.Cell(ligne, 2).Value = echeance.Periode.Libelle;
+            Montant(feuille.Cell(ligne, 3), echeance.Mensualite);
+            Montant(feuille.Cell(ligne, 4), echeance.Capital);
+            Montant(feuille.Cell(ligne, 5), echeance.Interets);
+            Montant(feuille.Cell(ligne, 6), echeance.Assurance);
+            Montant(feuille.Cell(ligne, 7), echeance.CapitalRestant);
+            ligne++;
+        }
+
+        foreach (var (colonne, largeur) in new[] { (1, 28), (2, 18), (3, 14), (4, 14), (5, 14), (6, 14), (7, 18) })
+            feuille.Column(colonne).Width = largeur;
+
+        classeur.SaveAs(chemin);
+    }
+
     private static int Titre(IXLWorksheet feuille, int ligne, string titre)
     {
         feuille.Cell(ligne, 1).Value = titre;

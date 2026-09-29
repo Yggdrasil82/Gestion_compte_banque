@@ -20,7 +20,7 @@ internal static class Captures
     private const double Hauteur = 880;
 
     /// <summary>L'aide au budget est longue : elle est capturée en entier sur une image plus haute.</summary>
-    private const double HauteurAide = 1720;
+    private const double HauteurAide = 2480;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
     private const double HauteurConfiguration = 1580;

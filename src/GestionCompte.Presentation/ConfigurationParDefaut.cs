@@ -137,6 +137,10 @@ public static class ConfigurationParDefaut
         });
         compte.ObjectifsEpargne.Add(new ObjectifEpargne("Vacances d'été", 1800m, new PeriodeMois(2027, 6), dejaEpargne: 300m));
         compte.ObjectifsEpargne.Add(new ObjectifEpargne("Fonds d'urgence", 3000m, new PeriodeMois(2027, 12)));
+        compte.SimulationsCredit.Add(new SimulationCredit("Maison 20 ans", 180000m, 3.4m, 240, new PeriodeMois(2027, 3), 0.30m));
+        compte.SimulationsCredit.Add(new SimulationCredit("Maison 25 ans", 180000m, 3.55m, 300, new PeriodeMois(2027, 3), 0.30m));
+        compte.SimulationsCredit.Add(new SimulationCredit("Moto", 9000m, 5.9m, 48, new PeriodeMois(2027, 1), 12m, TypeAssurance.ParMois)
+            { Type = TypeCredit.AutoMoto });
 
         var octobre = compte.CreerMoisSuivant();
         octobre.Operations.ForEach(o => o.Pointee = true);

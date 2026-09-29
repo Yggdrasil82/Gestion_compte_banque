@@ -46,6 +46,13 @@ du classeur Excel d'origine.
 - **1.3.1** : objectifs d'épargne calculés à partir du mois suivant le mois en cours ; un objectif peut être alimenté par un compte cumulé (ex. Économie) : déjà épargné et montants prévus comptés automatiquement.
 - **1.3.2** : objectifs d'épargne déplaçables (Monter / Descendre) pour changer leur priorité.
 - **1.3.3** : choix du mois dans une liste déroulante et bouton « Aujourd'hui » pour revenir au mois en cours.
+- **1.4.0** : simulation de crédit (immobilier, auto / moto, consommation) dans l'aide au budget : plusieurs simulations comparées, tableau d'amortissement, taux d'endettement, calcul inverse (combien emprunter), ajout des échéances au prévisionnel, export Excel.
+
+## Prochainement
+
+- Module Bourse / Trade Republic (en attente).
+- Virements liés entre comptes.
+- Taux de crédit de référence (Banque de France : taux moyens et taux d'usure) pour les simulations de crédit.
 
 ## Télécharger l'application
 

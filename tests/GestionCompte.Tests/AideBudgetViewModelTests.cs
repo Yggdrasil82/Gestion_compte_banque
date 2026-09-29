@@ -127,6 +127,42 @@ public sealed class AideBudgetViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Credits_ComparaisonInverseEtPrevisionnel()
+    {
+        var vm = OuvrirDemo();
+        var credits = vm.AideBudget.Credits;
+        Assert.Equal(3, credits.Liste.Elements.Count);
+        var maison20 = credits.Selection!;
+        Assert.Equal("Maison 20 ans", maison20.Nom);
+        Assert.Equal("ans", maison20.Unite);
+        Assert.Equal(20, maison20.Duree);
+        Assert.True(maison20.Mensualite > 1000m);
+        Assert.True(credits.Liste.Elements[1].CoutTotal > maison20.CoutTotal);
+
+        // Passer en mois garde le nombre saisi : 20 ans devient 20 mois.
+        maison20.Unite = "mois";
+        Assert.Equal(20, maison20.Modele.DureeMois);
+        maison20.Unite = "ans";
+        Assert.Equal(240, maison20.Modele.DureeMois);
+
+        credits.MensualiteMaximale = maison20.Mensualite;
+        Assert.InRange(credits.MontantEmpruntable, 179990m, 180000m);
+        credits.CreerDepuisMensualiteCommand.Execute(null);
+        Assert.Equal(4, credits.Liste.Elements.Count);
+
+        credits.Liste.Selection = credits.Liste.Elements[2];
+        credits.AjouterAuPrevisionnelCommand.Execute(null);
+        Assert.True(credits.Selection!.EstAuPrevisionnel);
+
+        var relu = new DepotSqlite(Chemin).Charger()!;
+        Assert.Equal(4, relu.SimulationsCredit.Count);
+        Assert.Contains(relu.OperationsPrevues, o => o.Libelle == "Crédit Moto");
+
+        credits.RetirerDuPrevisionnelCommand.Execute(null);
+        Assert.DoesNotContain(new DepotSqlite(Chemin).Charger()!.OperationsPrevues, o => o.Libelle == "Crédit Moto");
+    }
+
+    [Fact]
     public void Objectifs_MensualitesEtEnregistrement()
     {
         var vm = OuvrirDemo();

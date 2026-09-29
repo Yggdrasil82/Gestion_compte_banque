@@ -475,6 +475,7 @@ public sealed partial class MainViewModel : ObservableObject
         configuration.PremierMois = _moisDuJour;
         var nouveau = new CompteBancaire(configuration);
         nouveau.ObjectifsEpargne.AddRange(_compte.ObjectifsEpargne);
+        nouveau.SimulationsCredit.AddRange(_compte.SimulationsCredit);
         Repartir(nouveau);
         Statut = "Mois effacés : vérifiez le premier mois et le solde de départ, puis créez le premier mois.";
     }
@@ -704,7 +705,17 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var horizon = Previsionnel?.Horizon ?? 12;
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
-        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
+        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant(),
+            CreditAjouteOuRetire);
+    }
+
+    /// <summary>Échéances d'un crédit ajoutées ou retirées depuis l'aide au budget.</summary>
+    private void CreditAjouteOuRetire()
+    {
+        Enregistrer();
+        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = Previsionnel.Horizon };
+        AfficherMoisCourant();
+        Statut = "Prévisionnel mis à jour avec la simulation de crédit.";
     }
 
     private void OperationsPrevuesModifiees()

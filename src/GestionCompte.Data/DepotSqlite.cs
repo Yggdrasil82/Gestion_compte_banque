@@ -19,8 +19,9 @@ public sealed class DepotSqlite
     /// Version 5 : même schéma ; marque la correction des revenus « reçus » des mois pas encore commencés.
     /// Version 6 : fréquence des charges (tous les 2 mois, trimestrielle…).
     /// Version 7 : objectifs d'épargne alimentés par un compte cumulé.
+    /// Version 8 : simulations de crédit.
     /// </remarks>
-    public const int VersionSchema = 7;
+    public const int VersionSchema = 8;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -158,6 +159,19 @@ public sealed class DepotSqlite
                 }));
         }
 
+        // Table absente des fichiers avant le format 8.
+        if (TableExiste(connexion, "simulation_credit"))
+        {
+            Lire(connexion,
+                "SELECT nom, montant, taux, duree_mois, annee, mois, assurance, type_assurance, type_credit FROM simulation_credit ORDER BY ordre",
+                l => compte.SimulationsCredit.Add(new SimulationCredit(
+                    l.GetString(0), LireDecimal(l.GetString(1)), LireDecimal(l.GetString(2)), l.GetInt32(3),
+                    new PeriodeMois(l.GetInt32(4), l.GetInt32(5)), LireDecimal(l.GetString(6)), (TypeAssurance)l.GetInt32(7))
+                {
+                    Type = (TypeCredit)l.GetInt32(8),
+                }));
+        }
+
         return compte;
     }
 
@@ -174,7 +188,7 @@ public sealed class DepotSqlite
 
         using var transaction = connexion.BeginTransaction();
 
-        foreach (var table in new[] { "regle_classement", "objectif_epargne", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
+        foreach (var table in new[] { "regle_classement", "objectif_epargne", "simulation_credit", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
                                       "modele_charge", "modele_enveloppe", "modele_revenu", "parametres" })
             Executer(connexion, $"DELETE FROM {table}");
 
@@ -249,6 +263,15 @@ public sealed class DepotSqlite
                 ("$o", ordre), ("$n", objectif.Nom), ("$m", EcrireDecimal(objectif.Montant)),
                 ("$a", objectif.Echeance.Annee), ("$mo", objectif.Echeance.Mois), ("$d", EcrireDecimal(objectif.DejaEpargne)),
                 ("$c", objectif.CompteCumul));
+
+        foreach (var (simulation, ordre) in compte.SimulationsCredit.Select((s, i) => (s, i)))
+            Executer(connexion,
+                "INSERT INTO simulation_credit (ordre, nom, montant, taux, duree_mois, annee, mois, assurance, type_assurance, type_credit) " +
+                "VALUES ($o, $n, $m, $t, $d, $a, $mo, $as, $ta, $tc)",
+                ("$o", ordre), ("$n", simulation.Nom), ("$m", EcrireDecimal(simulation.Montant)), ("$t", EcrireDecimal(simulation.TauxAnnuel)),
+                ("$d", simulation.DureeMois), ("$a", simulation.PremiereEcheance.Annee), ("$mo", simulation.PremiereEcheance.Mois),
+                ("$as", EcrireDecimal(simulation.Assurance)), ("$ta", (int)simulation.TypeAssurance),
+                ("$tc", (int)simulation.Type));
 
         transaction.Commit();
     }
@@ -340,6 +363,10 @@ public sealed class DepotSqlite
             CREATE TABLE IF NOT EXISTS objectif_epargne (
                 ordre INTEGER NOT NULL, nom TEXT NOT NULL, montant TEXT NOT NULL,
                 annee INTEGER NOT NULL, mois INTEGER NOT NULL, deja_epargne TEXT NOT NULL, compte_cumul TEXT);
+            CREATE TABLE IF NOT EXISTS simulation_credit (
+                ordre INTEGER NOT NULL, nom TEXT NOT NULL, montant TEXT NOT NULL, taux TEXT NOT NULL, duree_mois INTEGER NOT NULL,
+                annee INTEGER NOT NULL, mois INTEGER NOT NULL, assurance TEXT NOT NULL, type_assurance INTEGER NOT NULL,
+                type_credit INTEGER NOT NULL);
             """);
 
         // Mise à jour des fichiers aux formats 1 et 2.
