@@ -301,6 +301,28 @@ public sealed partial class MainViewModel : ObservableObject
 
     private bool PeutAllerAuMoisSuivant() => _indexMois < _compte.Mois.Count - 1;
 
+    /// <summary>Mois créés, proposés dans la liste déroulante du bandeau.</summary>
+    public IReadOnlyList<ChoixPeriode> ListeMois => _compte.Mois.Select(m => new ChoixPeriode(m.Periode)).ToList();
+
+    /// <summary>Mois affiché, choisi dans la liste déroulante.</summary>
+    public ChoixPeriode? MoisSelectionne
+    {
+        get => _indexMois >= 0 ? new ChoixPeriode(_compte.Mois[_indexMois].Periode) : null;
+        set
+        {
+            if (value is not null)
+                AllerAuMois(_compte.Mois.ToList().FindIndex(m => m.Periode == value.Periode));
+        }
+    }
+
+    /// <summary>Revient au mois du jour, s'il est créé.</summary>
+    [RelayCommand(CanExecute = nameof(PeutAllerAuMoisEnCours))]
+    private void AllerAuMoisEnCours() => AllerAuMois(IndexMoisEnCours);
+
+    private bool PeutAllerAuMoisEnCours() => IndexMoisEnCours >= 0 && IndexMoisEnCours != _indexMois;
+
+    private int IndexMoisEnCours => _compte.Mois.ToList().FindIndex(m => m.Periode == _moisDuJour);
+
     [RelayCommand]
     private void CreerMois()
     {
@@ -704,6 +726,9 @@ public sealed partial class MainViewModel : ObservableObject
         MoisCourant = _indexMois >= 0 ? new MoisViewModel(_compte, _compte.Mois[_indexMois], MoisModifie) : null;
 
         OnPropertyChanged(nameof(TexteCreerMois));
+        OnPropertyChanged(nameof(ListeMois));
+        OnPropertyChanged(nameof(MoisSelectionne));
+        AllerAuMoisEnCoursCommand.NotifyCanExecuteChanged();
         MoisPrecedentCommand.NotifyCanExecuteChanged();
         MoisSuivantCommand.NotifyCanExecuteChanged();
         SupprimerDernierMoisCommand.NotifyCanExecuteChanged();

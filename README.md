@@ -45,6 +45,7 @@ du classeur Excel d'origine.
 - **1.3.0** : plusieurs comptes (un fichier par compte, configuration copiable), vue d'ensemble de tous les comptes, contrôle du numéro de compte à l'import.
 - **1.3.1** : objectifs d'épargne calculés à partir du mois suivant le mois en cours ; un objectif peut être alimenté par un compte cumulé (ex. Économie) : déjà épargné et montants prévus comptés automatiquement.
 - **1.3.2** : objectifs d'épargne déplaçables (Monter / Descendre) pour changer leur priorité.
+- **1.3.3** : choix du mois dans une liste déroulante et bouton « Aujourd'hui » pour revenir au mois en cours.
 
 ## Télécharger l'application
 

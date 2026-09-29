@@ -131,11 +131,20 @@
                                         Padding="0" Width="34" Height="34">
                                     <TextBlock Style="{StaticResource Icone}" Text="&#xE76B;" />
                                 </Button>
-                                <TextBlock Text="{Binding TitreMois}" FontSize="26" FontWeight="Bold" MinWidth="240" TextAlignment="Center"
-                                           VerticalAlignment="Center" Foreground="{DynamicResource EnteteTexte}" />
+                                <!-- Titre du mois : liste déroulante de tous les mois créés. -->
+                                <ComboBox Style="{StaticResource ListeEntete}" ItemsSource="{Binding ListeMois}" SelectedItem="{Binding MoisSelectionne}"
+                                          DisplayMemberPath="Libelle" ToolTip="Choisir un mois"
+                                          MinWidth="240" Margin="8,0" VerticalAlignment="Center" MaxDropDownHeight="420" />
                                 <Button Style="{StaticResource BoutonEntete}" Command="{Binding MoisSuivantCommand}" ToolTip="Mois suivant"
                                         Padding="0" Width="34" Height="34">
                                     <TextBlock Style="{StaticResource Icone}" Text="&#xE76C;" />
+                                </Button>
+                                <Button Style="{StaticResource BoutonEntete}" Command="{Binding AllerAuMoisEnCoursCommand}"
+                                        ToolTip="Revenir au mois en cours" Margin="8,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE8D1;" Margin="0,0,8,0" />
+                                        <TextBlock Text="Aujourd'hui" />
+                                    </StackPanel>
                                 </Button>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

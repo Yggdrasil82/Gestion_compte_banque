@@ -306,6 +306,24 @@
             </Setter>
         </Style>
 
+        <!-- Liste déroulante du bandeau (choix du mois) : grand titre, liste de taille normale. -->
+        <Style x:Key="ListeEntete" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Background" Value="{DynamicResource EnteteBouton}" />
+            <Setter Property="Foreground" Value="{DynamicResource EnteteTexte}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Padding" Value="14,2,30,2" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                        <Setter Property="FontSize" Value="14" />
+                        <Setter Property="FontWeight" Value="Normal" />
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Liste déroulante discrète, dans les cellules des tableaux. -->
         <Style x:Key="ListeCellule" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Background" Value="Transparent" />

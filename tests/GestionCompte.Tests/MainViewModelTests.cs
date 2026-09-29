@@ -178,6 +178,27 @@ public sealed class MainViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Navigation_ListeDeroulanteEtMoisEnCours()
+    {
+        new DepotSqlite(Chemin()).Enregistrer(new CompteBancaire(ConfigurationParDefaut.CreerExemple(new PeriodeMois(2026, 10))));
+        var vm = Ouvrir(new DateTime(2026, 11, 15));
+        for (var i = 0; i < 3; i++)
+            vm.CreerMoisCommand.Execute(null);
+
+        Assert.Equal(new[] { "Octobre 2026", "Novembre 2026", "Décembre 2026" }, vm.ListeMois.Select(m => m.Libelle));
+        Assert.Equal("Décembre 2026", vm.MoisSelectionne!.Libelle);
+
+        vm.MoisSelectionne = vm.ListeMois[0];
+        Assert.Equal("Octobre 2026", vm.TitreMois);
+        Assert.True(vm.AllerAuMoisEnCoursCommand.CanExecute(null));
+
+        vm.AllerAuMoisEnCoursCommand.Execute(null);
+        Assert.Equal("Novembre 2026", vm.TitreMois);
+        Assert.Equal("Novembre 2026", vm.MoisSelectionne!.Libelle);
+        Assert.False(vm.AllerAuMoisEnCoursCommand.CanExecute(null));
+    }
+
+    [Fact]
     public void Navigation_EntreLesMois()
     {
         var vm = OuvrirAvecUnMois();
