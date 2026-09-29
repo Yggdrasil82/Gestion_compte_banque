@@ -23,17 +23,21 @@ public sealed partial class AideBudgetViewModel : ObservableObject
     private readonly Action _donneesModifiees;
     private readonly Action _configurationRemplacee;
     private bool _simulationEnCours;
+    private readonly PeriodeMois _premierMois;
 
     /// <param name="donneesModifiees">Appelé après une modification des objectifs (à enregistrer).</param>
     /// <param name="configurationRemplacee">Appelé après une modification de la configuration depuis cet écran.</param>
-    public AideBudgetViewModel(CompteBancaire compte, IDialogues dialogues, Action donneesModifiees, Action configurationRemplacee)
+    /// <param name="premierMois">Premier mois d'épargne des objectifs : le mois suivant le mois en cours.</param>
+    public AideBudgetViewModel(CompteBancaire compte, IDialogues dialogues, Action donneesModifiees, Action configurationRemplacee,
+        PeriodeMois? premierMois = null)
     {
         _compte = compte;
         _dialogues = dialogues;
         _donneesModifiees = donneesModifiees;
         _configurationRemplacee = configurationRemplacee;
 
-        var premier = compte.ProchainMois;
+        _premierMois = premierMois ?? compte.ProchainMois;
+        var premier = _premierMois;
         var periodes = new List<ChoixPeriode>();
         for (var (i, p) = (0, premier); i < MoisProposes; i++, p = p.Suivant())
             periodes.Add(new ChoixPeriode(p));
@@ -124,12 +128,12 @@ public sealed partial class AideBudgetViewModel : ObservableObject
 
         RecalculerObjectifs();
         RecalculerSimulation();
-        Alertes = AideBudget.Alertes(_compte);
+        Alertes = AideBudget.Alertes(_compte, _premierMois);
     }
 
     private void RecalculerObjectifs()
     {
-        var resultat = AideBudget.AnalyserObjectifs(_compte);
+        var resultat = AideBudget.AnalyserObjectifs(_compte, _premierMois);
         CapaciteMensuelle = resultat.CapaciteMensuelle;
         foreach (var (vm, analyse) in Objectifs.Elements.Zip(resultat.Objectifs))
             vm.MettreAJour(analyse);
@@ -227,7 +231,7 @@ public sealed partial class AideBudgetViewModel : ObservableObject
     private void ObjectifModifie()
     {
         RecalculerObjectifs();
-        Alertes = AideBudget.Alertes(_compte);
+        Alertes = AideBudget.Alertes(_compte, _premierMois);
         _donneesModifiees();
     }
 

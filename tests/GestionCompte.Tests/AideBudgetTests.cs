@@ -247,6 +247,21 @@ public class AideBudgetTests
         Assert.Equal(Faisabilite.EcheancePassee, objectifs[2].Faisabilite);
     }
 
+    [Fact]
+    public void Objectifs_CalculesDepuisLeMoisSuivantLeMoisEnCours()
+    {
+        // Mois créés jusqu'en juin 2027 alors qu'on est en septembre 2026.
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
+        while (compte.ProchainMois <= new PeriodeMois(2027, 6))
+            compte.CreerMoisSuivant();
+        compte.ObjectifsEpargne.Add(new ObjectifEpargne("Noël", 1000m, new PeriodeMois(2026, 12)));
+
+        var objectif = Assert.Single(AideBudget.AnalyserObjectifs(compte, new PeriodeMois(2026, 10)).Objectifs);
+
+        Assert.Equal(3, objectif.MoisRestants);
+        Assert.Equal(333.34m, objectif.Mensualite);
+    }
+
     // ---- 6. Alertes ----
 
     [Fact]

@@ -216,7 +216,8 @@ public static class AideBudget
 
     // ---- 5. Objectifs d'épargne ----
 
-    public static ResultatObjectifs AnalyserObjectifs(CompteBancaire compte)
+    /// <param name="premierMois">Premier mois où l'on épargne (le mois suivant le mois en cours) ; par défaut le prochain mois à créer.</param>
+    public static ResultatObjectifs AnalyserObjectifs(CompteBancaire compte, PeriodeMois? premierMois = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         var capacite = CapaciteMensuelle(compte);
@@ -225,7 +226,7 @@ public static class AideBudget
         var objectifs = compte.ObjectifsEpargne.Select(objectif =>
         {
             var reste = Math.Max(0m, objectif.Montant - objectif.DejaEpargne);
-            var moisRestants = compte.ProchainMois.MoisJusqua(objectif.Echeance) + 1;
+            var moisRestants = (premierMois ?? compte.ProchainMois).MoisJusqua(objectif.Echeance) + 1;
 
             if (reste == 0)
                 return new AnalyseObjectif(objectif, Math.Max(0, moisRestants), 0m, 0m, Faisabilite.Atteint);
@@ -253,7 +254,7 @@ public static class AideBudget
 
     // ---- 6. Alertes ----
 
-    public static IReadOnlyList<Alerte> Alertes(CompteBancaire compte)
+    public static IReadOnlyList<Alerte> Alertes(CompteBancaire compte, PeriodeMois? premierMoisObjectifs = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         var alertes = new List<Alerte>();
@@ -295,7 +296,7 @@ public static class AideBudget
                 alertes.AddRange(HaussesDeCharges(compte.Mois[^2], dernier));
         }
 
-        foreach (var objectif in AnalyserObjectifs(compte).Objectifs.Where(o => o.Faisabilite == Faisabilite.Difficile))
+        foreach (var objectif in AnalyserObjectifs(compte, premierMoisObjectifs).Objectifs.Where(o => o.Faisabilite == Faisabilite.Difficile))
         {
             alertes.Add(new Alerte(NiveauAlerte.Attention, $"Objectif « {objectif.Objectif.Nom} » difficile à tenir",
                 $"Il faudrait mettre {Euros(objectif.Mensualite)} de côté par mois ; " +

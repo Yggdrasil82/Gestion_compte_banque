@@ -682,7 +682,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var horizon = Previsionnel?.Horizon ?? 12;
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
-        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee);
+        AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
     }
 
     private void OperationsPrevuesModifiees()
