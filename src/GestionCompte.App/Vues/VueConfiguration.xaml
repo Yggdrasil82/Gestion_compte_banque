@@ -184,7 +184,7 @@
                             <TextBlock Text="Modules" Style="{StaticResource TitreCarte}" />
                         </StackPanel>
                         <CheckBox Content="Crédits : simulation et comparaison de crédits"
-                                  IsChecked="{Binding DataContext.Apparence.ModuleCredits, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                  IsChecked="{Binding Apparence.ModuleCredits}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque l'onglet dans la barre de gauche. Réglage propre à ce PC : vos simulations sont conservées même si le module est masqué." />
                     </StackPanel>

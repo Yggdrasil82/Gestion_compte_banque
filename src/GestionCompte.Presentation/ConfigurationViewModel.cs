@@ -11,6 +11,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     private readonly ConfigurationBudget _configuration;
     private readonly Action _modifiee;
 
+    /// <summary>Réglages propres au PC (modules affichés), montrés dans la carte « Modules ».</summary>
+    public ApparenceViewModel? Apparence { get; init; }
+
     /// <param name="moisDuJour">Premier mois proposé dans la colonne « À partir de » des charges (par défaut, le premier mois).</param>
     public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee,
         PeriodeMois? moisDuJour = null)

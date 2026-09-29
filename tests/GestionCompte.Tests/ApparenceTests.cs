@@ -100,6 +100,7 @@ public sealed class ApparenceTests : IDisposable
         var depot = new DepotSqlite(Path.Combine(_dossier, "compte.db"));
         depot.Enregistrer(ConfigurationParDefaut.CreerDemo());
         var vm = new MainViewModel(depot, new SansDialogue(), new DateTime(2026, 11, 15), new ApparenceViewModel(null));
+        Assert.Same(vm.Apparence, vm.Configuration.Apparence);
         vm.OngletSelectionne = MainViewModel.OngletCredits;
 
         vm.Apparence.ModuleCredits = false;

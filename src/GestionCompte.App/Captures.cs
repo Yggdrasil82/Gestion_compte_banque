@@ -20,7 +20,7 @@ internal static class Captures
     private const double Hauteur = 880;
 
     /// <summary>L'aide au budget est longue : elle est capturée en entier sur une image plus haute.</summary>
-    private const double HauteurAide = 1720;
+    private const double HauteurAide = 1260;
 
     /// <summary>Le module Crédits : comparaison, tableau d'amortissement et calcul inverse.</summary>
     private const double HauteurCredits = 960;

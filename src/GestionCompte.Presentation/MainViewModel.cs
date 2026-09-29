@@ -718,7 +718,8 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Recrée les écrans après un changement de structure (mois créé, supprimé, restauré…).</summary>
     private void Reconstruire()
     {
-        Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour);
+        Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour)
+            { Apparence = Apparence };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }
