@@ -580,7 +580,7 @@
                                     <Run Text="{Binding Selection.Nom, Mode=OneWay}" />
                                     <Run Text="{Binding Selection.DureeTexte, Mode=OneWay, StringFormat='({0})'}" Foreground="{DynamicResource TexteDiscret}" />
                                 </TextBlock>
-                                <DataGrid ItemsSource="{Binding Selection.Tableau}" IsReadOnly="True" Height="330">
+                                <DataGrid ItemsSource="{Binding Selection.Tableau}" IsReadOnly="True" Height="440" VerticalAlignment="Top">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="N°" Binding="{Binding Numero}" Width="46" ElementStyle="{StaticResource CelluleMontant}" />
                                         <DataGridTextColumn Header="Mois" Binding="{Binding Periode.Libelle}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />
@@ -630,7 +630,18 @@
                                         <TextBlock>
                                             <Run Text="{Binding Selection.TauxEndettement, Mode=OneWay}" FontSize="20" FontWeight="Bold" />
                                             <Run Text="  —  reste" Foreground="{DynamicResource TexteDiscret}" />
-                                            <Run Text="{Binding Selection.ResteApres, Mode=OneWay, Converter={StaticResource Euros}}" FontWeight="Bold" />
+                                            <Run Text="{Binding Selection.ResteApres, Mode=OneWay, Converter={StaticResource Euros}}" FontWeight="Bold">
+                                                <Run.Style>
+                                                    <Style TargetType="Run">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Selection.ResteNegatif}" Value="True">
+                                                                <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Run.Style>
+                                            </Run>
                                             <Run Text="/ mois" Foreground="{DynamicResource TexteDiscret}" />
                                         </TextBlock>
                                         <TextBlock Text="{Binding Selection.DetailEndettement}" Style="{StaticResource Discret}" TextWrapping="Wrap" FontSize="11" />
