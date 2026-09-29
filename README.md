@@ -47,6 +47,7 @@ du classeur Excel d'origine.
 - **1.3.2** : objectifs d'épargne déplaçables (Monter / Descendre) pour changer leur priorité.
 - **1.3.3** : choix du mois dans une liste déroulante et bouton « Aujourd'hui » pour revenir au mois en cours.
 - **1.4.0** : simulation de crédit (immobilier, auto / moto, consommation) dans l'aide au budget : plusieurs simulations comparées, tableau d'amortissement, taux d'endettement, calcul inverse (combien emprunter), ajout des échéances au prévisionnel, export Excel.
+- **1.4.1** : enveloppe d'une opération remplie d'après son libellé (nom de l'enveloppe ou règle de classement) ; retouches de la simulation de crédit.
 
 ## Prochainement
 

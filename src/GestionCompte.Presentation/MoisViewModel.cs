@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using GestionCompte.Core;
+using GestionCompte.Core.Calculs;
+using GestionCompte.Core.Import;
 using GestionCompte.Core.Modeles;
 
 namespace GestionCompte.Presentation;
@@ -25,8 +27,8 @@ public sealed partial class MoisViewModel : ObservableObject
         Enveloppes = mois.Enveloppes.Select(e => new EnveloppeMoisViewModel(e, ValeurModifiee)).ToList();
 
         Operations = new ListeEditable<OperationViewModel>(
-            mois.Operations.Select(o => new OperationViewModel(o, ValeurModifiee)),
-            () => new OperationViewModel(new Operation("Nouvelle opération"), ValeurModifiee),
+            mois.Operations.Select(o => new OperationViewModel(o, ValeurModifiee, EnveloppeSuggeree)),
+            () => new OperationViewModel(new Operation("Nouvelle opération"), ValeurModifiee, EnveloppeSuggeree),
             StructureModifiee);
 
         NomsEnveloppes = new[] { "" }.Concat(mois.Enveloppes.Select(e => e.Nom)).ToList();
@@ -36,6 +38,17 @@ public sealed partial class MoisViewModel : ObservableObject
     }
 
     public PeriodeMois Periode => _mois.Periode;
+
+    /// <summary>
+    /// Enveloppe proposée pour un libellé saisi : l'enveloppe du même nom (« Courses »),
+    /// sinon celle d'une règle de classement (« LECLERC » → Courses), sinon aucune.
+    /// </summary>
+    private string? EnveloppeSuggeree(string libelle)
+    {
+        var noms = _mois.Enveloppes.Select(e => e.Nom).ToList();
+        return noms.FirstOrDefault(n => CalculateurMois.MemeNom(n, libelle))
+            ?? ImportReleve.EnveloppePour(_compte.Configuration.Regles, libelle, noms);
+    }
 
     public string Titre => _mois.Periode.Libelle;
 
@@ -193,10 +206,14 @@ public sealed partial class OperationViewModel : ObservableObject
 {
     private readonly Action _modifie;
 
-    public OperationViewModel(Operation modele, Action modifie)
+    private readonly Func<string, string?>? _enveloppeSuggeree;
+
+    /// <param name="enveloppeSuggeree">Enveloppe proposée pour un nouveau libellé (remplie si aucune n'est choisie).</param>
+    public OperationViewModel(Operation modele, Action modifie, Func<string, string?>? enveloppeSuggeree = null)
     {
         Modele = modele;
         _modifie = modifie;
+        _enveloppeSuggeree = enveloppeSuggeree;
     }
 
     public Operation Modele { get; }
@@ -204,7 +221,18 @@ public sealed partial class OperationViewModel : ObservableObject
     public string Libelle
     {
         get => Modele.Libelle;
-        set { if (SetProperty(Modele.Libelle, value ?? "", Modele, (m, v) => m.Libelle = v)) _modifie(); }
+        set
+        {
+            if (!SetProperty(Modele.Libelle, value ?? "", Modele, (m, v) => m.Libelle = v))
+                return;
+            // Une dépense sans enveloppe ni compte cumulé reçoit l'enveloppe correspondant à son libellé.
+            if (Modele.Enveloppe is null && Modele.CompteCumul is null && _enveloppeSuggeree?.Invoke(Modele.Libelle) is { } enveloppe)
+            {
+                Modele.Enveloppe = enveloppe;
+                OnPropertyChanged(nameof(Enveloppe));
+            }
+            _modifie();
+        }
     }
 
     public decimal Debit

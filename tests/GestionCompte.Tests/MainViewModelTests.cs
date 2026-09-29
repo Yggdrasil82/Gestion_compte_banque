@@ -199,6 +199,33 @@ public sealed class MainViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Operation_EnveloppeRemplieDApresLeLibelle()
+    {
+        var vm = OuvrirAvecUnMois();
+        var operations = vm.MoisCourant!.Operations;
+
+        operations.AjouterCommand.Execute(null);
+        var courses = operations.Selection!;
+        courses.Libelle = "courses";
+        Assert.Equal("Courses", courses.Enveloppe);
+
+        operations.AjouterCommand.Execute(null);
+        var leclerc = operations.Selection!;
+        leclerc.Libelle = "CB LECLERC DRIVE";
+        Assert.Equal("Courses", leclerc.Enveloppe);
+
+        // Une enveloppe déjà choisie n'est pas remplacée.
+        leclerc.Enveloppe = "Carburant";
+        leclerc.Libelle = "Leclerc";
+        Assert.Equal("Carburant", leclerc.Enveloppe);
+
+        operations.AjouterCommand.Execute(null);
+        var loyer = operations.Selection!;
+        loyer.Libelle = "Loyer";
+        Assert.Equal("", loyer.Enveloppe);
+    }
+
+    [Fact]
     public void Navigation_EntreLesMois()
     {
         var vm = OuvrirAvecUnMois();
