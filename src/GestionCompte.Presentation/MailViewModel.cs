@@ -410,9 +410,30 @@ public sealed partial class MailViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(ModifierContactCommand), nameof(SupprimerContactCommand), nameof(EcrireAuContactCommand))]
     private Contact? _contactSelectionne;
 
+    /// <summary>Contacts sélectionnés dans le carnet (Ctrl + clic, Maj + clic) ; mis à jour par la vue.</summary>
+    public IReadOnlyList<Contact> ContactsSelectionnes
+    {
+        get => _contactsSelectionnes;
+        set
+        {
+            _contactsSelectionnes = value;
+            SupprimerContactCommand.NotifyCanExecuteChanged();
+            EcrireAuContactCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    private IReadOnlyList<Contact> _contactsSelectionnes = Array.Empty<Contact>();
+
+    /// <summary>Contacts visés par « Écrire » et « Supprimer » : la sélection multiple, sinon le contact sélectionné.</summary>
+    private IReadOnlyList<Contact> ContactsVises =>
+        ContactsSelectionnes.Count > 0 ? ContactsSelectionnes
+        : ContactSelectionne is { } contact ? new[] { contact } : Array.Empty<Contact>();
+
     partial void OnRechercheContactChanged(string value) => MettreAJourContacts();
 
     public int NombreContacts => _carnet.Contacts.Count;
+
+    public bool AvecContacts => NombreContacts > 0;
 
     /// <summary>Contacts écrits récemment d'abord, puis par nom.</summary>
     private void MettreAJourContacts()
@@ -428,22 +449,28 @@ public sealed partial class MailViewModel : ObservableObject
             .ThenBy(c => string.IsNullOrWhiteSpace(c.Nom) ? c.Email : c.Nom, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
         ContactSelectionne = selection is not null && Contacts.Contains(selection) ? selection : null;
+        ContactsSelectionnes = ContactsSelectionnes.Where(Contacts.Contains).ToList();
         OnPropertyChanged(nameof(NombreContacts));
+        OnPropertyChanged(nameof(AvecContacts));
+        ViderCarnetCommand.NotifyCanExecuteChanged();
     }
 
-    /// <summary>Ajoute le contact aux destinataires (double-clic ou bouton « Écrire »).</summary>
-    [RelayCommand(CanExecute = nameof(AContact))]
+    /// <summary>Ajoute le ou les contacts sélectionnés aux destinataires (double-clic ou bouton « Écrire »).</summary>
+    [RelayCommand(CanExecute = nameof(AContactsVises))]
     private void EcrireAuContact()
     {
-        if (ContactSelectionne is not { } contact)
-            return;
-        var (adresses, _) = AdressesMail.Decouper(Destinataires);
-        if (adresses.Contains(contact.Email, StringComparer.OrdinalIgnoreCase))
-            return;
-        Destinataires = string.IsNullOrWhiteSpace(Destinataires) ? contact.Email : $"{Destinataires.TrimEnd().TrimEnd(';')}; {contact.Email}";
+        foreach (var contact in ContactsVises)
+        {
+            var (adresses, _) = AdressesMail.Decouper(Destinataires);
+            if (adresses.Contains(contact.Email, StringComparer.OrdinalIgnoreCase))
+                continue;
+            Destinataires = string.IsNullOrWhiteSpace(Destinataires) ? contact.Email : $"{Destinataires.TrimEnd().TrimEnd(';')}; {contact.Email}";
+        }
     }
 
     private bool AContact() => ContactSelectionne is not null;
+
+    private bool AContactsVises() => ContactsVises.Count > 0;
 
     [RelayCommand]
     private void NouveauContact()
@@ -474,13 +501,31 @@ public sealed partial class MailViewModel : ObservableObject
         ContactSelectionne = contact;
     }
 
-    [RelayCommand(CanExecute = nameof(AContact))]
+    [RelayCommand(CanExecute = nameof(AContactsVises))]
     private void SupprimerContact()
     {
-        if (ContactSelectionne is not { } contact
-            || !_dialogues.Confirmer("Supprimer le contact", $"Retirer {contact.Affichage} du carnet d'adresses ?"))
+        var vises = ContactsVises.ToList();
+        if (vises.Count == 0
+            || !(vises.Count == 1
+                ? _dialogues.Confirmer("Supprimer le contact", $"Retirer {vises[0].Affichage} du carnet d'adresses ?")
+                : _dialogues.Confirmer("Supprimer les contacts", $"Retirer ces {vises.Count} contacts du carnet d'adresses ?")))
             return;
-        _carnet.Contacts.Remove(contact);
+        foreach (var contact in vises)
+            _carnet.Contacts.Remove(contact);
+        ContactsSelectionnes = Array.Empty<Contact>();
+        EnregistrerCarnet();
+        MettreAJourContacts();
+    }
+
+    [RelayCommand(CanExecute = nameof(AvecContacts))]
+    private void ViderCarnet()
+    {
+        if (!_dialogues.Confirmer("Vider le carnet",
+                $"Retirer les {NombreContacts} contacts du carnet d'adresses ? L'historique des mails est conservé ; " +
+                "les contacts Google reviendront si vous les importez de nouveau."))
+            return;
+        _carnet.Contacts.Clear();
+        ContactsSelectionnes = Array.Empty<Contact>();
         EnregistrerCarnet();
         MettreAJourContacts();
     }

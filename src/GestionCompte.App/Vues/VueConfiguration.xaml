@@ -222,7 +222,7 @@
                                     Visibility="{Binding Google.Connecte, Converter={StaticResource Visible}}" />
                         </StackPanel>
                         <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
-                                   Text="Sert aux documents dans Google Drive, à l'envoi par Gmail et à l'import des contacts. Chacun crée son propre identifiant d'application Google (guide à la connexion). Réglage propre à ce PC." />
+                                   Text="Sert aux documents dans Google Drive, à l'envoi par Gmail et à l'import des contacts. Réglage propre à ce PC." />
                     </StackPanel>
                 </Border>
 

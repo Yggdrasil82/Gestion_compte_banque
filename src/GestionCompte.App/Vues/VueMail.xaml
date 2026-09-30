@@ -155,6 +155,9 @@
                 <Border Style="{StaticResource Carte}">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
+                            <Button DockPanel.Dock="Right" Command="{Binding ViderCarnetCommand}" Content="Vider" Padding="8,3" Margin="8,0,0,0"
+                                    ToolTip="Retirer tous les contacts du carnet"
+                                    Visibility="{Binding AvecContacts, Converter={StaticResource Visible}}" />
                             <TextBlock DockPanel.Dock="Right" Style="{StaticResource Discret}" FontSize="12" VerticalAlignment="Center"
                                        Text="{Binding NombreContacts, StringFormat='{}{0} contacts'}" />
                             <StackPanel Orientation="Horizontal">
@@ -164,6 +167,8 @@
                         </DockPanel>
                         <TextBox DockPanel.Dock="Top" Text="{Binding RechercheContact, UpdateSourceTrigger=PropertyChanged}" Height="28"
                                  ToolTip="Rechercher un nom, une adresse ou une note" Margin="0,0,0,6" />
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Discret}" FontSize="11" Margin="0,0,0,4"
+                                   Text="Ctrl + clic ou Maj + clic pour choisir plusieurs contacts." />
                         <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
                             <Button Style="{StaticResource BoutonAction}" Command="{Binding EcrireAuContactCommand}" Content="Écrire"
                                     ToolTip="Ajouter aux destinataires (ou double-clic)" />
@@ -175,7 +180,8 @@
                         </WrapPanel>
                         <ListBox ItemsSource="{Binding Contacts}" SelectedItem="{Binding ContactSelectionne}"
                                  Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="EcrireAuContact">
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="EcrireAuContact"
+                                 SelectionMode="Extended" SelectionChanged="ContactsChoisis">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Margin="2,3">

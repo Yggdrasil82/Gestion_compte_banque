@@ -19,11 +19,15 @@ public sealed partial class CompteGoogle : ObservableObject
     private readonly ISecretsLocaux _secrets;
     private readonly IDialogues _dialogues;
 
+    private readonly IdentifiantsGoogle? _integres;
+
     /// <param name="http">Client HTTP (remplacé dans les tests).</param>
-    public CompteGoogle(ISecretsLocaux secrets, IDialogues dialogues, HttpClient? http = null)
+    /// <param name="integres">Identifiant intégré à l'exe (par défaut celui de la compilation ; remplacé dans les tests).</param>
+    public CompteGoogle(ISecretsLocaux secrets, IDialogues dialogues, HttpClient? http = null, IdentifiantsGoogle? integres = null)
     {
         _secrets = secrets;
         _dialogues = dialogues;
+        _integres = integres ?? GoogleIntegre.Identifiants;
         Http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
         if (Identifiants() is { } identifiants && _secrets.Lire(SecretJeton) is { Length: > 0 } jeton)
             Connexion = new ConnexionGoogle(Http, identifiants, jeton);
@@ -51,7 +55,10 @@ public sealed partial class CompteGoogle : ObservableObject
     public bool Autorise(string portee) =>
         Connecte && (_secrets.Lire(SecretPortees) is not { Length: > 0 } portees || portees.Split(' ').Contains(portee));
 
-    public IdentifiantsGoogle? Identifiants() =>
+    /// <summary>Identifiant intégré à l'exe s'il y en a un, sinon celui saisi sur ce PC.</summary>
+    public IdentifiantsGoogle? Identifiants() => _integres ?? IdentifiantsSaisis();
+
+    private IdentifiantsGoogle? IdentifiantsSaisis() =>
         _secrets.Lire(SecretClientId) is { Length: > 0 } id && _secrets.Lire(SecretClientSecret) is { Length: > 0 } secret
             ? new IdentifiantsGoogle(id, secret)
             : null;
@@ -62,12 +69,17 @@ public sealed partial class CompteGoogle : ObservableObject
     /// </summary>
     public async Task<bool> ConnecterAsync(CancellationToken annulation = default)
     {
-        var saisie = _dialogues.DemanderIdentifiantsGoogle(Identifiants());
-        if (saisie is null)
-            return false;
-        var identifiants = new IdentifiantsGoogle(saisie.ClientId.Trim(), saisie.ClientSecret.Trim());
-        _secrets.Ecrire(SecretClientId, identifiants.ClientId);
-        _secrets.Ecrire(SecretClientSecret, identifiants.ClientSecret);
+        // Identifiant intégré à l'exe : la page de Google s'ouvre directement pour choisir le compte.
+        var identifiants = _integres;
+        if (identifiants is null)
+        {
+            var saisie = _dialogues.DemanderIdentifiantsGoogle(IdentifiantsSaisis());
+            if (saisie is null)
+                return false;
+            identifiants = new IdentifiantsGoogle(saisie.ClientId.Trim(), saisie.ClientSecret.Trim());
+            _secrets.Ecrire(SecretClientId, identifiants.ClientId);
+            _secrets.Ecrire(SecretClientSecret, identifiants.ClientSecret);
+        }
 
         var connexion = new ConnexionGoogle(Http, identifiants, null);
         await connexion.ConnecterAsync(_dialogues.OuvrirLien, annulation, e => Etat = e);

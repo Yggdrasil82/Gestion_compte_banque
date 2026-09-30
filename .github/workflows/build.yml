@@ -25,6 +25,27 @@ jobs:
       - name: Tests
         run: dotnet test tests/GestionCompte.Tests -c Release
 
+      # Identifiant d'application Google (secrets du dépôt GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET), chiffré dans l'exe
+      # comme le fait GoogleIntegre.Chiffrer ; sans ces secrets, l'application le demande à la connexion.
+      - name: Identifiants Google
+        shell: pwsh
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          if (-not $env:GOOGLE_CLIENT_ID -or -not $env:GOOGLE_CLIENT_SECRET) { Write-Host 'Pas de secrets Google : identifiant demandé à la connexion.'; exit 0 }
+          $aes = [System.Security.Cryptography.Aes]::Create()
+          $aes.Key = [System.Security.Cryptography.SHA256]::HashData([System.Text.Encoding]::UTF8.GetBytes('Mon Budget - Google'))
+          $aes.GenerateIV()
+          $texte = [System.Text.Encoding]::UTF8.GetBytes("$($env:GOOGLE_CLIENT_ID.Trim())`n$($env:GOOGLE_CLIENT_SECRET.Trim())")
+          $chiffre = $aes.EncryptCbc($texte, $aes.IV)
+          $donnees = [Convert]::ToBase64String([byte[]]($aes.IV + $chiffre))
+          $fichier = 'src/GestionCompte.Presentation/GoogleIntegre.cs'
+          $source = Get-Content $fichier -Raw
+          if (-not $source.Contains('"__GOOGLE_INTEGRE__"')) { throw 'Emplacement des identifiants Google introuvable.' }
+          [System.IO.File]::WriteAllText((Resolve-Path $fichier), $source.Replace('"__GOOGLE_INTEGRE__"', "`"$donnees`""))
+          Write-Host 'Identifiants Google intégrés (chiffrés).'
+
       - name: Création du .exe
         run: >
           dotnet publish src/GestionCompte.App/GestionCompte.App.csproj -c Release -r win-x64

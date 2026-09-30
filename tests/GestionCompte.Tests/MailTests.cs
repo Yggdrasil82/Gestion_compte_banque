@@ -142,6 +142,33 @@ public sealed class MailTests : IDisposable
     }
 
     [Fact]
+    public async Task Plusieurs_contacts_s_ecrivent_se_suppriment_ensemble_et_le_carnet_se_vide()
+    {
+        var (vm, _) = await Creer(new FauxEnvoi());
+        foreach (var adresse in new[] { "a@exemple.fr", "b@exemple.fr", "c@exemple.fr", "d@exemple.fr" })
+        {
+            _dialogues.Contact = new Contact { Email = adresse };
+            vm.NouveauContactCommand.Execute(null);
+        }
+        Assert.Equal(4, vm.NombreContacts);
+
+        vm.ContactsSelectionnes = vm.Contacts.Where(c => c.Email is "a@exemple.fr" or "b@exemple.fr").ToList();
+        vm.EcrireAuContactCommand.Execute(null);
+        Assert.Equal("a@exemple.fr; b@exemple.fr", vm.Destinataires);
+
+        vm.SupprimerContactCommand.Execute(null);
+        Assert.Equal(new[] { "c@exemple.fr", "d@exemple.fr" }, vm.Contacts.Select(c => c.Email).Order());
+        Assert.Empty(vm.ContactsSelectionnes);
+
+        Assert.True(vm.ViderCarnetCommand.CanExecute(null));
+        vm.ViderCarnetCommand.Execute(null);
+        Assert.Equal(0, vm.NombreContacts);
+        Assert.False(vm.ViderCarnetCommand.CanExecute(null));
+        var (relu, _) = await Creer(new FauxEnvoi());
+        Assert.Empty(relu.Contacts);
+    }
+
+    [Fact]
     public async Task Un_echec_d_envoi_garde_le_mail_et_le_note_dans_l_historique()
     {
         var envoi = new FauxEnvoi { Erreur = "Identifiant ou mot de passe refusé par le serveur d'envoi." };
@@ -287,6 +314,9 @@ public sealed class MailTests : IDisposable
         public IReadOnlyList<int>? Choix { get; set; }
         public string? MotDePasse { get; set; }
         public SaisieSmtp? Smtp { get; set; }
+        public Contact? Contact { get; set; }
+
+        public Contact? DemanderContact(Contact? actuel) => Contact;
 
         public bool Confirmer(string titre, string message) => true;
         public void Erreur(string message) => throw new InvalidOperationException(message);
