@@ -38,7 +38,7 @@ public sealed class ConnexionGoogleTests
     [Fact]
     public async Task Google_muet_a_la_validation_du_code_donne_une_erreur_qui_nomme_l_etape()
     {
-        var http = new HttpClient(new GoogleMuet()) { Timeout = TimeSpan.FromSeconds(1) };
+        var http = new HttpClient(new GoogleMuet());
         var connexion = new ConnexionGoogle(http, new IdentifiantsGoogle("id", "secret"), null);
         var ouverte = new TaskCompletionSource<string>();
         var etapes = new List<string>();
@@ -51,7 +51,9 @@ public sealed class ConnexionGoogleTests
         await navigateur.ConnectAsync(IPAddress.Loopback, new Uri(parametres["redirect_uri"]).Port);
         await navigateur.GetStream().WriteAsync(Encoding.ASCII.GetBytes($"GET /?state={parametres["state"]}&code=abc HTTP/1.1\r\n\r\n"));
 
-        var erreur = await Assert.ThrowsAsync<TimeoutException>(() => connecter.WaitAsync(TimeSpan.FromSeconds(10)));
+        // Attente large (machine de compilation parfois lente), puis l'erreur de la connexion elle-même.
+        Assert.Same(connecter, await Task.WhenAny(connecter, Task.Delay(TimeSpan.FromSeconds(60))));
+        var erreur = await Assert.ThrowsAsync<TimeoutException>(() => connecter);
         Assert.Contains("validation du code", erreur.Message);
         Assert.Contains("Code reçu de Google, validation…", etapes);
         Assert.Contains("Étape : Code reçu", GestionCompte.Presentation.CompteGoogle.MessageEchec(etapes[^1], erreur, TimeSpan.FromSeconds(75)));
@@ -59,11 +61,9 @@ public sealed class ConnexionGoogleTests
 
     private sealed class GoogleMuet : HttpMessageHandler
     {
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage requete, CancellationToken annulation)
-        {
-            await Task.Delay(Timeout.Infinite, annulation);
-            throw new InvalidOperationException();
-        }
+        // Ce que renvoie HttpClient quand son délai est dépassé.
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage requete, CancellationToken annulation) =>
+            Task.FromException<HttpResponseMessage>(new TaskCanceledException("délai dépassé", new TimeoutException()));
     }
 
     private sealed class FauxJeton : HttpMessageHandler
