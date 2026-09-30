@@ -26,7 +26,7 @@ internal static class Captures
     private const double HauteurCredits = 960;
 
     /// <summary>Le bilan : chiffres clés, graphique, pistes et tous les postes.</summary>
-    private const double HauteurBilan = 1320;
+    private const double HauteurBilan = 1420;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
     private const double HauteurConfiguration = 1700;

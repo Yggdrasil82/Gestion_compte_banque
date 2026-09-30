@@ -48,7 +48,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <ComboBox Style="{StaticResource ListeEntete}" ItemsSource="{Binding Choix}" SelectedItem="{Binding Selection}"
-                              DisplayMemberPath="Libelle" ToolTip="Choisir l'année ou les 12 derniers mois" MinWidth="220" VerticalAlignment="Center" />
+                              DisplayMemberPath="Libelle" ToolTip="Choisir l'année ou les 12 derniers mois" MinWidth="290" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Etendue}" Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12"
                                VerticalAlignment="Center" Margin="14,0,0,0" />
                 </StackPanel>
@@ -208,14 +208,14 @@
                                        Text="Du plus gros au plus petit. « Par mois » : total divisé par le nombre de mois ; l'évolution compare aux mêmes mois un an plus tôt. Les enveloppes comptent pour leur budget, ou leur dépense réelle si elle l'a dépassé." />
                             <DataGrid ItemsSource="{Binding Postes}" IsReadOnly="True" VerticalScrollBarVisibility="Disabled">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Poste" Binding="{Binding Nom, Mode=OneWay}" Width="*" MinWidth="140">
+                                    <DataGridTextColumn Header="Poste" Binding="{Binding Nom, Mode=OneWay}" Width="*" MinWidth="130">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleTexte}">
                                                 <Setter Property="FontWeight" Value="SemiBold" />
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Type" Binding="{Binding Type, Mode=OneWay}" Width="105">
+                                    <DataGridTextColumn Header="Type" Binding="{Binding Type, Mode=OneWay}" Width="120">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleTexte}">
                                                 <Setter Property="Foreground" Value="{DynamicResource TexteDiscret}" />

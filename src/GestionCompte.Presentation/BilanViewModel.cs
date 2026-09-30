@@ -177,7 +177,7 @@ public sealed class PosteBilanViewModel
     {
         Poste = poste;
         if (poste.Evolution is { } evolution)
-            Evolution = $"{(evolution >= 0 ? "+" : "")}{BilanViewModel.Pourcentage(evolution)}";
+            Evolution = Math.Abs(evolution) < 0.005m ? "stable" : $"{(evolution >= 0 ? "+" : "")}{BilanViewModel.Pourcentage(evolution)}";
         else if (avecComparaison && poste.MoyennePrecedente is null)
             Evolution = "nouveau";
         else
