@@ -14,7 +14,8 @@ public sealed class ConnexionGoogleTests
         var connexion = new ConnexionGoogle(http, new IdentifiantsGoogle("id", "secret"), null);
         var ouverte = new TaskCompletionSource<string>();
 
-        var connecter = connexion.ConnecterAsync(ouverte.SetResult);
+        // Hors du contexte de xUnit (limité en parallèle) : la suite de la connexion n'attend pas les autres tests.
+        var connecter = Task.Run(() => connexion.ConnecterAsync(ouverte.SetResult));
         var adresse = await ouverte.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var parametres = adresse[(adresse.IndexOf('?') + 1)..].Split('&')
             .Select(p => p.Split('=', 2)).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
@@ -43,7 +44,7 @@ public sealed class ConnexionGoogleTests
         var ouverte = new TaskCompletionSource<string>();
         var etapes = new List<string>();
 
-        var connecter = connexion.ConnecterAsync(ouverte.SetResult, default, etapes.Add);
+        var connecter = Task.Run(() => connexion.ConnecterAsync(ouverte.SetResult, default, etapes.Add));
         var adresse = await ouverte.Task.WaitAsync(TimeSpan.FromSeconds(10));
         var parametres = adresse[(adresse.IndexOf('?') + 1)..].Split('&')
             .Select(p => p.Split('=', 2)).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
