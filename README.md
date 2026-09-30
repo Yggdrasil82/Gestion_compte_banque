@@ -68,6 +68,7 @@ du classeur Excel d'origine.
 - **2.2.3** : connexion Google : le code renvoyé par Google est enregistré dès son arrivée, même si le navigateur coupe la page (la connexion échouait encore après 5 minutes).
 - **2.2.4** : connexion Google : la carte « Compte Google » affiche chaque étape de la connexion, et un échec indique l'étape, la vraie raison et le temps écoulé.
 - **2.3.0** : l'identifiant d'application Google peut être intégré à l'exe par la compilation GitHub (secrets du dépôt GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET, chiffrés dans l'exe, jamais dans le code) : « Connecter » ouvre alors directement Google. Mail : sélection de plusieurs contacts (Ctrl/Maj + clic) pour écrire ou supprimer, et bouton « Vider » du carnet.
+- **2.4.0** : Groq cherche sur internet (outil « browser_search » des modèles GPT-OSS) pour les offres d'Achats et les taux du moment ; si la clé refuse la recherche, les taux sont donnés de mémoire (indicatifs) et Achats explique le refus.
 
 ## Prochainement
 

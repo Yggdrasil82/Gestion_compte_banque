@@ -282,7 +282,7 @@ internal static class Captures
         gemini.Liens.Add(new Core.Calculs.SourceTaux("Courtier exemple", "https://www.courtier-exemple.fr/barometre"));
         gemini.Liens.Add(new Core.Calculs.SourceTaux("Taux d'usure (exemple)", "https://www.exemple.fr/taux-usure"));
         yield return gemini;
-        // Groq ne cherche pas sur internet : pas de sources, taux indicatifs.
+        // Exemple de réponse de mémoire (recherche refusée par la clé) : pas de sources, taux indicatifs.
         yield return new Core.Calculs.TauxMarche { Source = "Groq", Bas = 3.15m, Moyen = 3.50m, Haut = 4.00m, Usure = 5.87m, Assurance = 0.30m, Periode = "novembre 2026", SansRecherche = true };
     }
 

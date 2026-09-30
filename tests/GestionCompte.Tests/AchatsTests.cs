@@ -85,23 +85,45 @@ public sealed class AchatsTests : IDisposable
     }
 
     [Fact]
-    public async Task Groq_repond_sans_recherche_et_ne_cherche_pas_d_offres()
+    public async Task Groq_cherche_sur_internet_avec_son_outil_de_recherche()
     {
         var faux = new FauxHttp(_ => Json("""{"choices":[{"message":{"role":"assistant","content":"{\"moyen\":3.4}"}}]}"""));
         var groq = new Groq(new HttpClient(faux), "cle-q");
 
-        Assert.False(groq.RechercheInternet);
+        Assert.True(((IAssistantIA)groq).RechercheInternet);
         Assert.Equal("{\"moyen\":3.4}", await groq.DemanderAsync("Taux ?", avecRecherche: true));
-        Assert.True(groq.SansRecherche);
+        Assert.False(groq.SansRecherche);
         var q = Assert.Single(faux.Requetes);
         Assert.Equal("Bearer cle-q", q.Autorisation);
         Assert.Equal("https://api.groq.com/openai/v1/chat/completions", q.Adresse);
-        Assert.Equal("openai/gpt-oss-120b", JsonNode.Parse(q.Corps)!["model"]!.GetValue<string>());
-        Assert.Contains("Ignore la consigne de recherche", JsonNode.Parse(q.Corps)!["messages"]![0]!["content"]!.GetValue<string>());
-        Assert.Equal("json_object", JsonNode.Parse(q.Corps)!["response_format"]!["type"]!.GetValue<string>());
+        var corps = JsonNode.Parse(q.Corps)!;
+        Assert.Equal("openai/gpt-oss-120b", corps["model"]!.GetValue<string>());
+        Assert.Equal("browser_search", corps["tools"]![0]!["type"]!.GetValue<string>());
+        Assert.Equal("required", corps["tool_choice"]!.GetValue<string>());
+        Assert.Null(corps["response_format"]);
+        Assert.Equal("Taux ?", corps["messages"]![0]!["content"]!.GetValue<string>());
+    }
 
-        await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(groq, "casque"));
-        Assert.Single(faux.Requetes);
+    [Fact]
+    public async Task Groq_refait_la_demande_de_memoire_si_la_cle_refuse_la_recherche()
+    {
+        var faux = new FauxHttp(requete => requete.Content!.ReadAsStringAsync().Result.Contains("browser_search")
+            ? new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("""{"error":{"message":"browser_search is not available on your plan"}}""") }
+            : Json("""{"choices":[{"message":{"role":"assistant","content":"{\"moyen\":3.4}"}}]}"""));
+        var groq = new Groq(new HttpClient(faux), "cle-q");
+
+        Assert.Equal("{\"moyen\":3.4}", await groq.DemanderAsync("Taux ?", avecRecherche: true));
+        Assert.True(groq.SansRecherche);
+        Assert.Equal(2, faux.Requetes.Count);
+        var repli = JsonNode.Parse(faux.Requetes[1].Corps)!;
+        Assert.Null(repli["tools"]);
+        Assert.Equal("json_object", repli["response_format"]!["type"]!.GetValue<string>());
+        Assert.Contains("Ignore la consigne de recherche", repli["messages"]![0]!["content"]!.GetValue<string>());
+
+        // Pour les offres (pas de repli), le refus est expliqué.
+        var erreur = await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(groq, "casque"));
+        Assert.StartsWith("Groq : la recherche internet a été refusée.", erreur.Message);
+        Assert.Contains("not available on your plan", erreur.Message);
     }
 
     [Fact]

@@ -89,16 +89,14 @@ public sealed partial class AchatsViewModel : ObservableObject
     private async Task Rechercher()
     {
         var produit = Recherche.Trim();
-        // Seules les IA qui savent chercher sur internet proposent des offres (Groq ne le fait pas).
+        // Seules les IA qui savent chercher sur internet proposent des offres.
         var reglees = _ia.Assistants();
         var assistants = reglees.Where(a => a.RechercheInternet).ToList();
         if (assistants.Count == 0)
         {
             Erreur = !_ia.Actives
                 ? "Les IA sont coupées (Configuration › Intelligence artificielle) : utilisez la liste des sites."
-                : reglees.Count > 0
-                    ? "Groq ne cherche pas sur internet : saisissez une clé Gemini (Configuration › Intelligence artificielle), ou utilisez la liste des sites."
-                    : "Aucune IA réglée : saisissez une clé Gemini (Configuration › Intelligence artificielle), ou utilisez la liste des sites.";
+                : "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle), ou utilisez la liste des sites.";
             return;
         }
 

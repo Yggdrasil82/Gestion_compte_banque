@@ -168,8 +168,9 @@ public sealed class Gemini : IAssistantIA
 }
 
 /// <summary>
-/// Groq (GroqCloud, API compatible OpenAI) : modèles ouverts très rapides, gratuits sans carte bancaire,
-/// mais sans recherche internet : les demandes prévues avec recherche sont faites de mémoire (réponses indicatives).
+/// Groq (GroqCloud, API compatible OpenAI) : modèles ouverts très rapides, gratuits sans carte bancaire.
+/// La recherche internet passe par l'outil « browser_search » des modèles GPT-OSS ; si la clé la refuse,
+/// les demandes qui le permettent sont refaites de mémoire (réponses indicatives).
 /// </summary>
 public sealed class Groq : IAssistantIA
 {
@@ -194,7 +195,6 @@ public sealed class Groq : IAssistantIA
 
     public SourceOffre Source => SourceOffre.Groq;
     public string Nom => "Groq";
-    public bool RechercheInternet => false;
     public bool SansRecherche { get; private set; }
 
     public Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default) =>
@@ -202,11 +202,13 @@ public sealed class Groq : IAssistantIA
 
     public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
     {
-        if (avecRecherche && !repliSansRecherche)
-            throw new HttpRequestException("Groq ne fait pas de recherche internet.");
-        SansRecherche = avecRecherche;
-        var (statut, texte) = await ErreursIA.EnvoyerAsync(_http,
-            () => Requete(avecRecherche ? demande + ErreursIA.NoteSansRecherche : demande, json: avecRecherche), annulation, _patienter, Nom);
+        var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
+            (recherche, essais) => ErreursIA.EnvoyerAsync(_http,
+                () => Requete(recherche || !avecRecherche ? demande : demande + ErreursIA.NoteSansRecherche, recherche, json: avecRecherche && !recherche),
+                annulation, _patienter, Nom, essais),
+            sans => SansRecherche = sans);
+        if (statut != HttpStatusCode.OK && avecRecherche && !repliSansRecherche && ErreursIA.RechercheRefusee(statut, texte))
+            throw new HttpRequestException($"Groq : la recherche internet a été refusée. {ErreursIA.Message(Nom, statut, texte)}");
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
@@ -218,7 +220,7 @@ public sealed class Groq : IAssistantIA
             : "";
     }
 
-    private HttpRequestMessage Requete(string demande, bool json)
+    private HttpRequestMessage Requete(string demande, bool recherche, bool json)
     {
         var corps = new JsonObject
         {
@@ -226,7 +228,13 @@ public sealed class Groq : IAssistantIA
             ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
             ["max_completion_tokens"] = LongueurMaximale,
         };
-        // Les demandes prévues avec recherche (taux) attendent un objet JSON : Groq est obligé d'en rendre un.
+        // Recherche internet de Groq (incompatible avec le format JSON imposé : la réponse est lue dans le texte).
+        if (recherche)
+        {
+            corps["tools"] = new JsonArray(new JsonObject { ["type"] = "browser_search" });
+            corps["tool_choice"] = "required";
+        }
+        // Les demandes prévues avec recherche (taux) refaites de mémoire attendent un objet JSON : Groq est obligé d'en rendre un.
         if (json)
             corps["response_format"] = new JsonObject { ["type"] = "json_object" };
         var requete = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions")
@@ -313,6 +321,8 @@ public static class ErreursIA
         {
             // Même un quota du jour peut ne concerner que la recherche : la demande sans recherche le dira sinon.
             HttpStatusCode.TooManyRequests => true,
+            // Groq : résultats de recherche trop longs pour la limite gratuite de tokens par minute.
+            HttpStatusCode.RequestEntityTooLarge => true,
             HttpStatusCode.BadRequest or HttpStatusCode.Forbidden => !texte.Contains("API key", StringComparison.OrdinalIgnoreCase),
             _ => false,
         };

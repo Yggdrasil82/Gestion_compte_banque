@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Mon Budget 2.3.0 – Manuel d'utilisation</title>
+<title>Mon Budget 2.4.0 – Manuel d'utilisation</title>
 <style>
 @page { size: A4; margin: 16mm 15mm 18mm; }
 :root { --encre:#17303c; --doux:#51646e; --accent:#12799a; --fond:#eef5f8; --ligne:#cfdde4; --alerte:#b5541c; }
@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.3.0</p>
+  <p class="sous">Manuel d'utilisation · version 2.4.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -206,7 +206,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li><b>Suivre le prix</b> : le produit passe dans « Prix suivis », avec un prix cible et l'historique. « Relire les prix » les met à jour.</li>
     <li><b>Prévoir l'achat</b> : ajoute la dépense au prévisionnel.</li>
   </ul>
-  <div class="encart attention"><p>La recherche de prix a besoin de la recherche internet, que les clés Gemini gratuites n'incluent pas. Sans elle, l'application le dit et propose « Ouvrir sur les sites ».</p></div>
+  <div class="encart attention"><p>La recherche de prix a besoin de la recherche internet. Les clés Gemini gratuites ne l'incluent pas ; Groq la propose (depuis la version 2.4.0). Si une clé la refuse, l'application le dit, et « Ouvrir sur les sites » reste possible.</p></div>
 </section>
 
 <section class="page">
@@ -241,7 +241,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li><b>Combien puis-je emprunter ?</b> : le montant possible pour une mensualité donnée, avec « Créer la simulation ».</li>
     <li><b>Taux du moment</b> : les IA cherchent les taux bas, moyens et hauts, le taux d'usure et l'assurance. Seule la catégorie de crédit est envoyée. « Reprendre le taux moyen » l'applique à la simulation. Une alerte rouge prévient si le taux dépasse l'usure.</li>
   </ul>
-  <div class="encart"><p>Avec les clés gratuites, les IA n'ont pas accès à internet : les taux sont alors marqués « indicatifs » et à vérifier auprès d'une banque ou d'un courtier.</p></div>
+  <div class="encart"><p>Quand une IA n'a pas accès à internet (clé Gemini gratuite, ou recherche refusée), elle répond de mémoire : ses taux sont marqués « indicatifs » et à vérifier auprès d'une banque ou d'un courtier.</p></div>
 </section>
 
 <section class="page">
@@ -288,7 +288,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <table>
     <tr><th style="width:18%">IA</th><th style="width:36%">Où créer la clé</th><th>À savoir</th></tr>
     <tr><td><b>Gemini</b> (Google)</td><td>Google AI Studio : aistudio.google.com, « Get API key »</td><td>Gratuit sans carte bancaire. Modèle Flash-Lite par défaut (environ 500 demandes par jour). Pas de recherche internet avec une clé gratuite.</td></tr>
-    <tr><td><b>Groq</b></td><td>console.groq.com/keys, « Create API Key »</td><td>Gratuit sans carte bancaire (environ 1 000 demandes par jour). Pas de recherche internet.</td></tr>
+    <tr><td><b>Groq</b></td><td>console.groq.com/keys, « Create API Key »</td><td>Gratuit sans carte bancaire (environ 1 000 demandes par jour). Recherche internet possible (Achats, Taux du moment) ; si la clé la refuse, l'application le dit.</td></tr>
   </table>
   <p>Collez la clé dans Configuration › Intelligence artificielle › « Saisir la clé… ». Elle est chiffrée par Windows et reste sur votre PC. Ne la communiquez à personne.</p>
   <div class="encart"><p><b>Tout reste gratuit</b> tant qu'aucune carte bancaire ni compte de facturation n'est ajouté chez Google ou Groq. Si une limite du jour est atteinte, l'application le dit et indique quand réessayer.</p></div>
