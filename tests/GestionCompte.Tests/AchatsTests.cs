@@ -85,7 +85,7 @@ public sealed class AchatsTests : IDisposable
         var g = faux.Requetes[0];
         Assert.Equal("cle-g", g.Cle);
         Assert.Contains("google_search", g.Corps);
-        Assert.Contains("gemini-flash-latest:generateContent", g.Adresse);
+        Assert.Contains("gemini-flash-lite-latest:generateContent", g.Adresse);
         var m = faux.Requetes[1];
         Assert.Equal("Bearer cle-m", m.Autorisation);
         Assert.Equal("web_search", JsonNode.Parse(m.Corps)!["tools"]![0]!["type"]!.GetValue<string>());
@@ -203,7 +203,7 @@ public sealed class AchatsTests : IDisposable
         secrets.Ecrire(ServicesIA.SecretGemini, "cle");
         var ia = new ServicesIA(secrets, _dialogues);
         Assert.True(ia.Disponibles);
-        Assert.Equal("Gemini : clé enregistrée (gemini-flash-latest)", ia.EtatGemini);
+        Assert.Equal("Gemini : clé enregistrée (gemini-flash-lite-latest)", ia.EtatGemini);
 
         ia.Actives = false;
 
