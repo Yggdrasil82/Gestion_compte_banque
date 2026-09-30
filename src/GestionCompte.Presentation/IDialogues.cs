@@ -56,6 +56,16 @@ public interface IDialogues
     /// <summary>Réglages du serveur d'envoi (SMTP) ; mot de passe null = garder celui déjà enregistré. Null si annulé.</summary>
     SaisieSmtp? DemanderReglagesSmtp(Data.Mail.ReglagesSmtp? actuels) => null;
 
+    /// <summary>Clé API d'une IA (avec le lien pour la créer) ; null si annulé.</summary>
+    /// <param name="cleExistante">Une clé est déjà enregistrée : la laisser vide la garde.</param>
+    SaisieIA? DemanderCleIA(string nom, string adresseCle, bool cleExistante, string modele, string modeleParDefaut) => null;
+
+    /// <summary>Ajout ou modification d'un site de la liste de recherche ; null si annulé.</summary>
+    Core.Achats.SiteRecherche? DemanderSite(Core.Achats.SiteRecherche? actuel) => null;
+
+    /// <summary>Mois, libellé et montant d'un achat à ajouter au prévisionnel ; null si annulé.</summary>
+    AchatPrevu? DemanderAchatPrevu(string libelle, decimal montant, IReadOnlyList<ChoixPeriode> periodes) => null;
+
     /// <summary>Demande quel relevé bancaire (.ofx) importer ; null si l'utilisateur annule.</summary>
     string? ChoisirReleve();
 
@@ -73,6 +83,8 @@ public interface IDialogues
     /// <summary>Demande un texte (ex. nouveau nom d'un compte) ; null si l'utilisateur annule.</summary>
     string? DemanderNom(string titre, string message, string valeur) => null;
 }
+
+public sealed record AchatPrevu(Core.Modeles.PeriodeMois Periode, string Libelle, decimal Montant);
 
 /// <param name="MotDePasse">null : garder le mot de passe déjà enregistré.</param>
 public sealed record SaisieSmtp(Data.Mail.ReglagesSmtp Reglages, string? MotDePasse);

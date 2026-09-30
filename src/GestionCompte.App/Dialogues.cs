@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using GestionCompte.Core.Achats;
 using GestionCompte.Core.Mail;
 using GestionCompte.Data.Documents;
 using GestionCompte.Data.Mail;
@@ -180,6 +181,24 @@ public sealed class Dialogues : IDialogues
     {
         var fenetre = new FenetreSmtp(actuels) { Owner = Fenetre };
         return fenetre.ShowDialog() == true ? fenetre.Saisie : null;
+    }
+
+    public SaisieIA? DemanderCleIA(string nom, string adresseCle, bool cleExistante, string modele, string modeleParDefaut)
+    {
+        var fenetre = new FenetreCleIA(nom, adresseCle, cleExistante, modele, modeleParDefaut) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Saisie : null;
+    }
+
+    public SiteRecherche? DemanderSite(SiteRecherche? actuel)
+    {
+        var fenetre = new FenetreSite(actuel) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Site : null;
+    }
+
+    public AchatPrevu? DemanderAchatPrevu(string libelle, decimal montant, IReadOnlyList<ChoixPeriode> periodes)
+    {
+        var fenetre = new FenetreAchatPrevu(libelle, montant, periodes) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Achat : null;
     }
 
     public void OuvrirFichier(string chemin) => Lancer(chemin, "Aucun programme n'est installé pour ouvrir ce type de fichier.");

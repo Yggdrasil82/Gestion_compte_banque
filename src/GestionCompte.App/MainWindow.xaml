@@ -74,6 +74,11 @@
                                  ToolTip="Envoyer un mail avec des documents ou le bilan en pièce jointe"
                                  Visibility="{Binding Apparence.ModuleMail, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=9}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="{Binding Achats.TitreNavigation}"
+                                 Tag="&#xE7BF;" Background="{DynamicResource Accent3}"
+                                 ToolTip="Aide à l'achat : meilleur prix (Gemini et Mistral), sites, prix suivis"
+                                 Visibility="{Binding Apparence.ModuleAchats, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=10}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Crédits"
                                  Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
                                  Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
@@ -235,6 +240,10 @@
                 <!-- Module Mail (commun à tous les comptes) -->
                 <ContentControl Content="{Binding Mail}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=9}" />
+
+                <!-- Module Achats (commun à tous les comptes) -->
+                <ContentControl Content="{Binding Achats}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=10}" />
 
                 <!-- Module Crédits -->
                 <ContentControl Content="{Binding Credits}"

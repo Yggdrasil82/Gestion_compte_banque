@@ -190,7 +190,9 @@
                         <CheckBox Content="Documents : documents importants, échéances, Google Drive"
                                   IsChecked="{Binding Apparence.ModuleDocuments}" Margin="0,0,0,6" />
                         <CheckBox Content="Mail : envoi de mails (Gmail ou autre messagerie), carnet d'adresses"
-                                  IsChecked="{Binding Apparence.ModuleMail}" />
+                                  IsChecked="{Binding Apparence.ModuleMail}" Margin="0,0,0,6" />
+                        <CheckBox Content="Achats : meilleur prix avec Gemini et Mistral, sites marchands, prix suivis"
+                                  IsChecked="{Binding Apparence.ModuleAchats}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
                     </StackPanel>
@@ -215,6 +217,36 @@
                         </StackPanel>
                         <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
                                    Text="Sert aux documents dans Google Drive, à l'envoi par Gmail et à l'import des contacts. Chacun crée son propre identifiant d'application Google (guide à la connexion). Réglage propre à ce PC." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Intelligence artificielle (réglage propre à ce PC) -->
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                            <TextBlock Text="Intelligence artificielle" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <CheckBox Content="Utiliser les IA (décocher coupe tout envoi à Gemini et Mistral)" IsChecked="{Binding IA.Actives}"
+                                  Margin="0,0,0,8" />
+                        <DockPanel Margin="0,0,0,6">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="Saisir la clé…" Command="{Binding IA.ReglerGeminiCommand}" Padding="10,4" Margin="0,0,6,0" />
+                                <Button Content="Retirer" Command="{Binding IA.RetirerGeminiCommand}" Padding="10,4"
+                                        Visibility="{Binding IA.GeminiConfigure, Converter={StaticResource Visible}}" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding IA.EtatGemini}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="Saisir la clé…" Command="{Binding IA.ReglerMistralCommand}" Padding="10,4" Margin="0,0,6,0" />
+                                <Button Content="Retirer" Command="{Binding IA.RetirerMistralCommand}" Padding="10,4"
+                                        Visibility="{Binding IA.MistralConfigure, Converter={StaticResource Visible}}" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding IA.EtatMistral}" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
+                                   Text="Clés gratuites de Google AI Studio (Gemini) et de Mistral, gardées sur ce PC et chiffrées par Windows. Seul ce que vous demandez est envoyé (le nom d'un produit pour une recherche de prix) ; l'IA ne modifie jamais vos comptes." />
                     </StackPanel>
                 </Border>
             </StackPanel>

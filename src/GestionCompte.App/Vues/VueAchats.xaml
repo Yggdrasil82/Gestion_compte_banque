@@ -1,0 +1,233 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueAchats"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Racine">
+    <UserControl.Resources>
+        <Style x:Key="BoutonAction" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="10,5" />
+        </Style>
+        <Style x:Key="PetitBouton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Bandeau : produit cherché. -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <StackPanel>
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource BoutonEnteteBlanc}" Command="{Binding RechercherCommand}" Padding="16,7" Margin="10,0,6,0"
+                                ToolTip="Gemini et Mistral cherchent les offres ; les prix sont relus sur les pages">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE721;" Margin="0,0,8,0" />
+                                <TextBlock Text="Chercher le meilleur prix" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource BoutonEntete}" Command="{Binding OuvrirSitesCommand}" Margin="0"
+                                ToolTip="Ouvre la recherche dans le navigateur, sur chaque site coché de la liste">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE774;" Margin="0,0,8,0" />
+                                <TextBlock Text="Ouvrir sur les sites" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBox Text="{Binding Recherche, UpdateSourceTrigger=PropertyChanged}" Height="32" FontSize="14"
+                             ToolTip="Nom précis du produit (marque, modèle, taille…)" KeyDown="RechercheEntree" />
+                </DockPanel>
+                <TextBlock Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" Margin="0,6,0,0"
+                           Text="Seul le nom du produit est envoyé aux IA. Les prix trouvés sont relus sur les pages quand c'est possible." />
+            </StackPanel>
+        </Border>
+
+        <StackPanel DockPanel.Dock="Bottom" Margin="10,2,10,4">
+            <TextBlock Text="{Binding Erreur}" Foreground="{DynamicResource Negatif}" TextWrapping="Wrap" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Statut}" Style="{StaticResource Discret}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="440" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Offres trouvées par les IA. -->
+            <Border Style="{StaticResource Carte}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                        <TextBlock Text="Offres trouvées" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding Resume}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8" />
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
+                               Visibility="{Binding AvecOffres, Converter={StaticResource MasqueSiVrai}}"
+                               Text="Tapez le produit en haut puis « Chercher le meilleur prix » : Gemini et Mistral cherchent sur internet et les offres sont classées de la moins chère à la plus chère. Sans clé d'IA (Configuration › Intelligence artificielle), utilisez « Ouvrir sur les sites »." />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Offres}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{DynamicResource Bordure}" BorderThickness="0,0,0,1" Padding="0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Prix, Converter={StaticResource Euros}}" FontSize="18" FontWeight="Bold"
+                                                       Foreground="{DynamicResource Accent1}" VerticalAlignment="Top" />
+                                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                                <TextBlock TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding Site, Mode=OneWay}" FontWeight="SemiBold" />
+                                                    <Run Text="{Binding Titre, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Remarque}" Style="{StaticResource Discret}" FontSize="12" TextWrapping="Wrap" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Style="{StaticResource Discret}" FontSize="11" Text="{Binding Sources, StringFormat='{}{0} · '}" />
+                                                    <TextBlock x:Name="Verif" FontSize="11" Text="{Binding Verification}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
+                                                <Button Style="{StaticResource PetitBouton}" Content="Ouvrir"
+                                                        Command="{Binding DataContext.OuvrirOffreCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource PetitBouton}" Content="Suivre le prix"
+                                                        Command="{Binding DataContext.SuivreOffreCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource PetitBouton}" Content="Prévoir l'achat" Margin="0"
+                                                        Command="{Binding DataContext.PrevoirOffreCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Verifie}" Value="True">
+                                            <Setter TargetName="Verif" Property="Foreground" Value="{DynamicResource Positif}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Verifie}" Value="False">
+                                            <Setter TargetName="Verif" Property="Foreground" Value="{DynamicResource Avertissement}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Prix suivis. -->
+                <Border Style="{StaticResource Carte}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                            <TextBlock Text="Prix suivis" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                            <Button Style="{StaticResource BoutonAction}" Command="{Binding SuivreAdresseCommand}" Content="Suivre une page…"
+                                    ToolTip="Coller l'adresse de la page d'un produit" />
+                            <Button Style="{StaticResource BoutonAction}" Command="{Binding RelirePrixCommand}" Content="Relire les prix"
+                                    ToolTip="Les prix sont aussi relus à chaque ouverture de l'application (une fois par jour)" />
+                        </WrapPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
+                                   Visibility="{Binding AvecProduits, Converter={StaticResource MasqueSiVrai}}"
+                                   Text="Suivez le prix d'un produit (bouton « Suivre le prix » d'une offre, ou « Suivre une page… ») et fixez un prix cible : l'onglet Achats vous prévient quand il est atteint." />
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Produits}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="Cadre" BorderBrush="{DynamicResource Bordure}" BorderThickness="1" CornerRadius="10"
+                                                Padding="10,8" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding PrixTexte}" FontSize="16" FontWeight="Bold" Margin="8,0,0,0" />
+                                                    <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                </DockPanel>
+                                                <TextBlock Style="{StaticResource Discret}" FontSize="11" TextTrimming="CharacterEllipsis">
+                                                    <Run Text="{Binding Site, Mode=OneWay}" />
+                                                    <Run Text="·" />
+                                                    <Run Text="{Binding DateReleve, Mode=OneWay}" />
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Evolution}" FontSize="12" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="Cible" Text="{Binding Cible}" FontSize="12" Style="{StaticResource Discret}" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                                    <Button Style="{StaticResource PetitBouton}" Content="Ouvrir"
+                                                            Command="{Binding DataContext.OuvrirProduitCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                    <Button Style="{StaticResource PetitBouton}" Content="Prix cible…"
+                                                            Command="{Binding DataContext.ModifierCibleCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                    <Button Style="{StaticResource PetitBouton}" Content="Prévoir l'achat"
+                                                            Command="{Binding DataContext.PrevoirProduitCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                    <Button Style="{StaticResource PetitBouton}" ToolTip="Renommer"
+                                                            Command="{Binding DataContext.RenommerProduitCommand, ElementName=Racine}" CommandParameter="{Binding}">
+                                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" FontSize="11" />
+                                                    </Button>
+                                                    <Button Style="{StaticResource PetitBouton}" ToolTip="Ne plus suivre"
+                                                            Command="{Binding DataContext.SupprimerProduitCommand, ElementName=Racine}" CommandParameter="{Binding}">
+                                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" FontSize="11" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding CibleAtteinte}" Value="True">
+                                                <Setter TargetName="Cadre" Property="BorderBrush" Value="{DynamicResource Positif}" />
+                                                <Setter TargetName="Cadre" Property="BorderThickness" Value="2" />
+                                                <Setter TargetName="Cible" Property="Foreground" Value="{DynamicResource Positif}" />
+                                                <Setter TargetName="Cible" Property="FontWeight" Value="SemiBold" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+
+                <!-- Sites de recherche (liste modifiable). -->
+                <Border Grid.Row="1" Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                            <TextBlock Text="Sites de recherche" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Sites}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,2,8,2">
+                                        <CheckBox DockPanel.Dock="Left" IsChecked="{Binding Actif}" VerticalAlignment="Center" Margin="0,0,4,0"
+                                                  ToolTip="Inclus dans « Ouvrir sur les sites »"
+                                                  Command="{Binding DataContext.SiteCocheCommand, ElementName=Racine}" />
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource PetitBouton}" Margin="2,0,0,0" Padding="5,2" ToolTip="Retirer"
+                                                Command="{Binding DataContext.SupprimerSiteCommand, ElementName=Racine}" CommandParameter="{Binding}">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE711;" FontSize="9" />
+                                        </Button>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource PetitBouton}" Margin="2,0,0,0" Padding="5,2" ToolTip="Modifier"
+                                                Command="{Binding DataContext.ModifierSiteCommand, ElementName=Racine}" CommandParameter="{Binding}">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" FontSize="9" />
+                                        </Button>
+                                        <Button Style="{StaticResource PetitBouton}" Content="{Binding Nom}" HorizontalContentAlignment="Left"
+                                                ToolTip="Chercher le produit sur ce site"
+                                                Command="{Binding DataContext.OuvrirSiteCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Style="{StaticResource BoutonAction}" Command="{Binding AjouterSiteCommand}" Content="Ajouter un site…" />
+                            <Button Style="{StaticResource BoutonAction}" Command="{Binding ReinitialiserSitesCommand}" Content="Liste d'origine" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</UserControl>

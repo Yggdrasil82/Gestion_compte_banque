@@ -54,7 +54,8 @@ du classeur Excel d'origine.
 - **2.0.0** (en cours) : modules masquables dans Configuration › Modules :
   - « Bilan » : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF ;
   - « Documents » : documents importants communs à tous les comptes (catégories, échéances avec rappels, charge liée, notes), rangés sur le PC, dans un dossier synchronisé ou directement dans Google Drive ; protection facultative par mot de passe avec clé de secours ;
-  - « Mail » : envoi par Gmail (compte Google) ou par une autre messagerie (SMTP : Orange, Free…), pièces jointes tirées du coffre, du bilan (PDF) ou d'un fichier, carnet d'adresses (manuel et contacts Google) et historique des envois.
+  - « Mail » : envoi par Gmail (compte Google) ou par une autre messagerie (SMTP : Orange, Free…), pièces jointes tirées du coffre, du bilan (PDF) ou d'un fichier, carnet d'adresses (manuel et contacts Google) et historique des envois ;
+  - « Achats » : recherche du meilleur prix par Gemini et Mistral (offres regroupées, triées, prix relus sur les pages), liste de sites marchands modifiable, suivi du prix de produits avec prix cible, et « Prévoir l'achat » dans le prévisionnel.
 
 ## Prochainement
 
@@ -92,6 +93,13 @@ seul (`gmail.send`, pas de lecture de la boîte) ; lecture des contacts. L'ident
 restent sur le PC, chiffrés par Windows (`%LOCALAPPDATA%\GestionCompte\secrets`), comme le mot de passe
 de la messagerie (SMTP) ; rien n'est enregistré dans ce dépôt. Le carnet d'adresses et l'historique des envois
 sont dans `Documents\GestionCompte\mail.json`.
+
+### IA gratuites (Gemini et Mistral)
+
+Dans Configuration › Intelligence artificielle, chacun saisit ses propres clés gratuites :
+[Google AI Studio](https://aistudio.google.com/apikey) pour Gemini et [Mistral](https://console.mistral.ai/api-keys).
+Elles restent sur le PC, chiffrées par Windows. Pour une recherche de prix, seul le nom du produit est envoyé ;
+une case coupe tout envoi aux IA. Les produits suivis et la liste des sites sont dans `Documents\GestionCompte\achats.json`.
 
 Un document protégé est chiffré (AES-256) avec le mot de passe du coffre ; la clé de secours donnée à la création
 du mot de passe permet d'en choisir un nouveau en cas d'oubli. Sans l'un ni l'autre, un document protégé est perdu.

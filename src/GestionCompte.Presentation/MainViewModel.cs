@@ -34,6 +34,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Mail » (masquable dans la configuration).</summary>
     public const int OngletMail = 9;
 
+    /// <summary>Module « Achats » (masquable dans la configuration).</summary>
+    public const int OngletAchats = 10;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -78,6 +81,9 @@ public sealed partial class MainViewModel : ObservableObject
             EnvoiParMailPossible = Apparence.ModuleMail,
         };
         Mail = new MailViewModel(Apparence, dossier, Google, secrets, dialogues, Documents, () => Bilan);
+        IA = new ServicesIA(secrets, dialogues);
+        Achats = new AchatsViewModel(dossier, IA, dialogues);
+        Achats.AchatAPrevoir += (_, achat) => PrevoirAchat(achat);
         Documents.EnvoiParMailDemande += async (_, fiche) =>
         {
             if (await Mail.JoindreDocumentAsync(fiche))
@@ -88,7 +94,8 @@ public sealed partial class MainViewModel : ObservableObject
             if ((OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)
                 || (OngletSelectionne == OngletBilan && !Apparence.ModuleBilan)
                 || (OngletSelectionne == OngletDocuments && !Apparence.ModuleDocuments)
-                || (OngletSelectionne == OngletMail && !Apparence.ModuleMail))
+                || (OngletSelectionne == OngletMail && !Apparence.ModuleMail)
+                || (OngletSelectionne == OngletAchats && !Apparence.ModuleAchats))
                 OngletSelectionne = OngletConfiguration;
             Documents.EnvoiParMailPossible = Apparence.ModuleMail;
             if (Bilan is not null)
@@ -319,6 +326,27 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Envoi de mails, carnet d'adresses et historique, communs à tous les comptes.</summary>
     public MailViewModel Mail { get; }
+
+    /// <summary>IA gratuites (Gemini, Mistral) avec les clés de l'utilisateur, propres à ce PC.</summary>
+    public ServicesIA IA { get; }
+
+    /// <summary>Aide à l'achat : recherche du meilleur prix, sites, prix suivis.</summary>
+    public AchatsViewModel Achats { get; }
+
+    /// <summary>« Prévoir l'achat » : ajouté au prévisionnel du compte ouvert, au mois choisi.</summary>
+    private void PrevoirAchat(DemandeAchat achat)
+    {
+        var saisie = _dialogues.DemanderAchatPrevu(achat.Libelle, achat.Prix, Previsionnel.Periodes);
+        if (saisie is null)
+            return;
+        _compte.OperationsPrevues.Add(new OperationPrevue(saisie.Periode, saisie.Libelle, debit: saisie.Montant));
+        Enregistrer();
+        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = Previsionnel.Horizon };
+        AideBudget.Recalculer();
+        Credits.RafraichirTout();
+        OngletSelectionne = OngletPrevisionnel;
+        Statut = $"Achat « {saisie.Libelle} » prévu en {saisie.Periode.Libelle} ({Montants.Formater(saisie.Montant)} €) sur le compte « {CompteActif} ».";
+    }
 
     /// <summary>Import de relevé en cours d'aperçu, ou null.</summary>
     [ObservableProperty] private ImportViewModel? _import;
@@ -763,7 +791,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void Reconstruire()
     {
         Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour)
-            { Apparence = Apparence, Google = Google };
+            { Apparence = Apparence, Google = Google, IA = IA };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }

@@ -536,6 +536,10 @@
             <vues:VueMail />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:AchatsViewModel}">
+            <vues:VueAchats />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:CreditsViewModel}">
             <vues:VueCredits />
         </DataTemplate>

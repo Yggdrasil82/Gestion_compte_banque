@@ -60,6 +60,9 @@ public sealed class PreferencesAffichage
     /// <summary>Onglet « Mail » affiché dans la barre de gauche.</summary>
     public bool ModuleMail { get; set; } = true;
 
+    /// <summary>Onglet « Achats » affiché dans la barre de gauche.</summary>
+    public bool ModuleAchats { get; set; } = true;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ModeEnvoiMail ModeEnvoiMail { get; set; } = ModeEnvoiMail.Gmail;
 
@@ -187,6 +190,19 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Achats » affiché.</summary>
+    public bool ModuleAchats
+    {
+        get => _preferences.ModuleAchats;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleAchats, value, _preferences, (p, v) => p.ModuleAchats = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     /// <summary>Compte d'envoi des mails (réglage propre au PC).</summary>
     public ModeEnvoiMail ModeEnvoiMail
     {
@@ -222,6 +238,7 @@ public sealed class ApparenceViewModel : ObservableObject
         ModuleBilan = true;
         ModuleDocuments = true;
         ModuleMail = true;
+        ModuleAchats = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }

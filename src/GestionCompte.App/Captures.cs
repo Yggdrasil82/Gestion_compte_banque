@@ -5,9 +5,11 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using GestionCompte.Core.Achats;
 using GestionCompte.Core.Documents;
 using GestionCompte.Core.Mail;
 using GestionCompte.Data;
+using GestionCompte.Data.Achats;
 using GestionCompte.Data.Documents;
 using GestionCompte.Data.Mail;
 using GestionCompte.Presentation;
@@ -33,7 +35,7 @@ internal static class Captures
     private const double HauteurBilan = 1420;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
-    private const double HauteurConfiguration = 1880;
+    private const double HauteurConfiguration = 2080;
 
     /// <summary>Mail : rédaction, carnet d'adresses et historique.</summary>
     private const double HauteurMail = 960;
@@ -66,6 +68,7 @@ internal static class Captures
         new DepotSqlite(registre.Chemin(registre.Actif)).Enregistrer(ConfigurationParDefaut.CreerDemo());
         new DepotSqlite(registre.Chemin(registre.Ajouter("Livret A"))).Enregistrer(ConfigurationParDefaut.CreerDemoLivret());
         CreerCarnetDemo(dossierDemo);
+        CreerAchatsDemo(dossierDemo);
         // Serveur d'envoi d'exemple (jamais utilisé : aucune connexion pendant les captures).
         var secrets = new SecretsEnMemoire();
         secrets.Ecrire(MailViewModel.SecretSmtp, System.Text.Json.JsonSerializer.Serialize(
@@ -129,6 +132,7 @@ internal static class Captures
                 MainViewModel.OngletBilan => HauteurBilan,
                 MainViewModel.OngletConfiguration => HauteurConfiguration,
                 MainViewModel.OngletMail => HauteurMail,
+                MainViewModel.OngletAchats => HauteurMail,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -172,10 +176,49 @@ internal static class Captures
             vm.Mail.ModeGmail = true;
             await Capturer(("22-mail-gmail-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletMail, false));
 
+            // Achats : offres d'exemple (aucune IA n'est appelée pendant les captures) et prix suivis.
+            vm.Achats.Recherche = "Aspirateur balai sans fil X200";
+            vm.Achats.Offres = OffresDemo().Select(o => new OffreViewModel(o)).ToList();
+            vm.Achats.Resume = "5 offres (Gemini : 4, Mistral : 3), la moins chère : 219,99 € chez Boulanger.";
+            await Capturer(("23-achats-ocean", Ambiance.Ocean, false, MainViewModel.OngletAchats, false));
+            await Capturer(("24-achats-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletAchats, false));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
         });
+    }
+
+    private static void CreerAchatsDemo(string dossier)
+    {
+        var fichier = new FichierAchats(dossier);
+        var aujourdhui = DateTime.Today;
+        ProduitSuivi Produit(string nom, string adresse, decimal? cible, params decimal[] prix)
+        {
+            var produit = new ProduitSuivi { Nom = nom, Adresse = adresse, PrixCible = cible };
+            for (var i = 0; i < prix.Length; i++)
+                produit.Noter(new RelevePrix { Date = aujourdhui.AddDays(i - prix.Length + 1), Prix = prix[i] });
+            return produit;
+        }
+        fichier.Produits.Add(Produit("Aspirateur balai sans fil X200 (Boulanger)", "https://www.boulanger.com/ref/exemple-x200", 230m, 259.99m, 239.99m, 219.99m));
+        fichier.Produits.Add(Produit("Lave-linge 9 kg classe A (Darty)", "https://www.darty.com/nav/achat/exemple-lave-linge", 450m, 499m, 499m));
+        fichier.Produits.Add(Produit("Vélo électrique ville (Decathlon)", "https://www.decathlon.fr/p/exemple-velo", null, 1299m, 1349m));
+        fichier.Enregistrer();
+    }
+
+    private static IEnumerable<OffreTrouvee> OffresDemo()
+    {
+        OffreTrouvee Offre(string site, decimal prix, string adresse, VerificationOffre verification, string? remarque, params SourceOffre[] sources)
+        {
+            var offre = new OffreTrouvee { Site = site, Titre = "Aspirateur balai sans fil X200", Prix = prix, Adresse = adresse, Verification = verification, Remarque = remarque };
+            offre.Sources.UnionWith(sources);
+            return offre;
+        }
+        yield return Offre("Boulanger", 219.99m, "https://www.boulanger.com/ref/exemple-x200", VerificationOffre.Verifie, "Livraison gratuite, retrait en magasin", SourceOffre.Gemini, SourceOffre.Mistral);
+        yield return Offre("Cdiscount", 224.90m, "https://www.cdiscount.com/exemple-x200", VerificationOffre.Corrige, "Vendu par un vendeur partenaire", SourceOffre.Gemini);
+        yield return Offre("Fnac", 229.99m, "https://www.fnac.com/exemple-x200", VerificationOffre.Verifie, null, SourceOffre.Gemini, SourceOffre.Mistral);
+        yield return Offre("Amazon", 234.00m, "https://www.amazon.fr/dp/EXEMPLE", VerificationOffre.AVerifier, "Prix non relu (site protégé)", SourceOffre.Mistral);
+        yield return Offre("Darty", 249.99m, "https://www.darty.com/exemple-x200", VerificationOffre.Verifie, "Garantie 2 ans + extension possible", SourceOffre.Gemini);
     }
 
     private static void CreerCarnetDemo(string dossier)
