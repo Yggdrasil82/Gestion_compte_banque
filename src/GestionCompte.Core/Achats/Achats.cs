@@ -77,7 +77,7 @@ public sealed class ProduitSuivi
 public enum SourceOffre
 {
     Gemini,
-    Mistral,
+    Groq,
 }
 
 public enum VerificationOffre

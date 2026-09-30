@@ -26,6 +26,9 @@ public interface IAssistantIA
 
     /// <summary>Vrai si la dernière demande avec recherche a été faite sans recherche internet (refusée par la clé gratuite).</summary>
     bool SansRecherche => false;
+
+    /// <summary>L'IA sait chercher sur internet (au moins avec une clé qui l'inclut).</summary>
+    bool RechercheInternet => true;
 }
 
 public static class RechercheOffres
@@ -126,7 +129,7 @@ public sealed class Gemini : IAssistantIA
             sans => SansRecherche = sans);
         if (statut != HttpStatusCode.OK && avecRecherche && !repliSansRecherche && ErreursIA.RechercheRefusee(statut, texte))
             throw new HttpRequestException(
-                "Gemini : la recherche internet n'est pas incluse dans la clé gratuite Gemini (Google la réserve aux clés payantes) ; seul Mistral peut chercher sur internet.");
+                "Gemini : la recherche internet n'est pas incluse dans la clé gratuite Gemini (Google la réserve aux clés payantes).");
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
@@ -164,25 +167,24 @@ public sealed class Gemini : IAssistantIA
     }
 }
 
-/// <summary>Mistral (La Plateforme) : recherche web par l'outil « web_search » des conversations.</summary>
-public sealed class Mistral : IAssistantIA
+/// <summary>
+/// Groq (GroqCloud, API compatible OpenAI) : modèles ouverts très rapides, gratuits sans carte bancaire,
+/// mais sans recherche internet : les demandes prévues avec recherche sont faites de mémoire (réponses indicatives).
+/// </summary>
+public sealed class Groq : IAssistantIA
 {
-    public const string ModeleParDefaut = "mistral-medium-latest";
+    public const string ModeleParDefaut = "openai/gpt-oss-120b";
 
-    /// <summary>
-    /// Longueur maximale des réponses (en tokens) : sans elle, Mistral compte la taille maximale du modèle
-    /// dans la limite gratuite de tokens par minute et refuse la demande.
-    /// </summary>
-    public const int LongueurMaximale = 2000;
+    /// <summary>Longueur maximale des réponses (en tokens, raisonnement du modèle compris).</summary>
+    public const int LongueurMaximale = 4000;
 
     private readonly HttpClient _http;
     private readonly string _cle;
     private readonly string _modele;
-
     private readonly Action<string>? _patienter;
 
     /// <param name="patienter">Prévenu quand l'IA attend la fin d'une limite par minute avant un nouvel essai.</param>
-    public Mistral(HttpClient http, string cle, string? modele = null, Action<string>? patienter = null)
+    public Groq(HttpClient http, string cle, string? modele = null, Action<string>? patienter = null)
     {
         _http = http;
         _patienter = patienter;
@@ -190,9 +192,9 @@ public sealed class Mistral : IAssistantIA
         _modele = string.IsNullOrWhiteSpace(modele) ? ModeleParDefaut : modele.Trim();
     }
 
-    public SourceOffre Source => SourceOffre.Mistral;
-    public string Nom => "Mistral";
-
+    public SourceOffre Source => SourceOffre.Groq;
+    public string Nom => "Groq";
+    public bool RechercheInternet => false;
     public bool SansRecherche { get; private set; }
 
     public Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default) =>
@@ -200,69 +202,42 @@ public sealed class Mistral : IAssistantIA
 
     public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
     {
-        var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
-            (recherche, essais) => ErreursIA.EnvoyerAsync(_http,
-                () => Requete(recherche || !avecRecherche ? demande : demande + ErreursIA.NoteSansRecherche, recherche), annulation, _patienter, Nom, essais),
-            sans => SansRecherche = sans);
+        if (avecRecherche && !repliSansRecherche)
+            throw new HttpRequestException("Groq ne fait pas de recherche internet.");
+        SansRecherche = avecRecherche;
+        var (statut, texte) = await ErreursIA.EnvoyerAsync(_http,
+            () => Requete(avecRecherche ? demande + ErreursIA.NoteSansRecherche : demande), annulation, _patienter, Nom);
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
         using var json = JsonDocument.Parse(texte);
-        var resultat = new StringBuilder();
-        if (json.RootElement.TryGetProperty("outputs", out var sorties))
-        {
-            foreach (var sortie in sorties.EnumerateArray())
-                if (sortie.TryGetProperty("type", out var type) && type.GetString() == "message.output"
-                    && sortie.TryGetProperty("content", out var contenu))
-                    AjouterContenu(contenu, resultat);
-        }
-        else if (json.RootElement.TryGetProperty("choices", out var choix) && choix.GetArrayLength() > 0
-                 && choix[0].TryGetProperty("message", out var message) && message.TryGetProperty("content", out var contenu))
-            AjouterContenu(contenu, resultat);
-        return resultat.ToString();
+        return json.RootElement.TryGetProperty("choices", out var choix) && choix.GetArrayLength() > 0
+               && choix[0].TryGetProperty("message", out var message) && message.TryGetProperty("content", out var contenu)
+               && contenu.ValueKind == JsonValueKind.String
+            ? contenu.GetString() ?? ""
+            : "";
     }
 
-    private HttpRequestMessage Requete(string demande, bool avecRecherche)
+    private HttpRequestMessage Requete(string demande)
     {
-        var corps = avecRecherche
-            ? new JsonObject
-            {
-                ["model"] = _modele,
-                ["inputs"] = demande,
-                ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }),
-                ["completion_args"] = new JsonObject { ["max_tokens"] = LongueurMaximale },
-                ["store"] = false,
-            }
-            : new JsonObject
-            {
-                ["model"] = _modele,
-                ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
-                ["max_tokens"] = LongueurMaximale,
-            };
-        var requete = new HttpRequestMessage(HttpMethod.Post,
-            avecRecherche ? "https://api.mistral.ai/v1/conversations" : "https://api.mistral.ai/v1/chat/completions")
+        var corps = new JsonObject
+        {
+            ["model"] = _modele,
+            ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
+            ["max_completion_tokens"] = LongueurMaximale,
+        };
+        var requete = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions")
         {
             Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
         };
         requete.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _cle);
         return requete;
     }
-
-    /// <summary>Le contenu est un texte, ou une liste de morceaux (texte et références des pages consultées).</summary>
-    private static void AjouterContenu(JsonElement contenu, StringBuilder resultat)
-    {
-        if (contenu.ValueKind == JsonValueKind.String)
-            resultat.Append(contenu.GetString());
-        else if (contenu.ValueKind == JsonValueKind.Array)
-            foreach (var morceau in contenu.EnumerateArray())
-                if (morceau.TryGetProperty("type", out var t) && t.GetString() == "text" && morceau.TryGetProperty("text", out var texte))
-                    resultat.Append(texte.GetString());
-    }
 }
 
 public static class ErreursIA
 {
-    /// <summary>Attente avant le premier nouvel essai quand l'IA ne donne pas de délai (Mistral gratuit : 1 demande par seconde).</summary>
+    /// <summary>Attente avant le premier nouvel essai quand l'IA ne donne pas de délai (limite par seconde).</summary>
     public static TimeSpan AttenteParDefaut { get; set; } = TimeSpan.FromSeconds(2);
 
     /// <summary>Attente avant le second nouvel essai : la fin de la minute (limite de tokens par minute).</summary>
@@ -401,8 +376,8 @@ public static class ErreursIA
                 $"{ia} refuse la clé API (vérifiez-la dans Configuration › Intelligence artificielle). {detail}",
             HttpStatusCode.TooManyRequests when LimiteDuJour(texte) =>
                 $"{ia} : quota gratuit du jour atteint, de nouveau disponible {RemiseAZeroGemini(maintenantUtc ?? DateTime.UtcNow)}.{raison}",
-            HttpStatusCode.TooManyRequests when ia == "Mistral" =>
-                $"Mistral : limite gratuite atteinte (1 demande par seconde et un nombre de tokens par minute, voir « Limites » dans la console Mistral) ; réessayez dans une minute.{raison}",
+            HttpStatusCode.TooManyRequests when ia == "Groq" =>
+                $"Groq : limite gratuite atteinte (demandes et tokens par minute et par jour, voir « Limits » dans la console Groq) ; réessayez dans une minute.{raison}",
             HttpStatusCode.TooManyRequests => $"{ia} : limite gratuite par minute atteinte, réessayez dans une minute.{raison}",
             HttpStatusCode.NotFound => $"{ia} : modèle introuvable ({detail}).",
             _ => $"{ia} a refusé la demande ({(int)statut}) : {detail}",

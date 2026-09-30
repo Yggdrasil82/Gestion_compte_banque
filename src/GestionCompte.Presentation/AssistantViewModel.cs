@@ -7,13 +7,13 @@ using CommunityToolkit.Mvvm.Input;
 namespace GestionCompte.Presentation;
 
 /// <summary>
-/// Module « Assistant » : questions sur le budget posées à Gemini et/ou Mistral.
+/// Module « Assistant » : questions sur le budget posées à Gemini et/ou Groq.
 /// Seul un résumé des chiffres, affiché avant l'envoi, part aux IA (s'il est coché) ; l'assistant ne modifie rien.
 /// La conversation n'est pas enregistrée.
 /// </summary>
 public sealed partial class AssistantViewModel : ObservableObject
 {
-    public const string LesDeux = "Gemini et Mistral";
+    public const string LesDeux = "Gemini et Groq";
 
     /// <summary>Nombre d'échanges précédents renvoyés avec la question.</summary>
     private const int ToursGardes = 6;
@@ -54,7 +54,7 @@ public sealed partial class AssistantViewModel : ObservableObject
 
     // ---- IA utilisées ----
 
-    public IReadOnlyList<string> ChoixIA { get; } = new[] { LesDeux, "Gemini", "Mistral" };
+    public IReadOnlyList<string> ChoixIA { get; } = new[] { LesDeux, "Gemini", "Groq" };
 
     [ObservableProperty] private string _iAChoisie = LesDeux;
 
@@ -97,7 +97,7 @@ public sealed partial class AssistantViewModel : ObservableObject
             Erreur = !_ia.Actives
                 ? "Les IA sont coupées (Configuration › Intelligence artificielle)."
                 : IAChoisie == LesDeux
-                    ? "Aucune IA réglée : saisissez une clé Gemini ou Mistral (Configuration › Intelligence artificielle)."
+                    ? "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle)."
                     : $"{IAChoisie} n'est pas réglée : saisissez sa clé (Configuration › Intelligence artificielle) ou choisissez une autre IA.";
             return;
         }

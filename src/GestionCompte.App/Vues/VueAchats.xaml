@@ -21,7 +21,7 @@
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                         <Button Style="{StaticResource BoutonEnteteBlanc}" Command="{Binding RechercherCommand}" Padding="16,7" Margin="10,0,6,0"
-                                ToolTip="Gemini et Mistral cherchent les offres ; les prix sont relus sur les pages">
+                                ToolTip="Gemini cherche les offres sur internet (recherche incluse seulement avec une clé Gemini payante) ; les prix sont relus sur les pages">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icone}" Text="&#xE721;" Margin="0,0,8,0" />
                                 <TextBlock Text="Chercher le meilleur prix" />
@@ -64,7 +64,7 @@
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Resume}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8" />
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
                                Visibility="{Binding AvecOffres, Converter={StaticResource MasqueSiVrai}}"
-                               Text="Tapez le produit en haut puis « Chercher le meilleur prix » : Gemini et Mistral cherchent sur internet et les offres sont classées de la moins chère à la plus chère. Sans clé d'IA (Configuration › Intelligence artificielle), utilisez « Ouvrir sur les sites »." />
+                               Text="Tapez le produit en haut puis « Chercher le meilleur prix » : Gemini cherche sur internet (clé Gemini payante nécessaire) et les offres sont classées de la moins chère à la plus chère. Sans clé d'IA (Configuration › Intelligence artificielle), utilisez « Ouvrir sur les sites »." />
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding Offres}">
                             <ItemsControl.ItemTemplate>

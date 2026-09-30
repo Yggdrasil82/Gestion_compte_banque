@@ -8,19 +8,22 @@ namespace GestionCompte.Presentation;
 public sealed record SaisieIA(string? Cle, string Modele);
 
 /// <summary>
-/// IA gratuites (Gemini, Mistral) avec les clés personnelles de l'utilisateur, gardées sur ce PC et chiffrées par Windows.
+/// IA gratuites (Gemini, Groq) avec les clés personnelles de l'utilisateur, gardées sur ce PC et chiffrées par Windows.
 /// Une case permet de couper tout envoi aux IA.
 /// </summary>
 public sealed partial class ServicesIA : ObservableObject
 {
     public const string SecretGemini = "ia-gemini-cle";
-    public const string SecretMistral = "ia-mistral-cle";
+    public const string SecretGroq = "ia-groq-cle";
     public const string SecretModeleGemini = "ia-gemini-modele";
-    public const string SecretModeleMistral = "ia-mistral-modele";
+    public const string SecretModeleGroq = "ia-groq-modele";
+
+    /// <summary>Anciennes clés Mistral (retiré en 2.2.0 : clés API réservées aux offres payantes), effacées au démarrage.</summary>
+    private static readonly string[] AnciensSecrets = { "ia-mistral-cle", "ia-mistral-modele" };
     public const string SecretCoupee = "ia-coupee";
 
     public const string AdresseCleGemini = "https://aistudio.google.com/apikey";
-    public const string AdresseCleMistral = "https://console.mistral.ai/api-keys";
+    public const string AdresseCleGroq = "https://console.groq.com/keys";
 
     private readonly ISecretsLocaux _secrets;
     private readonly IDialogues _dialogues;
@@ -34,15 +37,18 @@ public sealed partial class ServicesIA : ObservableObject
         _dialogues = dialogues;
         _assistantsTest = assistantsTest;
         Http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
+        foreach (var ancien in AnciensSecrets)
+            if (_secrets.Lire(ancien) is not null)
+                _secrets.Ecrire(ancien, null);
         MettreAJour();
     }
 
     public HttpClient Http { get; }
 
     [ObservableProperty] private bool _geminiConfigure;
-    [ObservableProperty] private bool _mistralConfigure;
+    [ObservableProperty] private bool _groqConfigure;
     [ObservableProperty] private string _etatGemini = "";
-    [ObservableProperty] private string _etatMistral = "";
+    [ObservableProperty] private string _etatGroq = "";
 
     /// <summary>Envoi aux IA autorisé (case « Utiliser les IA » de la configuration).</summary>
     public bool Actives
@@ -77,8 +83,8 @@ public sealed partial class ServicesIA : ObservableObject
         var assistants = new List<IAssistantIA>();
         if (_secrets.Lire(SecretGemini) is { Length: > 0 } gemini)
             assistants.Add(new Gemini(Http, gemini, _secrets.Lire(SecretModeleGemini), Patienter));
-        if (_secrets.Lire(SecretMistral) is { Length: > 0 } mistral)
-            assistants.Add(new Mistral(Http, mistral, _secrets.Lire(SecretModeleMistral), Patienter));
+        if (_secrets.Lire(SecretGroq) is { Length: > 0 } groq)
+            assistants.Add(new Groq(Http, groq, _secrets.Lire(SecretModeleGroq), Patienter));
         return assistants;
     }
 
@@ -86,7 +92,7 @@ public sealed partial class ServicesIA : ObservableObject
     private void ReglerGemini() => Regler("Gemini", SecretGemini, SecretModeleGemini, Gemini.ModeleParDefaut, AdresseCleGemini);
 
     [RelayCommand]
-    private void ReglerMistral() => Regler("Mistral", SecretMistral, SecretModeleMistral, Mistral.ModeleParDefaut, AdresseCleMistral);
+    private void ReglerGroq() => Regler("Groq", SecretGroq, SecretModeleGroq, Groq.ModeleParDefaut, AdresseCleGroq);
 
     private void Regler(string nom, string secretCle, string secretModele, string modeleParDefaut, string adresseCle)
     {
@@ -104,7 +110,7 @@ public sealed partial class ServicesIA : ObservableObject
     private void RetirerGemini() => Retirer("Gemini", SecretGemini);
 
     [RelayCommand]
-    private void RetirerMistral() => Retirer("Mistral", SecretMistral);
+    private void RetirerGroq() => Retirer("Groq", SecretGroq);
 
     private void Retirer(string nom, string secret)
     {
@@ -117,9 +123,9 @@ public sealed partial class ServicesIA : ObservableObject
     private void MettreAJour()
     {
         GeminiConfigure = _secrets.Lire(SecretGemini) is { Length: > 0 };
-        MistralConfigure = _secrets.Lire(SecretMistral) is { Length: > 0 };
+        GroqConfigure = _secrets.Lire(SecretGroq) is { Length: > 0 };
         EtatGemini = GeminiConfigure ? $"Gemini : clé enregistrée ({_secrets.Lire(SecretModeleGemini) ?? Gemini.ModeleParDefaut})" : "Gemini : pas de clé";
-        EtatMistral = MistralConfigure ? $"Mistral : clé enregistrée ({_secrets.Lire(SecretModeleMistral) ?? Mistral.ModeleParDefaut})" : "Mistral : pas de clé";
+        EtatGroq = GroqConfigure ? $"Groq : clé enregistrée ({_secrets.Lire(SecretModeleGroq) ?? Groq.ModeleParDefaut})" : "Groq : pas de clé";
         OnPropertyChanged(nameof(Disponibles));
     }
 }

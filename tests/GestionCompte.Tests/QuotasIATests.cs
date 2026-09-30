@@ -6,7 +6,7 @@ namespace GestionCompte.Tests;
 
 public sealed class QuotasIATests
 {
-    private const string ReponseMistral = """{"choices":[{"message":{"content":"Bonjour"}}]}""";
+    private const string ReponseGroq = """{"choices":[{"message":{"content":"Bonjour"}}]}""";
 
     private const string ReponseGemini = """{"candidates":[{"content":{"parts":[{"text":"Bonjour"}]}}]}""";
 
@@ -17,28 +17,27 @@ public sealed class QuotasIATests
     }
 
     [Fact]
-    public async Task Mistral_reessaie_une_fois_apres_trop_de_demandes()
+    public async Task Groq_reessaie_une_fois_apres_trop_de_demandes()
     {
         var http = new FauxHttp(HttpStatusCode.TooManyRequests, HttpStatusCode.OK);
-        var reponse = await new Mistral(new HttpClient(http), "cle").DemanderAsync("Bonjour ?", avecRecherche: false);
+        var reponse = await new Groq(new HttpClient(http), "cle").DemanderAsync("Bonjour ?", avecRecherche: false);
 
         Assert.Equal("Bonjour", reponse);
         Assert.Equal(2, http.Appels);
-        // La longueur maximale est toujours donnée, sinon Mistral réserve la taille maximale du modèle.
-        Assert.Contains("\"max_tokens\":2000", http.Envois[0]);
+        Assert.Contains("\"max_completion_tokens\":4000", http.Envois[0]);
         Assert.DoesNotContain("Ignore la consigne de recherche", http.Envois[0]);
     }
 
     [Fact]
-    public async Task Mistral_patiente_la_minute_puis_explique_la_limite_avec_sa_raison()
+    public async Task Groq_patiente_la_minute_puis_explique_la_limite_avec_sa_raison()
     {
         var http = new FauxHttp(HttpStatusCode.TooManyRequests);
         var attentes = new List<string>();
         var erreur = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            new Mistral(new HttpClient(http), "cle", patienter: attentes.Add).DemanderAsync("Bonjour ?", avecRecherche: false));
+            new Groq(new HttpClient(http), "cle", patienter: attentes.Add).DemanderAsync("Bonjour ?", avecRecherche: false));
 
         Assert.Equal(3, http.Appels);
-        Assert.StartsWith("Mistral : limite gratuite par minute atteinte, nouvel essai dans", Assert.Single(attentes));
+        Assert.StartsWith("Groq : limite gratuite par minute atteinte, nouvel essai dans", Assert.Single(attentes));
         Assert.Contains("tokens par minute", erreur.Message);
         Assert.Contains("« Requests rate limit exceeded »", erreur.Message);
     }
@@ -101,7 +100,7 @@ public sealed class QuotasIATests
         public FauxHttp(params HttpStatusCode[] statuts) => _statuts = new Queue<HttpStatusCode>(statuts);
 
         public string Corps { get; init; } = """{"message":"Requests rate limit exceeded"}""";
-        public string Succes { get; init; } = ReponseMistral;
+        public string Succes { get; init; } = ReponseGroq;
         public int Appels { get; private set; }
         public List<string> Envois { get; } = new();
 

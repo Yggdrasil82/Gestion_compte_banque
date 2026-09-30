@@ -4,7 +4,7 @@ using GestionCompte.Presentation;
 
 namespace GestionCompte.App;
 
-/// <summary>Saisie de la clé API gratuite d'une IA (Gemini ou Mistral).</summary>
+/// <summary>Saisie de la clé API gratuite d'une IA (Gemini ou Groq).</summary>
 public partial class FenetreCleIA : Window
 {
     private readonly string _adresse;

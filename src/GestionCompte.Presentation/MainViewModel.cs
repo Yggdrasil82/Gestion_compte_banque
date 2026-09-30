@@ -348,7 +348,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Envoi de mails, carnet d'adresses et historique, communs à tous les comptes.</summary>
     public MailViewModel Mail { get; }
 
-    /// <summary>IA gratuites (Gemini, Mistral) avec les clés de l'utilisateur, propres à ce PC.</summary>
+    /// <summary>IA gratuites (Gemini, Groq) avec les clés de l'utilisateur, propres à ce PC.</summary>
     public ServicesIA IA { get; }
 
     /// <summary>Aide à l'achat : recherche du meilleur prix, sites, prix suivis.</summary>

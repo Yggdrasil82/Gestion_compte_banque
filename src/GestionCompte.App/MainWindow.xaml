@@ -76,17 +76,17 @@
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=9}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="{Binding Achats.TitreNavigation}"
                                  Tag="&#xE7BF;" Background="{DynamicResource Accent3}"
-                                 ToolTip="Aide à l'achat : meilleur prix (Gemini et Mistral), sites, prix suivis"
+                                 ToolTip="Aide à l'achat : meilleur prix (Gemini), sites, prix suivis"
                                  Visibility="{Binding Apparence.ModuleAchats, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=10}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Lettres"
                                  Tag="&#xE70B;" Background="{DynamicResource Accent2}"
-                                 ToolTip="Lettres types rédigées par Gemini et Mistral : PDF, Word ou mail"
+                                 ToolTip="Lettres types rédigées par Gemini et Groq : PDF, Word ou mail"
                                  Visibility="{Binding Apparence.ModuleLettres, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=11}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Assistant"
                                  Tag="&#xE8BD;" Background="{DynamicResource Accent1}"
-                                 ToolTip="Questions sur votre budget à Gemini et Mistral (ne modifie rien)"
+                                 ToolTip="Questions sur votre budget à Gemini et Groq (ne modifie rien)"
                                  Visibility="{Binding Apparence.ModuleAssistant, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=12}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Crédits"

@@ -191,11 +191,11 @@
                                   IsChecked="{Binding Apparence.ModuleDocuments}" Margin="0,0,0,6" />
                         <CheckBox Content="Mail : envoi de mails (Gmail ou autre messagerie), carnet d'adresses"
                                   IsChecked="{Binding Apparence.ModuleMail}" Margin="0,0,0,6" />
-                        <CheckBox Content="Achats : meilleur prix avec Gemini et Mistral, sites marchands, prix suivis"
+                        <CheckBox Content="Achats : meilleur prix avec Gemini, sites marchands, prix suivis"
                                   IsChecked="{Binding Apparence.ModuleAchats}" Margin="0,0,0,6" />
-                        <CheckBox Content="Lettres : lettres types rédigées par Gemini et Mistral, PDF, Word ou mail"
+                        <CheckBox Content="Lettres : lettres types rédigées par Gemini et Groq, PDF, Word ou mail"
                                   IsChecked="{Binding Apparence.ModuleLettres}" Margin="0,0,0,6" />
-                        <CheckBox Content="Assistant : questions sur votre budget à Gemini et Mistral (ne modifie rien)"
+                        <CheckBox Content="Assistant : questions sur votre budget à Gemini et Groq (ne modifie rien)"
                                   IsChecked="{Binding Apparence.ModuleAssistant}" Margin="0,0,0,6" />
                         <CheckBox Content="Animation du canard à l'ouverture de l'application"
                                   IsChecked="{Binding Apparence.AnimationDemarrage}" />
@@ -233,7 +233,7 @@
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
                             <TextBlock Text="Intelligence artificielle" Style="{StaticResource TitreCarte}" />
                         </StackPanel>
-                        <CheckBox Content="Utiliser les IA (décocher coupe tout envoi à Gemini et Mistral)" IsChecked="{Binding IA.Actives}"
+                        <CheckBox Content="Utiliser les IA (décocher coupe tout envoi à Gemini et Groq)" IsChecked="{Binding IA.Actives}"
                                   Margin="0,0,0,8" />
                         <DockPanel Margin="0,0,0,6">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -245,14 +245,14 @@
                         </DockPanel>
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                <Button Content="Saisir la clé…" Command="{Binding IA.ReglerMistralCommand}" Padding="10,4" Margin="0,0,6,0" />
-                                <Button Content="Retirer" Command="{Binding IA.RetirerMistralCommand}" Padding="10,4"
-                                        Visibility="{Binding IA.MistralConfigure, Converter={StaticResource Visible}}" />
+                                <Button Content="Saisir la clé…" Command="{Binding IA.ReglerGroqCommand}" Padding="10,4" Margin="0,0,6,0" />
+                                <Button Content="Retirer" Command="{Binding IA.RetirerGroqCommand}" Padding="10,4"
+                                        Visibility="{Binding IA.GroqConfigure, Converter={StaticResource Visible}}" />
                             </StackPanel>
-                            <TextBlock Text="{Binding IA.EtatMistral}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding IA.EtatGroq}" VerticalAlignment="Center" />
                         </DockPanel>
                         <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
-                                   Text="Clés gratuites de Google AI Studio (Gemini) et de Mistral, gardées sur ce PC et chiffrées par Windows. Seul ce que vous demandez est envoyé (le nom d'un produit pour une recherche de prix) ; l'IA ne modifie jamais vos comptes." />
+                                   Text="Clés gratuites de Google AI Studio (Gemini) et de GroqCloud (Groq), gardées sur ce PC et chiffrées par Windows. Seul ce que vous demandez est envoyé (le nom d'un produit pour une recherche de prix) ; l'IA ne modifie jamais vos comptes." />
                     </StackPanel>
                 </Border>
             </StackPanel>

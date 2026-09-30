@@ -60,35 +60,47 @@ public sealed class AchatsTests : IDisposable
              {"site":"Gratuit ?","prix":0,"url":"https://exemple.fr/x"}]
             ```
             """, SourceOffre.Gemini);
-        var mistral = RechercheOffres.Extraire("""[{"site":"Darty","prix":199.99,"url":"https://darty.com/aspirateur-z"},{"site":"Boulanger","prix":205,"url":"https://www.boulanger.com/z","remarque":"livraison 9,99 €"}]""", SourceOffre.Mistral);
+        var groq = RechercheOffres.Extraire("""[{"site":"Darty","prix":199.99,"url":"https://darty.com/aspirateur-z"},{"site":"Boulanger","prix":205,"url":"https://www.boulanger.com/z","remarque":"livraison 9,99 €"}]""", SourceOffre.Groq);
 
-        var offres = FusionOffres.Fusionner(gemini.Concat(mistral));
+        var offres = FusionOffres.Fusionner(gemini.Concat(groq));
 
         Assert.Equal(new[] { "Fnac", "Darty", "Boulanger" }, offres.Select(o => o.Site));
-        Assert.Equal(new[] { SourceOffre.Gemini, SourceOffre.Mistral }, offres[1].Sources.OrderBy(s => s));
+        Assert.Equal(new[] { SourceOffre.Gemini, SourceOffre.Groq }, offres[1].Sources.OrderBy(s => s));
         Assert.Equal("livraison 9,99 €", offres[2].Remarque);
     }
 
     [Fact]
-    public async Task Gemini_utilise_la_recherche_google_et_mistral_l_outil_web()
+    public async Task Gemini_utilise_la_recherche_google()
     {
-        var faux = new FauxHttp(requete => requete.RequestUri!.Host.Contains("mistral")
-            ? Json("""{"outputs":[{"type":"tool.execution","name":"web_search"},{"type":"message.output","content":[{"type":"text","text":"[{\"site\":\"A\",\"prix\":10,\"url\":\"https://a.fr/p\"}]"},{"type":"tool_reference","url":"https://a.fr/p"}]}]}""")
-            : Json("""{"candidates":[{"content":{"parts":[{"text":"[{\"site\":\"B\",\"prix\":12,"},{"text":"\"url\":\"https://b.fr/p\"}]"}]}}]}"""));
-        var http = new HttpClient(faux);
+        var faux = new FauxHttp(_ =>
+            Json("""{"candidates":[{"content":{"parts":[{"text":"[{\"site\":\"B\",\"prix\":12,"},{"text":"\"url\":\"https://b.fr/p\"}]"}]}}]}"""));
 
-        var parGemini = await RechercheOffres.RechercherAsync(new Gemini(http, "cle-g"), "casque");
-        var parMistral = await RechercheOffres.RechercherAsync(new Mistral(http, "cle-m"), "casque");
+        var parGemini = await RechercheOffres.RechercherAsync(new Gemini(new HttpClient(faux), "cle-g"), "casque");
 
         Assert.Equal("B", Assert.Single(parGemini).Site);
-        Assert.Equal("A", Assert.Single(parMistral).Site);
         var g = faux.Requetes[0];
         Assert.Equal("cle-g", g.Cle);
         Assert.Contains("google_search", g.Corps);
         Assert.Contains("gemini-flash-lite-latest:generateContent", g.Adresse);
-        var m = faux.Requetes[1];
-        Assert.Equal("Bearer cle-m", m.Autorisation);
-        Assert.Equal("web_search", JsonNode.Parse(m.Corps)!["tools"]![0]!["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Groq_repond_sans_recherche_et_ne_cherche_pas_d_offres()
+    {
+        var faux = new FauxHttp(_ => Json("""{"choices":[{"message":{"role":"assistant","content":"{\"moyen\":3.4}"}}]}"""));
+        var groq = new Groq(new HttpClient(faux), "cle-q");
+
+        Assert.False(groq.RechercheInternet);
+        Assert.Equal("{\"moyen\":3.4}", await groq.DemanderAsync("Taux ?", avecRecherche: true));
+        Assert.True(groq.SansRecherche);
+        var q = Assert.Single(faux.Requetes);
+        Assert.Equal("Bearer cle-q", q.Autorisation);
+        Assert.Equal("https://api.groq.com/openai/v1/chat/completions", q.Adresse);
+        Assert.Equal("openai/gpt-oss-120b", JsonNode.Parse(q.Corps)!["model"]!.GetValue<string>());
+        Assert.Contains("Ignore la consigne de recherche", JsonNode.Parse(q.Corps)!["messages"]![0]!["content"]!.GetValue<string>());
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(groq, "casque"));
+        Assert.Single(faux.Requetes);
     }
 
     [Fact]
@@ -116,7 +128,7 @@ public sealed class AchatsTests : IDisposable
         var ia = new ServicesIA(new SecretsEnMemoire(), _dialogues, assistantsTest: () => new IAssistantIA[]
         {
             new FausseIA(SourceOffre.Gemini, """[{"site":"A","titre":"Casque","prix":99,"url":"https://a.fr/casque"},{"site":"C","prix":90,"url":"https://c.fr/casque"}]"""),
-            new FausseIA(SourceOffre.Mistral, null),
+            new FausseIA(SourceOffre.Groq, null),
         });
         var vm = new AchatsViewModel(_dossier, ia, _dialogues, new HttpClient(pages), () => Maintenant);
         vm.Recherche = "casque";
@@ -126,8 +138,8 @@ public sealed class AchatsTests : IDisposable
         Assert.Equal(new[] { "C", "A" }, vm.Offres.Select(o => o.Site));
         Assert.Equal("à vérifier", vm.Offres[0].Verification);
         Assert.Equal("prix vérifié sur la page", vm.Offres[1].Verification);
-        Assert.Equal("2 offres (Gemini : 2, Mistral : 0), la moins chère : 90,00 € chez C.", vm.Resume);
-        Assert.Equal("Mistral : limite gratuite atteinte.", vm.Erreur);
+        Assert.Equal("2 offres (Gemini : 2, Groq : 0), la moins chère : 90,00 € chez C.", vm.Resume);
+        Assert.Equal("Groq : limite gratuite atteinte.", vm.Erreur);
     }
 
     [Fact]

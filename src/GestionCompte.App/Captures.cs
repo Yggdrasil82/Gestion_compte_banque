@@ -199,7 +199,7 @@ internal static class Captures
             // Achats : offres d'exemple (aucune IA n'est appelée pendant les captures) et prix suivis.
             vm.Achats.Recherche = "Aspirateur balai sans fil X200";
             vm.Achats.Offres = OffresDemo().Select(o => new OffreViewModel(o)).ToList();
-            vm.Achats.Resume = "5 offres (Gemini : 4, Mistral : 3), la moins chère : 219,99 € chez Boulanger.";
+            vm.Achats.Resume = "5 offres (Gemini : 5), la moins chère : 219,99 € chez Boulanger.";
             await Capturer(("23-achats-ocean", Ambiance.Ocean, false, MainViewModel.OngletAchats, false));
             await Capturer(("24-achats-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletAchats, false));
 
@@ -212,7 +212,7 @@ internal static class Captures
             vm.Lettres.Versions = new[]
             {
                 new VersionLettreViewModel("Gemini", "Résiliation de mon abonnement internet – contrat n° 123456789", LettreDemo, null),
-                new VersionLettreViewModel("Mistral", "Demande de résiliation – abonnement n° 123456789",
+                new VersionLettreViewModel("Groq", "Demande de résiliation – abonnement n° 123456789",
                     "Madame, Monsieur,\n\nPar la présente, je vous demande de bien vouloir résilier mon abonnement internet (contrat n° 123456789) à compter du 31 décembre 2026, en raison de mon déménagement.\n\nJe vous remercie de m'adresser une confirmation écrite de cette résiliation.\n\nJe vous prie d'agréer, Madame, Monsieur, mes salutations distinguées.", null),
             };
             vm.Lettres.ChoisirVersionCommand.Execute(vm.Lettres.Versions[0]);
@@ -225,7 +225,7 @@ internal static class Captures
             vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Vous", "Où puis-je faire des économies ?", deVous: true));
             vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Gemini",
                 "D'après vos chiffres, trois pistes :\n• Carburant : l'enveloppe est dépassée ce mois-ci ; regrouper les trajets ou comparer les stations peut faire gagner 15 à 20 € par mois.\n• Abonnements : vérifiez ceux que vous utilisez peu (plateformes, mobile).\n• Courses : vous êtes sous le budget, gardez ce rythme et virez la différence sur votre épargne.", deVous: false));
-            vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Mistral",
+            vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Groq",
                 "Votre taux d'épargne est correct. Le poste le plus élevé après le loyer est l'alimentation : fixer une liste et un jour de courses par semaine aide souvent à réduire de 5 à 10 %. Pensez aussi à renégocier votre assurance habitation à l'échéance.", deVous: false));
             await Capturer(("27-assistant-ocean", Ambiance.Ocean, false, MainViewModel.OngletAssistant, false));
             await Capturer(("28-assistant-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletAssistant, false));
@@ -282,8 +282,8 @@ internal static class Captures
         gemini.Liens.Add(new Core.Calculs.SourceTaux("Courtier exemple", "https://www.courtier-exemple.fr/barometre"));
         gemini.Liens.Add(new Core.Calculs.SourceTaux("Taux d'usure (exemple)", "https://www.exemple.fr/taux-usure"));
         yield return gemini;
-        // Mistral a répondu sans recherche internet (refusée par la clé gratuite) : pas de sources, taux indicatifs.
-        yield return new Core.Calculs.TauxMarche { Source = "Mistral", Bas = 3.15m, Moyen = 3.50m, Haut = 4.00m, Usure = 5.87m, Assurance = 0.30m, Periode = "novembre 2026", SansRecherche = true };
+        // Groq ne cherche pas sur internet : pas de sources, taux indicatifs.
+        yield return new Core.Calculs.TauxMarche { Source = "Groq", Bas = 3.15m, Moyen = 3.50m, Haut = 4.00m, Usure = 5.87m, Assurance = 0.30m, Periode = "novembre 2026", SansRecherche = true };
     }
 
     private static void CreerAchatsDemo(string dossier)
@@ -311,10 +311,10 @@ internal static class Captures
             offre.Sources.UnionWith(sources);
             return offre;
         }
-        yield return Offre("Boulanger", 219.99m, "https://www.boulanger.com/ref/exemple-x200", VerificationOffre.Verifie, "Livraison gratuite, retrait en magasin", SourceOffre.Gemini, SourceOffre.Mistral);
+        yield return Offre("Boulanger", 219.99m, "https://www.boulanger.com/ref/exemple-x200", VerificationOffre.Verifie, "Livraison gratuite, retrait en magasin", SourceOffre.Gemini);
         yield return Offre("Cdiscount", 224.90m, "https://www.cdiscount.com/exemple-x200", VerificationOffre.Corrige, "Vendu par un vendeur partenaire", SourceOffre.Gemini);
-        yield return Offre("Fnac", 229.99m, "https://www.fnac.com/exemple-x200", VerificationOffre.Verifie, null, SourceOffre.Gemini, SourceOffre.Mistral);
-        yield return Offre("Amazon", 234.00m, "https://www.amazon.fr/dp/EXEMPLE", VerificationOffre.AVerifier, "Prix non relu (site protégé)", SourceOffre.Mistral);
+        yield return Offre("Fnac", 229.99m, "https://www.fnac.com/exemple-x200", VerificationOffre.Verifie, null, SourceOffre.Gemini);
+        yield return Offre("Amazon", 234.00m, "https://www.amazon.fr/dp/EXEMPLE", VerificationOffre.AVerifier, "Prix non relu (site protégé)", SourceOffre.Gemini);
         yield return Offre("Darty", 249.99m, "https://www.darty.com/exemple-x200", VerificationOffre.Verifie, "Garantie 2 ans + extension possible", SourceOffre.Gemini);
     }
 

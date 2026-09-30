@@ -41,8 +41,8 @@ public sealed class TauxMarcheTests
         Assert.Equal(0.3m, taux.Assurance);
         Assert.Equal("novembre 2026", taux.Periode);
         Assert.Single(taux.Liens);
-        Assert.Null(RechercheTaux.Extraire("{\"bas\":null,\"moyen\":null}", "Mistral"));
-        Assert.Null(RechercheTaux.Extraire("Je ne sais pas.", "Mistral"));
+        Assert.Null(RechercheTaux.Extraire("{\"bas\":null,\"moyen\":null}", "Groq"));
+        Assert.Null(RechercheTaux.Extraire("Je ne sais pas.", "Groq"));
     }
 
     [Fact]
@@ -59,8 +59,8 @@ public sealed class TauxMarcheTests
         compte.SimulationsCredit.Clear();
         compte.SimulationsCredit.Add(new SimulationCredit("Maison", 200000m, 6.2m, 240, new PeriodeMois(2026, 12), 0.3m));
         var gemini = new FausseIA(SourceOffre.Gemini, """{"bas":3.1,"moyen":3.45,"haut":3.9,"usure":5.9,"assurance":0.28,"periode":"novembre 2026","sources":[]}""");
-        var mistral = new FausseIA(SourceOffre.Mistral, """{"bas":3.2,"moyen":3.5,"haut":4.0,"usure":5.87,"assurance":0.3,"periode":"novembre 2026","sources":[]}""");
-        var ia = new ServicesIA(new SecretsEnMemoire(), new Dialogues(), assistantsTest: () => new IAssistantIA[] { gemini, mistral });
+        var groq = new FausseIA(SourceOffre.Groq, """{"bas":3.2,"moyen":3.5,"haut":4.0,"usure":5.87,"assurance":0.3,"periode":"novembre 2026","sources":[]}""");
+        var ia = new ServicesIA(new SecretsEnMemoire(), new Dialogues(), assistantsTest: () => new IAssistantIA[] { gemini, groq });
         var enregistrements = 0;
         var credits = new CreditsViewModel(compte, new[] { new ChoixPeriode(new PeriodeMois(2026, 12)) }, new Dialogues(),
             () => enregistrements++, () => { }, ia, () => Aujourdhui);

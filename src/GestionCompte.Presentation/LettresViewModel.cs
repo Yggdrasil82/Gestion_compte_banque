@@ -11,7 +11,7 @@ using GestionCompte.Data.Mail;
 namespace GestionCompte.Presentation;
 
 /// <summary>
-/// Module « Lettres » : lettres types rédigées par Gemini et Mistral (une version chacune, au choix),
+/// Module « Lettres » : lettres types rédigées par Gemini et Groq (une version chacune, au choix),
 /// relues et modifiables, puis exportées en PDF ou Word ou envoyées par mail.
 /// Les coordonnées de l'utilisateur sont ajoutées par l'application et ne partent jamais aux IA.
 /// </summary>
@@ -127,7 +127,7 @@ public sealed partial class LettresViewModel : ObservableObject
         if (assistants.Count == 0)
         {
             Erreur = _ia.Actives
-                ? "Aucune IA réglée : saisissez une clé Gemini ou Mistral (Configuration › Intelligence artificielle)."
+                ? "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle)."
                 : "Les IA sont coupées (Configuration › Intelligence artificielle).";
             return;
         }

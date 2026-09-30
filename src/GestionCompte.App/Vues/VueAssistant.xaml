@@ -81,7 +81,7 @@
                     <Grid>
                         <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap" VerticalAlignment="Top"
                                    Visibility="{Binding AvecConversation, Converter={StaticResource MasqueSiVrai}}"
-                                   Text="Posez une question sur votre budget ou choisissez une suggestion. Gemini et Mistral répondent chacune d'après le résumé affiché à droite. Sans clé d'IA, saisissez-en une dans Configuration › Intelligence artificielle." />
+                                   Text="Posez une question sur votre budget ou choisissez une suggestion. Gemini et Groq répondent chacun d'après le résumé affiché à droite. Sans clé d'IA, saisissez-en une dans Configuration › Intelligence artificielle." />
                         <ScrollViewer x:Name="Defilement" VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding Conversation}">
                                 <ItemsControl.ItemTemplate>

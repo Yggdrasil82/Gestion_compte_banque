@@ -173,7 +173,7 @@ public sealed partial class CreditsViewModel : ObservableObject
         _donneesModifiees();
     }
 
-    // ---- Taux du moment (Gemini et Mistral cherchent sur internet) ----
+    // ---- Taux du moment (sur internet quand la clé le permet, sinon de mémoire : taux indicatifs) ----
 
     public bool IADisponibles => _ia?.Disponibles == true;
 
@@ -228,7 +228,7 @@ public sealed partial class CreditsViewModel : ObservableObject
         {
             ErreurTaux = _ia?.Actives == false
                 ? "Les IA sont coupées (Configuration › Intelligence artificielle)."
-                : "Aucune IA réglée : saisissez une clé Gemini ou Mistral (Configuration › Intelligence artificielle).";
+                : "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle).";
             return;
         }
 
@@ -263,7 +263,10 @@ public sealed partial class CreditsViewModel : ObservableObject
             CategorieCherchee = categorie;
             Usure = RechercheTaux.Usure(trouves);
             ErreurTaux = string.Join("\n", reponses.Where(r => r.Erreur is not null).Select(r => r.Erreur));
-            StatutTaux = trouves.Count == 0 ? "" : "Moyennes trouvées sur internet, à vérifier sur les sources : ce ne sont pas des offres de banque.";
+            StatutTaux = trouves.Count == 0 ? ""
+                : trouves.All(t => t.SansRecherche)
+                    ? "Taux indicatifs donnés de mémoire par les IA, à vérifier auprès d'une banque ou d'un courtier : ce ne sont pas des offres."
+                    : "Moyennes trouvées sur internet, à vérifier sur les sources : ce ne sont pas des offres de banque.";
         }
         finally
         {

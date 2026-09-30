@@ -75,7 +75,7 @@ public sealed class LettresTests : IDisposable
         var ia = new ServicesIA(new SecretsEnMemoire(), _dialogues, assistantsTest: () => new IAssistantIA[]
         {
             new FausseIA(SourceOffre.Gemini, ReponseGemini),
-            new FausseIA(SourceOffre.Mistral, "Objet : Résiliation\n\nMadame, Monsieur,\n\nVersion Mistral."),
+            new FausseIA(SourceOffre.Groq, "Objet : Résiliation\n\nMadame, Monsieur,\n\nVersion Groq."),
         });
         var lettres = new LettresViewModel(_dossier, ia, _dialogues, () => Aujourdhui);
         Assert.False(lettres.RedigerCommand.CanExecute(null));
@@ -84,11 +84,11 @@ public sealed class LettresTests : IDisposable
         Assert.True(lettres.RedigerCommand.CanExecute(null));
         lettres.RedigerCommand.ExecuteAsync(null).GetAwaiter().GetResult();
 
-        Assert.Equal(new[] { "Gemini", "Mistral" }, lettres.Versions.Select(v => v.Source));
+        Assert.Equal(new[] { "Gemini", "Groq" }, lettres.Versions.Select(v => v.Source));
         lettres.ChoisirVersionCommand.Execute(lettres.Versions[1]);
         Assert.Equal("Box Internet", lettres.Destinataire);
         Assert.Equal("Résiliation", lettres.Objet);
-        Assert.Contains("Version Mistral.", lettres.Corps);
+        Assert.Contains("Version Groq.", lettres.Corps);
 
         lettres.Corps += "\n\nAjout manuel.";
         lettres.GarderCommand.Execute(null);
@@ -103,7 +103,7 @@ public sealed class LettresTests : IDisposable
         var ia = new ServicesIA(new SecretsEnMemoire(), _dialogues, assistantsTest: () => new IAssistantIA[]
         {
             new FausseIA(SourceOffre.Gemini, null),
-            new FausseIA(SourceOffre.Mistral, ReponseGemini),
+            new FausseIA(SourceOffre.Groq, ReponseGemini),
         });
         var lettres = new LettresViewModel(_dossier, ia, _dialogues, () => Aujourdhui);
         lettres.Champs[0].Valeur = "Box";
@@ -174,8 +174,8 @@ public sealed class LettresTests : IDisposable
     public void L_assistant_envoie_le_resume_si_coche_et_ne_garde_que_les_ia_choisies()
     {
         var gemini = new FausseIA(SourceOffre.Gemini, "Réduisez les loisirs.");
-        var mistral = new FausseIA(SourceOffre.Mistral, "Épargnez 50 € de plus.");
-        var ia = new ServicesIA(new SecretsEnMemoire(), _dialogues, assistantsTest: () => new IAssistantIA[] { gemini, mistral });
+        var groq = new FausseIA(SourceOffre.Groq, "Épargnez 50 € de plus.");
+        var ia = new ServicesIA(new SecretsEnMemoire(), _dialogues, assistantsTest: () => new IAssistantIA[] { gemini, groq });
         var assistant = new AssistantViewModel(ia, () => "Solde : 1 234 €");
         Assert.Equal("Solde : 1 234 €", assistant.Resume);
 
@@ -186,13 +186,13 @@ public sealed class LettresTests : IDisposable
         Assert.Equal("", assistant.Question);
 
         assistant.InclureResume = false;
-        assistant.IAChoisie = "Mistral";
+        assistant.IAChoisie = "Groq";
         assistant.PoserCommand.ExecuteAsync("Et ensuite ?").GetAwaiter().GetResult();
         Assert.Single(gemini.Demandes);
-        var derniere = mistral.Demandes.Last();
+        var derniere = groq.Demandes.Last();
         Assert.DoesNotContain("Solde : 1 234 €", derniere);
         Assert.Contains("Réduisez les loisirs.", derniere);
-        Assert.Equal("Mistral", assistant.Conversation.Last().Auteur);
+        Assert.Equal("Groq", assistant.Conversation.Last().Auteur);
 
         assistant.EffacerCommand.Execute(null);
         Assert.False(assistant.AvecConversation);

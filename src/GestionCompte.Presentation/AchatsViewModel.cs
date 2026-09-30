@@ -11,7 +11,7 @@ namespace GestionCompte.Presentation;
 public sealed record DemandeAchat(string Libelle, decimal Prix);
 
 /// <summary>
-/// Module « Achats » : recherche du meilleur prix par Gemini et Mistral (offres fusionnées, prix relus sur les pages),
+/// Module « Achats » : recherche du meilleur prix par Gemini (offres fusionnées, prix relus sur les pages),
 /// liste de sites modifiable, suivi du prix de produits avec prix cible, et « Prévoir l'achat » dans le prévisionnel.
 /// </summary>
 public sealed partial class AchatsViewModel : ObservableObject
@@ -89,12 +89,16 @@ public sealed partial class AchatsViewModel : ObservableObject
     private async Task Rechercher()
     {
         var produit = Recherche.Trim();
-        var assistants = _ia.Assistants();
+        // Seules les IA qui savent chercher sur internet proposent des offres (Groq ne le fait pas).
+        var reglees = _ia.Assistants();
+        var assistants = reglees.Where(a => a.RechercheInternet).ToList();
         if (assistants.Count == 0)
         {
-            Erreur = _ia.Actives
-                ? "Aucune IA réglée : saisissez une clé Gemini ou Mistral (Configuration › Intelligence artificielle), ou utilisez la liste des sites."
-                : "Les IA sont coupées (Configuration › Intelligence artificielle) : utilisez la liste des sites.";
+            Erreur = !_ia.Actives
+                ? "Les IA sont coupées (Configuration › Intelligence artificielle) : utilisez la liste des sites."
+                : reglees.Count > 0
+                    ? "Groq ne cherche pas sur internet : saisissez une clé Gemini (Configuration › Intelligence artificielle), ou utilisez la liste des sites."
+                    : "Aucune IA réglée : saisissez une clé Gemini (Configuration › Intelligence artificielle), ou utilisez la liste des sites.";
             return;
         }
 
@@ -437,7 +441,7 @@ public sealed class OffreViewModel
     public decimal Prix => Offre.Prix;
     public string Remarque => Offre.Remarque ?? "";
 
-    /// <summary>Ex. « Gemini + Mistral ».</summary>
+    /// <summary>Ex. « Gemini ».</summary>
     public string Sources => string.Join(" + ", Offre.Sources.OrderBy(s => s));
 
     public bool Verifie => Offre.Verification != VerificationOffre.AVerifier;

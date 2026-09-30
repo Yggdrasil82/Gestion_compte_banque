@@ -248,12 +248,12 @@
                 </DockPanel>
             </Border>
 
-            <!-- Taux du moment : Gemini et Mistral cherchent sur internet. -->
+            <!-- Taux du moment : sur internet quand la clé le permet, sinon de mémoire (taux indicatifs). -->
             <Border Style="{StaticResource Carte}" Visibility="{Binding ASelection, Converter={StaticResource Visible}}">
                 <StackPanel>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource BoutonPrincipal}" Command="{Binding ChercherTauxCommand}" Margin="0"
-                                VerticalAlignment="Top" ToolTip="Gemini et Mistral cherchent les taux actuels sur internet">
+                                VerticalAlignment="Top" ToolTip="Gemini et Groq donnent les taux actuels : sur internet si votre clé le permet, sinon de mémoire (taux indicatifs)">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icone}" Text="&#xE721;" Margin="0,0,6,0" />
                                 <TextBlock Text="Chercher les taux du moment" />
@@ -271,7 +271,7 @@
                     </TextBlock>
                     <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap" Margin="0,4,0,0"
                                Visibility="{Binding IADisponibles, Converter={StaticResource MasqueSiVrai}}"
-                               Text="Saisissez une clé Gemini ou Mistral dans Configuration › Intelligence artificielle pour chercher les taux." />
+                               Text="Saisissez une clé Gemini ou Groq dans Configuration › Intelligence artificielle pour chercher les taux." />
 
                     <Border Background="{DynamicResource Negatif}" CornerRadius="8" Padding="12,8" Margin="0,8,0,0">
                         <Border.Style>

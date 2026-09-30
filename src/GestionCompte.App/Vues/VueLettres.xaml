@@ -25,7 +25,7 @@
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                         <Button Style="{StaticResource BoutonEnteteBlanc}" Command="{Binding RedigerCommand}" Padding="16,7" Margin="10,0,6,0"
-                                ToolTip="Gemini et Mistral proposent chacune une version de la lettre">
+                                ToolTip="Gemini et Groq proposent chacun une version de la lettre">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" Margin="0,0,8,0" />
                                 <TextBlock Text="Rédiger avec les IA" />
@@ -95,7 +95,7 @@
                                  MinHeight="50" VerticalContentAlignment="Top" Padding="4" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0" TextWrapping="Wrap"
                                    Visibility="{Binding IADisponibles, Converter={StaticResource MasqueSiVrai}}"
-                                   Text="Saisissez une clé Gemini ou Mistral dans Configuration › Intelligence artificielle pour faire rédiger vos lettres." />
+                                   Text="Saisissez une clé Gemini ou Groq dans Configuration › Intelligence artificielle pour faire rédiger vos lettres." />
                     </StackPanel>
                 </Border>
 
@@ -108,7 +108,7 @@
                         </StackPanel>
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
                                    Visibility="{Binding AvecVersions, Converter={StaticResource MasqueSiVrai}}"
-                                   Text="Remplissez les informations puis « Rédiger avec les IA » : Gemini et Mistral proposent chacune une version, vous gardez celle qui vous convient." />
+                                   Text="Remplissez les informations puis « Rédiger avec les IA » : Gemini et Groq proposent chacun une version, vous gardez celle qui vous convient." />
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <ItemsControl ItemsSource="{Binding Versions}">
                                 <ItemsControl.ItemTemplate>
