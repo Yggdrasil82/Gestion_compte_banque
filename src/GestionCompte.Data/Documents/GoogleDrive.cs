@@ -138,6 +138,8 @@ public sealed class ConnexionGoogle
         {
             await using var flux = client.GetStream();
             var ligne = await LirePremiereLigneAsync(flux, delai.Token);
+            // Lit le reste de l'en-tête : fermer avec des octets non lus coupe brutalement la page sous Windows.
+            while ((await LirePremiereLigneAsync(flux, delai.Token)).Length > 0) { }
             // Ex. « GET /?state=…&code=… HTTP/1.1 » ; les autres demandes du navigateur (favicon…) reçoivent une page vide.
             var chemin = ligne.Split(' ').ElementAtOrDefault(1) ?? "";
             var requete = Parametres(chemin);
@@ -152,6 +154,7 @@ public sealed class ConnexionGoogle
                 $"HTTP/1.1 {(reponduAuRetour ? "200 OK" : "404 Not Found")}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {corps.Length}\r\nConnection: close\r\n\r\n");
             await flux.WriteAsync(entete, delai.Token);
             await flux.WriteAsync(corps, delai.Token);
+            client.Client.Shutdown(SocketShutdown.Send);
             if (reponduAuRetour)
                 retour.TrySetResult(requete);
         }
