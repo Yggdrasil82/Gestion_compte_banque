@@ -6,10 +6,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using GestionCompte.Core.Achats;
+using GestionCompte.Core.Lettres;
 using GestionCompte.Core.Documents;
 using GestionCompte.Core.Mail;
 using GestionCompte.Data;
 using GestionCompte.Data.Achats;
+using GestionCompte.Data.Lettres;
 using GestionCompte.Data.Documents;
 using GestionCompte.Data.Mail;
 using GestionCompte.Presentation;
@@ -54,7 +56,7 @@ internal static class Captures
         };
 
         // Sécurité : ne jamais bloquer le serveur de compilation.
-        var delaiMaximum = new DispatcherTimer { Interval = TimeSpan.FromSeconds(120) };
+        var delaiMaximum = new DispatcherTimer { Interval = TimeSpan.FromSeconds(180) };
         delaiMaximum.Tick += (_, _) =>
         {
             File.WriteAllText(fichierErreur, "Délai dépassé pendant les captures.");
@@ -69,6 +71,7 @@ internal static class Captures
         new DepotSqlite(registre.Chemin(registre.Ajouter("Livret A"))).Enregistrer(ConfigurationParDefaut.CreerDemoLivret());
         CreerCarnetDemo(dossierDemo);
         CreerAchatsDemo(dossierDemo);
+        CreerLettresDemo(dossierDemo);
         // Serveur d'envoi d'exemple (jamais utilisé : aucune connexion pendant les captures).
         var secrets = new SecretsEnMemoire();
         secrets.Ecrire(MailViewModel.SecretSmtp, System.Text.Json.JsonSerializer.Serialize(
@@ -133,6 +136,8 @@ internal static class Captures
                 MainViewModel.OngletConfiguration => HauteurConfiguration,
                 MainViewModel.OngletMail => HauteurMail,
                 MainViewModel.OngletAchats => HauteurMail,
+                MainViewModel.OngletLettres => HauteurMail,
+                MainViewModel.OngletAssistant => HauteurMail,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -183,10 +188,63 @@ internal static class Captures
             await Capturer(("23-achats-ocean", Ambiance.Ocean, false, MainViewModel.OngletAchats, false));
             await Capturer(("24-achats-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletAchats, false));
 
+            // Lettres : deux versions d'exemple (aucune IA n'est appelée), la première gardée.
+            vm.Lettres.ModeleChoisi = ModeleLettre.Liste[0];
+            vm.Lettres.Champs[0].Valeur = "Box Internet Exemple";
+            vm.Lettres.Champs[1].Valeur = "123456789";
+            vm.Lettres.Champs[2].Valeur = "31 décembre 2026";
+            vm.Lettres.Champs[3].Valeur = "déménagement";
+            vm.Lettres.Versions = new[]
+            {
+                new VersionLettreViewModel("Gemini", "Résiliation de mon abonnement internet – contrat n° 123456789", LettreDemo, null),
+                new VersionLettreViewModel("Mistral", "Demande de résiliation – abonnement n° 123456789",
+                    "Madame, Monsieur,\n\nPar la présente, je vous demande de bien vouloir résilier mon abonnement internet (contrat n° 123456789) à compter du 31 décembre 2026, en raison de mon déménagement.\n\nJe vous remercie de m'adresser une confirmation écrite de cette résiliation.\n\nJe vous prie d'agréer, Madame, Monsieur, mes salutations distinguées.", null),
+            };
+            vm.Lettres.ChoisirVersionCommand.Execute(vm.Lettres.Versions[0]);
+            vm.Lettres.Destinataire = "Box Internet Exemple\nService résiliation\nTSA 12345\n75000 Paris";
+            vm.Lettres.Statut = "Version de Gemini gardée : relisez-la, complétez le destinataire, puis exportez-la ou envoyez-la.";
+            await Capturer(("25-lettres-ocean", Ambiance.Ocean, false, MainViewModel.OngletLettres, false));
+            await Capturer(("26-lettres-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletLettres, false));
+
+            // Assistant : conversation d'exemple sur le compte joint (aucune IA n'est appelée).
+            vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Vous", "Où puis-je faire des économies ?", deVous: true));
+            vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Gemini",
+                "D'après vos chiffres, trois pistes :\n• Carburant : l'enveloppe est dépassée ce mois-ci ; regrouper les trajets ou comparer les stations peut faire gagner 15 à 20 € par mois.\n• Abonnements : vérifiez ceux que vous utilisez peu (plateformes, mobile).\n• Courses : vous êtes sous le budget, gardez ce rythme et virez la différence sur votre épargne.", deVous: false));
+            vm.Assistant.Conversation.Add(new MessageAssistantViewModel("Mistral",
+                "Votre taux d'épargne est correct. Le poste le plus élevé après le loyer est l'alimentation : fixer une liste et un jour de courses par semaine aide souvent à réduire de 5 à 10 %. Pensez aussi à renégocier votre assurance habitation à l'échéance.", deVous: false));
+            await Capturer(("27-assistant-ocean", Ambiance.Ocean, false, MainViewModel.OngletAssistant, false));
+            await Capturer(("28-assistant-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletAssistant, false));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
         });
+    }
+
+    private const string LettreDemo =
+        "Madame, Monsieur,\n\nJe vous informe par la présente de ma décision de résilier mon abonnement internet, contrat n° 123456789, avec effet au 31 décembre 2026, en raison de mon déménagement.\n\n" +
+        "Je vous remercie de bien vouloir procéder à la clôture de mon compte à cette date et de m'indiquer les modalités de restitution du matériel.\n\n" +
+        "Dans l'attente de votre confirmation, je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.";
+
+    /// <summary>Coordonnées fictives et une lettre déjà gardée.</summary>
+    private static void CreerLettresDemo(string dossier)
+    {
+        var fichier = new FichierLettres(dossier);
+        fichier.Charger();
+        fichier.Coordonnees.Nom = "Camille Martin";
+        fichier.Coordonnees.Adresse = "12 rue des Exemples\n69000 Lyon";
+        fichier.Coordonnees.Telephone = "06 00 00 00 00";
+        fichier.Coordonnees.Email = "camille.martin@exemple.fr";
+        fichier.Coordonnees.Ville = "Lyon";
+        fichier.Lettres.Add(new Lettre
+        {
+            Date = new DateTime(2026, 10, 3),
+            Modele = "Contestation de frais bancaires",
+            Destinataire = "Banque Exemple\nAgence centrale",
+            Objet = "Contestation de frais d'incident",
+            Corps = "Madame, Monsieur,\n\n…",
+        });
+        fichier.Enregistrer();
     }
 
     private static void CreerAchatsDemo(string dossier)

@@ -192,7 +192,11 @@
                         <CheckBox Content="Mail : envoi de mails (Gmail ou autre messagerie), carnet d'adresses"
                                   IsChecked="{Binding Apparence.ModuleMail}" Margin="0,0,0,6" />
                         <CheckBox Content="Achats : meilleur prix avec Gemini et Mistral, sites marchands, prix suivis"
-                                  IsChecked="{Binding Apparence.ModuleAchats}" />
+                                  IsChecked="{Binding Apparence.ModuleAchats}" Margin="0,0,0,6" />
+                        <CheckBox Content="Lettres : lettres types rédigées par Gemini et Mistral, PDF, Word ou mail"
+                                  IsChecked="{Binding Apparence.ModuleLettres}" Margin="0,0,0,6" />
+                        <CheckBox Content="Assistant : questions sur votre budget à Gemini et Mistral (ne modifie rien)"
+                                  IsChecked="{Binding Apparence.ModuleAssistant}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
                     </StackPanel>

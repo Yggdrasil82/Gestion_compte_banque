@@ -1,0 +1,229 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueLettres"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Racine">
+    <UserControl.Resources>
+        <Style x:Key="Etiquette" TargetType="TextBlock" BasedOn="{StaticResource Discret}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,6,0,3" />
+        </Style>
+        <Style x:Key="BoutonAction" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="10,6" />
+        </Style>
+        <Style x:Key="PetitBouton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Bandeau : modèle de lettre, rédaction par les IA. -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <StackPanel>
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                        <Button Style="{StaticResource BoutonEnteteBlanc}" Command="{Binding RedigerCommand}" Padding="16,7" Margin="10,0,6,0"
+                                ToolTip="Gemini et Mistral proposent chacune une version de la lettre">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" Margin="0,0,8,0" />
+                                <TextBlock Text="Rédiger avec les IA" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource BoutonEntete}" Command="{Binding NouvelleLettreCommand}" Margin="0"
+                                ToolTip="Effacer les informations et la lettre en cours">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" Margin="0,0,8,0" />
+                                <TextBlock Text="Nouvelle lettre" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <ComboBox ItemsSource="{Binding Modeles}" SelectedItem="{Binding ModeleChoisi}" DisplayMemberPath="Titre"
+                              Height="32" FontSize="14" VerticalContentAlignment="Center" ToolTip="Type de lettre" />
+                </DockPanel>
+                <TextBlock Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
+                           Text="Seules les informations ci-dessous sont envoyées aux IA : vos nom, adresse et coordonnées sont ajoutés par l'application." />
+            </StackPanel>
+        </Border>
+
+        <StackPanel DockPanel.Dock="Bottom" Margin="10,2,10,4">
+            <TextBlock Text="{Binding Erreur}" Foreground="{DynamicResource Negatif}" TextWrapping="Wrap" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Statut}" Style="{StaticResource Discret}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="430" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Informations pour la lettre. -->
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                            <TextBlock Text="Informations" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding Champs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel>
+                                        <TextBlock Style="{StaticResource Etiquette}" Text="{Binding Nom}" />
+                                        <TextBox x:Name="Saisie" Text="{Binding Valeur, UpdateSourceTrigger=PropertyChanged}" Padding="4" />
+                                    </StackPanel>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Multiligne}" Value="True">
+                                            <Setter TargetName="Saisie" Property="AcceptsReturn" Value="True" />
+                                            <Setter TargetName="Saisie" Property="TextWrapping" Value="Wrap" />
+                                            <Setter TargetName="Saisie" Property="MinHeight" Value="90" />
+                                            <Setter TargetName="Saisie" Property="VerticalContentAlignment" Value="Top" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Style="{StaticResource Etiquette}" Text="Précisions (facultatif : ton, éléments à mentionner…)" />
+                        <TextBox Text="{Binding Precisions, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="50" VerticalContentAlignment="Top" Padding="4" />
+                        <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding IADisponibles, Converter={StaticResource MasqueSiVrai}}"
+                                   Text="Saisissez une clé Gemini ou Mistral dans Configuration › Intelligence artificielle pour faire rédiger vos lettres." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Versions proposées par les IA. -->
+                <Border Grid.Row="1" Style="{StaticResource Carte}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                            <TextBlock Text="Versions proposées" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
+                                   Visibility="{Binding AvecVersions, Converter={StaticResource MasqueSiVrai}}"
+                                   Text="Remplissez les informations puis « Rédiger avec les IA » : Gemini et Mistral proposent chacune une version, vous gardez celle qui vous convient." />
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Versions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource Bordure}" BorderThickness="1" CornerRadius="10" Padding="10,8" Margin="0,0,0,8">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource PetitBouton}" Content="Garder cette version" Margin="0"
+                                                            Visibility="{Binding Reussie, Converter={StaticResource Visible}}"
+                                                            Command="{Binding DataContext.ChoisirVersionCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                    <TextBlock Text="{Binding Titre}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                                </DockPanel>
+                                                <TextBlock Text="{Binding Objet}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,6,0,2" />
+                                                <TextBlock Text="{Binding Corps}" TextWrapping="Wrap" MaxHeight="150" TextTrimming="CharacterEllipsis" FontSize="12" />
+                                                <TextBlock Text="{Binding Erreur}" Foreground="{DynamicResource Negatif}" TextWrapping="Wrap" FontSize="12"
+                                                           Visibility="{Binding Reussie, Converter={StaticResource MasqueSiVrai}}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+
+                <!-- Lettres gardées. -->
+                <Border Grid.Row="2" Style="{StaticResource Carte}" Visibility="{Binding AvecHistorique, Converter={StaticResource Visible}}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                            <TextBlock Text="Mes lettres" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="170">
+                            <ItemsControl ItemsSource="{Binding Historique}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,0,0,6">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource PetitBouton}" Content="Reprendre"
+                                                        Command="{Binding DataContext.ReprendreCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                                <Button Style="{StaticResource PetitBouton}" Margin="0" ToolTip="Supprimer"
+                                                        Command="{Binding DataContext.SupprimerCommand, ElementName=Racine}" CommandParameter="{Binding}">
+                                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" />
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Objet}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Discret}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- Lettre en cours : relecture et envoi. -->
+            <Border Grid.Column="1" Style="{StaticResource Carte}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                        <TextBlock Text="Lettre" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource PetitBouton}" Content="Mes coordonnées…" Margin="8,0,0,0"
+                                VerticalAlignment="Center" Command="{Binding ModifierCoordonneesCommand}"
+                                ToolTip="Nom, adresse, téléphone, e-mail et ville : gardés sur ce PC, jamais envoyés aux IA" />
+                        <TextBlock Text="{Binding ResumeCoordonnees}" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12" />
+                    </DockPanel>
+
+                    <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                        <Button Style="{StaticResource BoutonAction}" Command="{Binding ExporterPdfCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xEA90;" Margin="0,0,6,0" />
+                                <TextBlock Text="Enregistrer en PDF" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource BoutonAction}" Command="{Binding ExporterWordCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE8A5;" Margin="0,0,6,0" />
+                                <TextBlock Text="Enregistrer en Word" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource BoutonAction}" Command="{Binding EnvoyerParMailCommand}"
+                                Visibility="{Binding EnvoiParMailPossible, Converter={StaticResource Visible}}"
+                                ToolTip="Ouvre l'onglet Mail avec la lettre en PDF et son texte">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE715;" Margin="0,0,6,0" />
+                                <TextBlock Text="Envoyer par mail" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource BoutonAction}" Command="{Binding GarderCommand}" Content="Garder dans « Mes lettres »" />
+                    </WrapPanel>
+
+                    <Grid>
+                        <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap" VerticalAlignment="Top"
+                                   Visibility="{Binding AvecLettre, Converter={StaticResource MasqueSiVrai}}"
+                                   Text="La version gardée s'affiche ici : relisez-la, complétez les passages entre [crochets], puis enregistrez-la en PDF ou Word ou envoyez-la par mail." />
+                        <DockPanel Visibility="{Binding AvecLettre, Converter={StaticResource Visible}}">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource Etiquette}" Text="Destinataire (nom et adresse)" />
+                            <TextBox DockPanel.Dock="Top" Text="{Binding Destinataire, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                                     TextWrapping="Wrap" MinHeight="56" VerticalContentAlignment="Top" Padding="4" />
+                            <TextBlock DockPanel.Dock="Top" Text="{Binding LieuDate}" HorizontalAlignment="Right" Margin="0,8,0,0" />
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource Etiquette}" Text="Objet" />
+                            <TextBox DockPanel.Dock="Top" Text="{Binding Objet, UpdateSourceTrigger=PropertyChanged}" FontWeight="SemiBold" Padding="4" />
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource Etiquette}" Text="Texte de la lettre" />
+                            <TextBox Text="{Binding Corps, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" MinHeight="160" Padding="6" />
+                        </DockPanel>
+                    </Grid>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

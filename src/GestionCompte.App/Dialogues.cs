@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using GestionCompte.Core.Achats;
+using GestionCompte.Core.Lettres;
 using GestionCompte.Core.Mail;
 using GestionCompte.Data.Documents;
 using GestionCompte.Data.Mail;
@@ -49,6 +50,19 @@ public sealed class Dialogues : IDialogues
             FileName = nomParDefaut,
             Filter = "Document PDF (*.pdf)|*.pdf",
             DefaultExt = ".pdf",
+            OverwritePrompt = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
+    public string? ChoisirFichierWord(string nomParDefaut)
+    {
+        var dialogue = new SaveFileDialog
+        {
+            Title = "Enregistrer en Word",
+            FileName = nomParDefaut,
+            Filter = "Document Word (*.docx)|*.docx",
+            DefaultExt = ".docx",
             OverwritePrompt = true,
         };
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
@@ -175,6 +189,12 @@ public sealed class Dialogues : IDialogues
     {
         var fenetre = new FenetreContact(actuel) { Owner = Fenetre };
         return fenetre.ShowDialog() == true ? fenetre.Contact : null;
+    }
+
+    public Coordonnees? DemanderCoordonnees(Coordonnees actuelles)
+    {
+        var fenetre = new FenetreCoordonnees(actuelles) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Coordonnees : null;
     }
 
     public SaisieSmtp? DemanderReglagesSmtp(ReglagesSmtp? actuels)

@@ -79,6 +79,16 @@
                                  ToolTip="Aide à l'achat : meilleur prix (Gemini et Mistral), sites, prix suivis"
                                  Visibility="{Binding Apparence.ModuleAchats, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=10}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Lettres"
+                                 Tag="&#xE70B;" Background="{DynamicResource Accent2}"
+                                 ToolTip="Lettres types rédigées par Gemini et Mistral : PDF, Word ou mail"
+                                 Visibility="{Binding Apparence.ModuleLettres, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=11}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Assistant"
+                                 Tag="&#xE8BD;" Background="{DynamicResource Accent1}"
+                                 ToolTip="Questions sur votre budget à Gemini et Mistral (ne modifie rien)"
+                                 Visibility="{Binding Apparence.ModuleAssistant, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=12}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Crédits"
                                  Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
                                  Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
@@ -244,6 +254,14 @@
                 <!-- Module Achats (commun à tous les comptes) -->
                 <ContentControl Content="{Binding Achats}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=10}" />
+
+                <!-- Module Lettres (commun à tous les comptes) -->
+                <ContentControl Content="{Binding Lettres}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=11}" />
+
+                <!-- Module Assistant -->
+                <ContentControl Content="{Binding Assistant}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=12}" />
 
                 <!-- Module Crédits -->
                 <ContentControl Content="{Binding Credits}"

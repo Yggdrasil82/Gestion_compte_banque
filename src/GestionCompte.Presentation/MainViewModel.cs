@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionCompte.Core;
 using GestionCompte.Core.Import;
+using GestionCompte.Core.Lettres;
 using GestionCompte.Core.Modeles;
 using GestionCompte.Data;
 
@@ -36,6 +37,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Module « Achats » (masquable dans la configuration).</summary>
     public const int OngletAchats = 10;
+
+    /// <summary>Module « Lettres » (masquable dans la configuration).</summary>
+    public const int OngletLettres = 11;
+
+    /// <summary>Module « Assistant » (masquable dans la configuration).</summary>
+    public const int OngletAssistant = 12;
 
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
@@ -84,6 +91,13 @@ public sealed partial class MainViewModel : ObservableObject
         IA = new ServicesIA(secrets, dialogues);
         Achats = new AchatsViewModel(dossier, IA, dialogues);
         Achats.AchatAPrevoir += (_, achat) => PrevoirAchat(achat);
+        Lettres = new LettresViewModel(dossier, IA, dialogues, () => aujourdHui.Date) { EnvoiParMailPossible = Apparence.ModuleMail };
+        Lettres.EnvoiParMailDemande += (_, lettre) =>
+        {
+            Mail.PreparerLettre(lettre.Objet, lettre.Texte, lettre.Piece);
+            OngletSelectionne = OngletMail;
+        };
+        Assistant = new AssistantViewModel(IA, () => _compte is null ? "" : ResumeBudget.Construire(_compte, _moisDuJour));
         Documents.EnvoiParMailDemande += async (_, fiche) =>
         {
             if (await Mail.JoindreDocumentAsync(fiche))
@@ -95,9 +109,12 @@ public sealed partial class MainViewModel : ObservableObject
                 || (OngletSelectionne == OngletBilan && !Apparence.ModuleBilan)
                 || (OngletSelectionne == OngletDocuments && !Apparence.ModuleDocuments)
                 || (OngletSelectionne == OngletMail && !Apparence.ModuleMail)
-                || (OngletSelectionne == OngletAchats && !Apparence.ModuleAchats))
+                || (OngletSelectionne == OngletAchats && !Apparence.ModuleAchats)
+                || (OngletSelectionne == OngletLettres && !Apparence.ModuleLettres)
+                || (OngletSelectionne == OngletAssistant && !Apparence.ModuleAssistant))
                 OngletSelectionne = OngletConfiguration;
             Documents.EnvoiParMailPossible = Apparence.ModuleMail;
+            Lettres.EnvoiParMailPossible = Apparence.ModuleMail;
             if (Bilan is not null)
                 Bilan.EnvoiParMailPossible = Apparence.ModuleMail;
             Mail.ModulesModifies();
@@ -165,6 +182,8 @@ public sealed partial class MainViewModel : ObservableObject
     {
         if (value == OngletEnsemble)
             Ensemble = CalculerEnsemble();
+        else if (value == OngletAssistant)
+            Assistant.ActualiserResume();
     }
 
     private void NotifierComptes()
@@ -332,6 +351,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Aide à l'achat : recherche du meilleur prix, sites, prix suivis.</summary>
     public AchatsViewModel Achats { get; }
+
+    /// <summary>Lettres types rédigées par les IA, communes à tous les comptes.</summary>
+    public LettresViewModel Lettres { get; }
+
+    /// <summary>Assistant budgétaire (questions aux IA sur un résumé des chiffres du compte ouvert).</summary>
+    public AssistantViewModel Assistant { get; }
 
     /// <summary>« Prévoir l'achat » : ajouté au prévisionnel du compte ouvert, au mois choisi.</summary>
     private void PrevoirAchat(DemandeAchat achat)
@@ -809,6 +834,7 @@ public sealed partial class MainViewModel : ObservableObject
                 OngletSelectionne = OngletMail;
         };
         Documents?.ChargesModifiees();
+        Assistant?.ActualiserResume();
     }
 
     /// <summary>Échéances d'un crédit ajoutées ou retirées depuis le module Crédits.</summary>

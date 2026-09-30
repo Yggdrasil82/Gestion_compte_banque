@@ -16,6 +16,12 @@ public interface IDialogues
     /// <summary>Demande où enregistrer un export PDF ; null si l'utilisateur annule.</summary>
     string? ChoisirFichierPdf(string nomParDefaut) => null;
 
+    /// <summary>Demande où enregistrer un document Word ; null si l'utilisateur annule.</summary>
+    string? ChoisirFichierWord(string nomParDefaut) => null;
+
+    /// <summary>Coordonnées de l'expéditeur des lettres ; null si annulé.</summary>
+    Core.Lettres.Coordonnees? DemanderCoordonnees(Core.Lettres.Coordonnees actuelles) => null;
+
     // ---- Documents ----
 
     /// <summary>Demande quel fichier ajouter au coffre ; null si l'utilisateur annule.</summary>

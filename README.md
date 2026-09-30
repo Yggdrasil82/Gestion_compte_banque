@@ -55,7 +55,9 @@ du classeur Excel d'origine.
   - « Bilan » : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF ;
   - « Documents » : documents importants communs à tous les comptes (catégories, échéances avec rappels, charge liée, notes), rangés sur le PC, dans un dossier synchronisé ou directement dans Google Drive ; protection facultative par mot de passe avec clé de secours ;
   - « Mail » : envoi par Gmail (compte Google) ou par une autre messagerie (SMTP : Orange, Free…), pièces jointes tirées du coffre, du bilan (PDF) ou d'un fichier, carnet d'adresses (manuel et contacts Google) et historique des envois ;
-  - « Achats » : recherche du meilleur prix par Gemini et Mistral (offres regroupées, triées, prix relus sur les pages), liste de sites marchands modifiable, suivi du prix de produits avec prix cible, et « Prévoir l'achat » dans le prévisionnel.
+  - « Achats » : recherche du meilleur prix par Gemini et Mistral (offres regroupées, triées, prix relus sur les pages), liste de sites marchands modifiable, suivi du prix de produits avec prix cible, et « Prévoir l'achat » dans le prévisionnel ;
+  - « Lettres » : lettres types (résiliation, contestation de frais, réclamation, garantie, délai de paiement…) ou libres, une version proposée par Gemini et une par Mistral, relues puis enregistrées en PDF ou Word ou envoyées par mail ;
+  - « Assistant » : questions sur le budget posées à Gemini et/ou Mistral à partir d'un résumé des chiffres affiché avant l'envoi ; il ne modifie rien.
 
 ## Prochainement
 
@@ -100,6 +102,11 @@ Dans Configuration › Intelligence artificielle, chacun saisit ses propres clé
 [Google AI Studio](https://aistudio.google.com/apikey) pour Gemini et [Mistral](https://console.mistral.ai/api-keys).
 Elles restent sur le PC, chiffrées par Windows. Pour une recherche de prix, seul le nom du produit est envoyé ;
 une case coupe tout envoi aux IA. Les produits suivis et la liste des sites sont dans `Documents\GestionCompte\achats.json`.
+
+Pour une lettre, seules les informations saisies (organisme, numéro de contrat…) partent aux IA : le nom, l'adresse
+et les coordonnées sont ajoutés par l'application (`Documents\GestionCompte\lettres.json`, avec les lettres gardées).
+L'assistant reçoit la question et, si la case est cochée, le résumé des chiffres affiché à l'écran (sans libellés
+d'opérations, numéro de compte ni nom) ; la conversation n'est pas enregistrée.
 
 Un document protégé est chiffré (AES-256) avec le mot de passe du coffre ; la clé de secours donnée à la création
 du mot de passe permet d'en choisir un nouveau en cas d'oubli. Sans l'un ni l'autre, un document protégé est perdu.

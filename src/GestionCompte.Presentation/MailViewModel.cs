@@ -234,6 +234,17 @@ public sealed partial class MailViewModel : ObservableObject
         return true;
     }
 
+    /// <summary>Prépare un mail avec une lettre : objet et texte repris s'ils sont vides, lettre jointe en PDF.</summary>
+    public void PreparerLettre(string objet, string texte, PieceJointe piece)
+    {
+        AjouterPiece(piece);
+        if (string.IsNullOrWhiteSpace(Objet))
+            Objet = objet;
+        if (string.IsNullOrWhiteSpace(Corps))
+            Corps = texte;
+        Statut = "Lettre jointe en PDF : ajoutez le destinataire puis envoyez.";
+    }
+
     [RelayCommand]
     private void JoindreBilan() => JoindreBilanPdf();
 

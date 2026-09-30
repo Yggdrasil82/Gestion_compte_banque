@@ -1,0 +1,26 @@
+<Window x:Class="GestionCompte.App.FenetreCoordonnees"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mes coordonnées" Width="440" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="20">
+        <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap" Margin="0,0,0,6"
+                   Text="Ajoutées en haut de chaque lettre et gardées sur ce PC. Elles ne sont jamais envoyées aux IA." />
+        <TextBlock Text="Prénom et nom" Style="{StaticResource Discret}" Margin="0,6,0,3" />
+        <TextBox x:Name="Nom" Height="28" MaxLength="100" />
+        <TextBlock Text="Adresse (plusieurs lignes possibles)" Style="{StaticResource Discret}" Margin="0,10,0,3" />
+        <TextBox x:Name="Adresse" MinHeight="56" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" MaxLength="300" />
+        <TextBlock Text="Téléphone (facultatif)" Style="{StaticResource Discret}" Margin="0,10,0,3" />
+        <TextBox x:Name="Telephone" Height="28" MaxLength="40" />
+        <TextBlock Text="Adresse mail (facultatif)" Style="{StaticResource Discret}" Margin="0,10,0,3" />
+        <TextBox x:Name="Email" Height="28" MaxLength="200" />
+        <TextBlock Text="Ville (pour « Fait à …, le … »)" Style="{StaticResource Discret}" Margin="0,10,0,3" />
+        <TextBox x:Name="Ville" Height="28" MaxLength="80" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Annuler" IsCancel="True" Padding="16,7" />
+            <Button Content="OK" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="16,7" Margin="0" Click="Valider" />
+        </StackPanel>
+    </StackPanel>
+</Window>

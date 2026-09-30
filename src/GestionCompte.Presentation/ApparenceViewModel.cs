@@ -63,6 +63,12 @@ public sealed class PreferencesAffichage
     /// <summary>Onglet « Achats » affiché dans la barre de gauche.</summary>
     public bool ModuleAchats { get; set; } = true;
 
+    /// <summary>Onglet « Lettres » affiché dans la barre de gauche.</summary>
+    public bool ModuleLettres { get; set; } = true;
+
+    /// <summary>Onglet « Assistant » affiché dans la barre de gauche.</summary>
+    public bool ModuleAssistant { get; set; } = true;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ModeEnvoiMail ModeEnvoiMail { get; set; } = ModeEnvoiMail.Gmail;
 
@@ -203,6 +209,32 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Lettres » affiché.</summary>
+    public bool ModuleLettres
+    {
+        get => _preferences.ModuleLettres;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleLettres, value, _preferences, (p, v) => p.ModuleLettres = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Module « Assistant » affiché.</summary>
+    public bool ModuleAssistant
+    {
+        get => _preferences.ModuleAssistant;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleAssistant, value, _preferences, (p, v) => p.ModuleAssistant = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     /// <summary>Compte d'envoi des mails (réglage propre au PC).</summary>
     public ModeEnvoiMail ModeEnvoiMail
     {
@@ -239,6 +271,8 @@ public sealed class ApparenceViewModel : ObservableObject
         ModuleDocuments = true;
         ModuleMail = true;
         ModuleAchats = true;
+        ModuleLettres = true;
+        ModuleAssistant = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }

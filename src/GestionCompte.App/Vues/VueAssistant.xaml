@@ -1,0 +1,133 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueAssistant"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Racine">
+    <UserControl.Resources>
+        <Style x:Key="PetitBouton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Bandeau : IA interrogées. -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource BoutonEntete}" Command="{Binding EffacerCommand}" Margin="0"
+                        VerticalAlignment="Center" ToolTip="Effacer la conversation (elle n'est jamais enregistrée)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" Margin="0,0,8,0" />
+                        <TextBlock Text="Effacer" />
+                    </StackPanel>
+                </Button>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Demander à" Foreground="{DynamicResource EnteteTexte}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <ComboBox ItemsSource="{Binding ChoixIA}" SelectedItem="{Binding IAChoisie}" MinWidth="190" Height="30"
+                              VerticalContentAlignment="Center" FontSize="14" />
+                    <TextBlock Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" VerticalAlignment="Center" Margin="14,0,0,0"
+                               TextWrapping="Wrap" Text="L'assistant donne des pistes : il ne modifie jamais votre budget." />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <StackPanel DockPanel.Dock="Bottom" Margin="10,2,10,4">
+            <TextBlock Text="{Binding Erreur}" Foreground="{DynamicResource Negatif}" TextWrapping="Wrap" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Statut}" Style="{StaticResource Discret}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="420" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Conversation. -->
+            <Border Style="{StaticResource Carte}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                        <TextBlock Text="Conversation" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+
+                    <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                        <ItemsControl ItemsSource="{Binding Suggestions}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource PetitBouton}" Content="{Binding}"
+                                            Command="{Binding DataContext.PoserCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource BoutonPrincipal}" Command="{Binding EnvoyerCommand}"
+                                    Margin="8,0,0,0" Padding="16,6" VerticalAlignment="Bottom">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE724;" Margin="0,0,8,0" />
+                                    <TextBlock Text="Demander" />
+                                </StackPanel>
+                            </Button>
+                            <TextBox Text="{Binding Question, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
+                                     MinHeight="44" MaxHeight="120" VerticalContentAlignment="Top" Padding="6" FontSize="14"
+                                     PreviewKeyDown="QuestionTouche" ToolTip="Entrée pour envoyer, Maj+Entrée pour aller à la ligne" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <Grid>
+                        <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap" VerticalAlignment="Top"
+                                   Visibility="{Binding AvecConversation, Converter={StaticResource MasqueSiVrai}}"
+                                   Text="Posez une question sur votre budget ou choisissez une suggestion. Gemini et Mistral répondent chacune d'après le résumé affiché à droite. Sans clé d'IA, saisissez-en une dans Configuration › Intelligence artificielle." />
+                        <ScrollViewer x:Name="Defilement" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Conversation}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="Bulle" CornerRadius="12" Padding="12,8" Margin="0,0,60,8" HorizontalAlignment="Left"
+                                                Background="{DynamicResource Fond}" BorderBrush="{DynamicResource Bordure}" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Auteur}" FontWeight="SemiBold" FontSize="12" Foreground="{DynamicResource Accent1}" />
+                                                <TextBox Text="{Binding Texte, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0"
+                                                         Background="Transparent" Padding="0" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding DeVous}" Value="True">
+                                                <Setter TargetName="Bulle" Property="HorizontalAlignment" Value="Right" />
+                                                <Setter TargetName="Bulle" Property="Margin" Value="60,0,0,8" />
+                                                <Setter TargetName="Bulle" Property="Background" Value="{DynamicResource Selection}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- Ce qui est envoyé aux IA. -->
+            <Border Grid.Column="1" Style="{StaticResource Carte}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                        <TextBlock Text="Ce qui est envoyé" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+                    <CheckBox DockPanel.Dock="Top" IsChecked="{Binding InclureResume}" Margin="0,0,0,6"
+                              Content="Joindre ce résumé de mon budget aux questions" />
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Text="Seuls ces chiffres partent, avec votre question : ni libellés d'opérations, ni numéro de compte, ni nom. La conversation n'est pas enregistrée." />
+                    <Button DockPanel.Dock="Bottom" Style="{StaticResource PetitBouton}" Content="Actualiser le résumé" HorizontalAlignment="Left"
+                            Margin="0,8,0,0" Command="{Binding ActualiserResumeCommand}" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBox Text="{Binding Resume, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12"
+                                 BorderThickness="0" Background="Transparent" Padding="0" />
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>
