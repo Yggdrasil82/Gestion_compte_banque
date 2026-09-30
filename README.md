@@ -65,6 +65,7 @@ du classeur Excel d'origine.
 - **2.2.0** : Groq remplace Mistral (dont les clés API ne fonctionnent plus avec l'offre gratuite) : clé gratuite sans carte bancaire, modèle `openai/gpt-oss-120b` par défaut, pour l'Assistant, les Lettres et les taux indicatifs ; Groq ne cherche pas sur internet et ne sert donc pas dans Achats. Les anciennes clés Mistral sont effacées. Quand les taux sont indicatifs, le message l'indique au lieu de « trouvés sur internet ».
 - **2.2.1** : sans recherche internet, les IA doivent toujours donner un chiffre approximatif (jamais « null ») et Groq répond obligatoirement en JSON ; quand une IA ne donne pas de taux, le message montre le début de sa réponse.
 - **2.2.2** : connexion Google : une connexion ouverte à l'avance par le navigateur ne bloque plus le retour de Google (la connexion échouait après 5 minutes d'attente).
+- **2.2.3** : connexion Google : le code renvoyé par Google est enregistré dès son arrivée, même si le navigateur coupe la page (la connexion échouait encore après 5 minutes).
 
 ## Prochainement
 

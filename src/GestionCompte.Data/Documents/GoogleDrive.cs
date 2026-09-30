@@ -138,25 +138,26 @@ public sealed class ConnexionGoogle
         {
             await using var flux = client.GetStream();
             var ligne = await LirePremiereLigneAsync(flux, delai.Token);
-            // Lit le reste de l'en-tête : fermer avec des octets non lus coupe brutalement la page sous Windows.
-            while ((await LirePremiereLigneAsync(flux, delai.Token)).Length > 0) { }
             // Ex. « GET /?state=…&code=… HTTP/1.1 » ; les autres demandes du navigateur (favicon…) reçoivent une page vide.
             var chemin = ligne.Split(' ').ElementAtOrDefault(1) ?? "";
             var requete = Parametres(chemin);
             var reponduAuRetour = requete.ContainsKey("code") || requete.ContainsKey("error");
+            // Noté tout de suite : une coupure du navigateur pendant l'envoi de la page ne doit pas le perdre.
+            if (reponduAuRetour)
+                retour.TrySetResult(requete);
             var reussi = requete.GetValueOrDefault("code") is not null && requete.GetValueOrDefault("state") == etat;
             var page = !reponduAuRetour ? ""
                 : reussi
                     ? "<html><body style='font-family:Segoe UI;padding:40px'><h2>Connexion réussie</h2><p>Vous pouvez fermer cette page et revenir dans Gestion compte.</p></body></html>"
                     : "<html><body style='font-family:Segoe UI;padding:40px'><h2>Connexion annulée</h2><p>Revenez dans Gestion compte pour réessayer.</p></body></html>";
+            // Lit le reste de l'en-tête : fermer avec des octets non lus coupe brutalement la page sous Windows.
+            while ((await LirePremiereLigneAsync(flux, delai.Token)).Length > 0) { }
             var corps = Encoding.UTF8.GetBytes(page);
             var entete = Encoding.ASCII.GetBytes(
                 $"HTTP/1.1 {(reponduAuRetour ? "200 OK" : "404 Not Found")}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {corps.Length}\r\nConnection: close\r\n\r\n");
             await flux.WriteAsync(entete, delai.Token);
             await flux.WriteAsync(corps, delai.Token);
             client.Client.Shutdown(SocketShutdown.Send);
-            if (reponduAuRetour)
-                retour.TrySetResult(requete);
         }
         catch (Exception e) when (e is OperationCanceledException or IOException or ObjectDisposedException or SocketException)
         {
