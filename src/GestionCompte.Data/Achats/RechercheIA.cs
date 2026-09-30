@@ -206,7 +206,7 @@ public sealed class Groq : IAssistantIA
             throw new HttpRequestException("Groq ne fait pas de recherche internet.");
         SansRecherche = avecRecherche;
         var (statut, texte) = await ErreursIA.EnvoyerAsync(_http,
-            () => Requete(avecRecherche ? demande + ErreursIA.NoteSansRecherche : demande), annulation, _patienter, Nom);
+            () => Requete(avecRecherche ? demande + ErreursIA.NoteSansRecherche : demande, json: avecRecherche), annulation, _patienter, Nom);
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
@@ -218,7 +218,7 @@ public sealed class Groq : IAssistantIA
             : "";
     }
 
-    private HttpRequestMessage Requete(string demande)
+    private HttpRequestMessage Requete(string demande, bool json)
     {
         var corps = new JsonObject
         {
@@ -226,6 +226,9 @@ public sealed class Groq : IAssistantIA
             ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
             ["max_completion_tokens"] = LongueurMaximale,
         };
+        // Les demandes prévues avec recherche (taux) attendent un objet JSON : Groq est obligé d'en rendre un.
+        if (json)
+            corps["response_format"] = new JsonObject { ["type"] = "json_object" };
         var requete = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions")
         {
             Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
@@ -301,7 +304,8 @@ public static class ErreursIA
     /// <summary>Ajoutée à une demande prévue avec recherche quand elle est refaite sans recherche internet.</summary>
     public const string NoteSansRecherche =
         "\n\nImportant : tu n'as pas accès à internet pour cette demande. Ignore la consigne de recherche et réponds avec tes connaissances " +
-        "les plus récentes, en donnant des valeurs approximatives plutôt que null (elles seront présentées comme indicatives). Ne cite aucune adresse de page.";
+        "les plus récentes. Ne mets jamais null : donne toujours ton meilleur chiffre approximatif pour chaque valeur " +
+        "(il sera présenté comme indicatif, à vérifier). Ne cite aucune adresse de page.";
 
     /// <summary>Refus qui peut venir de la recherche internet elle-même (quota de recherche, outil non inclus) et non de la clé.</summary>
     public static bool RechercheRefusee(HttpStatusCode statut, string texte) =>

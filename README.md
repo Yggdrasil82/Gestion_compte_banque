@@ -63,6 +63,7 @@ du classeur Excel d'origine.
 - **2.1.2** : les messages d'erreur des IA donnent la raison exacte de leur refus ; si la limite par minute est atteinte, l'IA patiente la minute (en l'annonçant) puis réessaie ; si la clé gratuite refuse la recherche internet, les taux sont donnés de mémoire avec la mention « taux indicatifs, non vérifiés sur internet » (les Achats, eux, ne proposent jamais d'offres sans recherche).
 - **2.1.3** : Mistral reçoit une longueur maximale de réponse (sans elle, la limite gratuite de tokens par minute refusait chaque demande) ; sans recherche internet, l'IA donne des taux approximatifs marqués « indicatifs » ; dans Achats, Gemini explique que la recherche internet n'est pas incluse dans sa clé gratuite.
 - **2.2.0** : Groq remplace Mistral (dont les clés API ne fonctionnent plus avec l'offre gratuite) : clé gratuite sans carte bancaire, modèle `openai/gpt-oss-120b` par défaut, pour l'Assistant, les Lettres et les taux indicatifs ; Groq ne cherche pas sur internet et ne sert donc pas dans Achats. Les anciennes clés Mistral sont effacées. Quand les taux sont indicatifs, le message l'indique au lieu de « trouvés sur internet ».
+- **2.2.1** : sans recherche internet, les IA doivent toujours donner un chiffre approximatif (jamais « null ») et Groq répond obligatoirement en JSON ; quand une IA ne donne pas de taux, le message montre le début de sa réponse.
 
 ## Prochainement
 

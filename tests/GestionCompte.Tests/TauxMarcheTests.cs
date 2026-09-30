@@ -46,6 +46,14 @@ public sealed class TauxMarcheTests
     }
 
     [Fact]
+    public void Sans_taux_le_message_montre_le_debut_de_la_reponse()
+    {
+        Assert.Equal("(vide)", CreditsViewModel.Extrait("  \n "));
+        Assert.Equal("Je n'ai pas accès à internet.", CreditsViewModel.Extrait("Je n'ai pas\n accès à internet."));
+        Assert.EndsWith("…", CreditsViewModel.Extrait(new string('a', 300)));
+    }
+
+    [Fact]
     public void Le_taeg_approche_ajoute_l_assurance()
     {
         Assert.Equal(3.8m, RechercheTaux.TaegApproche(new SimulationCredit("A", 200000m, 3.5m, 240, new PeriodeMois(2026, 12), 0.3m)));

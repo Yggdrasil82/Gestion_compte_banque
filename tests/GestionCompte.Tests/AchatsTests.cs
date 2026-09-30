@@ -98,6 +98,7 @@ public sealed class AchatsTests : IDisposable
         Assert.Equal("https://api.groq.com/openai/v1/chat/completions", q.Adresse);
         Assert.Equal("openai/gpt-oss-120b", JsonNode.Parse(q.Corps)!["model"]!.GetValue<string>());
         Assert.Contains("Ignore la consigne de recherche", JsonNode.Parse(q.Corps)!["messages"]![0]!["content"]!.GetValue<string>());
+        Assert.Equal("json_object", JsonNode.Parse(q.Corps)!["response_format"]!["type"]!.GetValue<string>());
 
         await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(groq, "casque"));
         Assert.Single(faux.Requetes);

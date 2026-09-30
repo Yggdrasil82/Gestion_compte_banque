@@ -244,14 +244,15 @@ public sealed partial class CreditsViewModel : ObservableObject
             {
                 try
                 {
-                    var taux = RechercheTaux.Extraire(await ia.DemanderAsync(demande, avecRecherche: true), ia.Nom);
+                    var reponse = await ia.DemanderAsync(demande, avecRecherche: true);
+                    var taux = RechercheTaux.Extraire(reponse, ia.Nom);
                     if (taux is not null && ia.SansRecherche)
                     {
                         // Sans recherche, les adresses citées seraient inventées.
                         taux.SansRecherche = true;
                         taux.Liens.Clear();
                     }
-                    return (ia.Nom, Taux: taux, Erreur: taux is null ? $"{ia.Nom} n'a pas trouvé de taux." : null);
+                    return (ia.Nom, Taux: taux, Erreur: taux is null ? $"{ia.Nom} n'a pas donné de taux. Sa réponse : « {Extrait(reponse)} »" : null);
                 }
                 catch (Exception e) when (e is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
                 {
@@ -272,6 +273,13 @@ public sealed partial class CreditsViewModel : ObservableObject
         {
             RechercheEnCours = false;
         }
+    }
+
+    /// <summary>Début de la réponse d'une IA, sur une ligne, pour comprendre pourquoi aucun taux n'en a été tiré.</summary>
+    public static string Extrait(string reponse)
+    {
+        var texte = string.Join(" ", reponse.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return texte.Length == 0 ? "(vide)" : texte.Length > 200 ? texte[..200] + "…" : texte;
     }
 
     /// <summary>Reprend le taux moyen trouvé (et l'assurance, si elle est en % par an) dans la simulation sélectionnée.</summary>
