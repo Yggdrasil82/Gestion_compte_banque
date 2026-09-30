@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
+using GestionCompte.Data.Documents;
 using GestionCompte.Presentation;
 using Microsoft.Win32;
 
@@ -101,6 +103,72 @@ public sealed class Dialogues : IDialogues
         var fenetre = new FenetreNom(titre, message, valeur) { Owner = Fenetre };
         return fenetre.ShowDialog() == true ? fenetre.Valeur : null;
     }
+
+    public string? ChoisirDocument()
+    {
+        var dialogue = new OpenFileDialog
+        {
+            Title = "Ajouter un document au coffre",
+            Filter = "Documents (*.pdf;*.jpg;*.jpeg;*.png;*.docx;*.xlsx;*.odt;*.txt)|*.pdf;*.jpg;*.jpeg;*.png;*.heic;*.docx;*.doc;*.xlsx;*.xls;*.odt;*.txt|Tous les fichiers (*.*)|*.*",
+            CheckFileExists = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
+    public string? ChoisirEmplacementFichier(string nomParDefaut)
+    {
+        var extension = Path.GetExtension(nomParDefaut);
+        var dialogue = new SaveFileDialog
+        {
+            Title = "Enregistrer sous",
+            FileName = nomParDefaut,
+            Filter = extension.Length > 1
+                ? $"Fichier {extension.TrimStart('.').ToUpperInvariant()} (*{extension})|*{extension}|Tous les fichiers (*.*)|*.*"
+                : "Tous les fichiers (*.*)|*.*",
+            DefaultExt = extension,
+            OverwritePrompt = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
+    public string? ChoisirDossier(string titre)
+    {
+        var dialogue = new OpenFolderDialog { Title = titre };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FolderName : null;
+    }
+
+    public string? DemanderMotDePasse(string titre, string message, bool confirmer)
+    {
+        var fenetre = new FenetreMotDePasse(titre, message, confirmer) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Valeur : null;
+    }
+
+    public void AfficherCleSecours(string cle) => new FenetreCleSecours(cle) { Owner = Fenetre }.ShowDialog();
+
+    public IdentifiantsGoogle? DemanderIdentifiantsGoogle(IdentifiantsGoogle? actuels)
+    {
+        var fenetre = new FenetreGoogle(actuels) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Identifiants : null;
+    }
+
+    public void OuvrirFichier(string chemin) => Lancer(chemin, "Aucun programme n'est installé pour ouvrir ce type de fichier.");
+
+    public void OuvrirLien(string adresse) => Lancer(adresse, $"Le navigateur n'a pas pu être ouvert. Adresse à ouvrir :\n{adresse}");
+
+    private void Lancer(string cible, string message)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(cible) { UseShellExecute = true });
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            Erreur(message);
+        }
+    }
+
+    public void Information(string titre, string message) =>
+        Afficher(message, titre, MessageBoxButton.OK, MessageBoxImage.Information);
 
     public void OuvrirDossier(string dossier) =>
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dossier}\"") { UseShellExecute = true });

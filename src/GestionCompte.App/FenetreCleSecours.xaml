@@ -1,0 +1,25 @@
+<Window x:Class="GestionCompte.App.FenetreCleSecours"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Clé de secours du coffre" Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="20">
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
+                   Text="Voici la clé de secours de votre coffre. Si vous oubliez le mot de passe, elle seule permet de récupérer les documents protégés. Notez-la ou enregistrez-la, puis rangez-la en lieu sûr (pas dans le coffre lui-même)." />
+        <Border Background="{DynamicResource FondCarte}" BorderBrush="{DynamicResource Bordure}" BorderThickness="1" CornerRadius="8" Padding="12">
+            <TextBox x:Name="Cle" IsReadOnly="True" BorderThickness="0" Background="Transparent" FontFamily="Consolas" FontSize="17"
+                     HorizontalContentAlignment="Center" TextWrapping="Wrap" />
+        </Border>
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Content="Copier" Padding="14,6" Click="Copier" />
+            <Button Content="Enregistrer dans un fichier…" Padding="14,6" Click="Enregistrer" />
+        </StackPanel>
+        <CheckBox x:Name="Notee" Content="J'ai noté ou enregistré ma clé de secours" Margin="0,14,0,0" Click="CaseCochee" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button x:Name="Fermer" Content="Terminé" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="16,7" Margin="0"
+                    IsEnabled="False" Click="Terminer" />
+        </StackPanel>
+    </StackPanel>
+</Window>

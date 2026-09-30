@@ -186,7 +186,9 @@
                         <CheckBox Content="Bilan : bilan annuel, pistes d'économie, exports Excel et PDF"
                                   IsChecked="{Binding Apparence.ModuleBilan}" Margin="0,0,0,6" />
                         <CheckBox Content="Crédits : simulation et comparaison de crédits"
-                                  IsChecked="{Binding Apparence.ModuleCredits}" />
+                                  IsChecked="{Binding Apparence.ModuleCredits}" Margin="0,0,0,6" />
+                        <CheckBox Content="Documents : documents importants, échéances, Google Drive"
+                                  IsChecked="{Binding Apparence.ModuleDocuments}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
                     </StackPanel>

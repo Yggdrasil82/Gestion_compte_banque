@@ -20,6 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Chiffrement Windows (DPAPI) des identifiants Google Drive gardés sur ce PC. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\GestionCompte.Core\GestionCompte.Core.csproj" />
     <ProjectReference Include="..\GestionCompte.Data\GestionCompte.Data.csproj" />
     <ProjectReference Include="..\GestionCompte.Presentation\GestionCompte.Presentation.csproj" />

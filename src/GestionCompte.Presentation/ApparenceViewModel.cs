@@ -4,6 +4,19 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace GestionCompte.Presentation;
 
+/// <summary>Où le coffre des documents range ses fichiers.</summary>
+public enum EmplacementDocuments
+{
+    /// <summary>Dossier « Documents » à côté des données de l'application.</summary>
+    Local,
+
+    /// <summary>Dossier choisi, par exemple synchronisé par Google Drive pour ordinateur.</summary>
+    Dossier,
+
+    /// <summary>Google Drive, connexion directe depuis l'application.</summary>
+    GoogleDrive,
+}
+
 public enum Ambiance
 {
     Ocean,
@@ -24,6 +37,15 @@ public sealed class PreferencesAffichage
 
     /// <summary>Onglet « Bilan » affiché dans la barre de gauche.</summary>
     public bool ModuleBilan { get; set; } = true;
+
+    /// <summary>Onglet « Documents » affiché dans la barre de gauche.</summary>
+    public bool ModuleDocuments { get; set; } = true;
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public EmplacementDocuments EmplacementDocuments { get; set; } = EmplacementDocuments.Local;
+
+    /// <summary>Dossier du coffre quand <see cref="EmplacementDocuments"/> vaut Dossier.</summary>
+    public string? DossierDocuments { get; set; }
 
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
@@ -123,6 +145,33 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Documents » affiché.</summary>
+    public bool ModuleDocuments
+    {
+        get => _preferences.ModuleDocuments;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleDocuments, value, _preferences, (p, v) => p.ModuleDocuments = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Emplacement du coffre des documents (réglage propre au PC).</summary>
+    public EmplacementDocuments EmplacementDocuments => _preferences.EmplacementDocuments;
+
+    public string? DossierDocuments => _preferences.DossierDocuments;
+
+    public void ChoisirEmplacementDocuments(EmplacementDocuments emplacement, string? dossier)
+    {
+        _preferences.EmplacementDocuments = emplacement;
+        _preferences.DossierDocuments = dossier;
+        Enregistrer();
+        OnPropertyChanged(nameof(EmplacementDocuments));
+        OnPropertyChanged(nameof(DossierDocuments));
+    }
+
     /// <summary>Levé quand un module est affiché ou masqué.</summary>
     public event EventHandler? ModulesChanges;
 
@@ -131,6 +180,7 @@ public sealed class ApparenceViewModel : ObservableObject
     {
         ModuleCredits = true;
         ModuleBilan = true;
+        ModuleDocuments = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }

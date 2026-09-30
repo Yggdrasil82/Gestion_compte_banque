@@ -44,7 +44,10 @@ public partial class App : Application
         MainViewModel vm;
         try
         {
-            vm = new MainViewModel(registre, new Dialogues(), DateTime.Today, apparence);
+            // Identifiants Google Drive : chiffrés par Windows, propres à ce PC (hors du dossier des données, qui peut être synchronisé).
+            var secrets = new SecretsWindows(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GestionCompte", "secrets"));
+            vm = new MainViewModel(registre, new Dialogues(), DateTime.Today, apparence, secrets);
         }
         catch (Exception ex)
         {

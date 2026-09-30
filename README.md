@@ -51,7 +51,9 @@ du classeur Excel d'origine.
 - **1.4.2** : correction du plantage au choix d'un mois dans la liste déroulante.
 - **1.4.3** : nouvelle icône (canard grippe-sou sur son coffre-fort).
 - **1.5.0** : la simulation de crédit devient le module « Crédits », un onglet à part qu'on peut masquer dans la configuration (réglage propre au PC).
-- **1.6.0** : module « Bilan » (masquable) : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF.
+- **2.0.0** (en cours) : modules masquables dans Configuration › Modules :
+  - « Bilan » : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF ;
+  - « Documents » : documents importants communs à tous les comptes (catégories, échéances avec rappels, charge liée, notes), rangés sur le PC, dans un dossier synchronisé ou directement dans Google Drive ; protection facultative par mot de passe avec clé de secours.
 
 ## Prochainement
 
@@ -66,6 +68,27 @@ captures d'écran. Le fichier `GestionCompte.exe` (aucune installation nécessai
 **Actions** du dépôt → dernière exécution réussie → section **Artifacts** → `GestionCompte-windows`.
 
 Les données sont enregistrées automatiquement dans `Documents\GestionCompte\compte.db` (un fichier `compte-2.db`, `compte-3.db`… par compte supplémentaire, listés dans `comptes.json`).
+
+## Documents et Google Drive
+
+Le module « Documents » range les fichiers dans `Documents\GestionCompte\Documents` (par défaut), dans un dossier
+choisi (par exemple un dossier de « Mon Drive » synchronisé par l'application Google Drive pour ordinateur), ou
+directement dans Google Drive (dossier « Gestion compte - Documents »).
+
+Pour la connexion directe, chacun crée une fois son propre identifiant d'application Google (gratuit) :
+
+1. [Console Google Cloud](https://console.cloud.google.com/) : créer un projet.
+2. « API et services » › « Bibliothèque » : activer **Google Drive API**.
+3. « Google Auth Platform » : type « Externe », puis dans « Audience », **Publier l'application**
+   (sinon la connexion est à refaire tous les 7 jours).
+4. « Clients » › « Créer un client » : type **Application de bureau**.
+5. Dans l'application, « Connecter Google Drive… » : coller l'ID client et le code secret, puis autoriser l'accès dans le navigateur.
+
+L'application ne voit que les fichiers qu'elle a créés (autorisation `drive.file`). L'identifiant et la connexion
+restent sur le PC, chiffrés par Windows (`%LOCALAPPDATA%\GestionCompte\secrets`) ; rien n'est enregistré dans ce dépôt.
+
+Un document protégé est chiffré (AES-256) avec le mot de passe du coffre ; la clé de secours donnée à la création
+du mot de passe permet d'en choisir un nouveau en cas d'oubli. Sans l'un ni l'autre, un document protégé est perdu.
 
 ## Développement
 

@@ -16,6 +16,7 @@
         <local:VisibleSiEgalConvertisseur x:Key="VisibleSiEgal" />
         <BooleanToVisibilityConverter x:Key="Visible" />
         <local:ProportionConvertisseur x:Key="Proportion" />
+        <local:MasqueSiVraiConvertisseur x:Key="MasqueSiVrai" />
 
         <FontFamily x:Key="Icones">Segoe MDL2 Assets</FontFamily>
 
@@ -183,6 +184,21 @@
             <Setter Property="CaretBrush" Value="{DynamicResource Texte}" />
             <Setter Property="SelectionBrush" Value="{DynamicResource Accent1}" />
             <Setter Property="Padding" Value="4,3" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="DatePicker">
+            <Setter Property="Background" Value="{DynamicResource Saisie}" />
+            <Setter Property="Foreground" Value="{DynamicResource Texte}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Bordure}" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="SelectedDateFormat" Value="Short" />
+        </Style>
+
+        <Style TargetType="DatePickerTextBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource Texte}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource Texte}" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
@@ -510,6 +526,10 @@
 
         <DataTemplate DataType="{x:Type vm:BilanViewModel}">
             <vues:VueBilan />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:DocumentsViewModel}">
+            <vues:VueDocuments />
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:CreditsViewModel}">

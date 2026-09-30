@@ -490,3 +490,8 @@ $RECYCLE.BIN/
 *.xlsx
 *.xlsm
 *.db
+
+# Coffre de documents et identifiants locaux (jamais dans le dépôt).
+*.secret
+doc-*.dat
+documents.json

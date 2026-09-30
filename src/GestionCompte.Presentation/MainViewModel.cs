@@ -28,6 +28,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Bilan » (masquable dans la configuration).</summary>
     public const int OngletBilan = 7;
 
+    /// <summary>Module « Documents » (masquable dans la configuration).</summary>
+    public const int OngletDocuments = 8;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -39,20 +42,23 @@ public sealed partial class MainViewModel : ObservableObject
     private string? _compteReleve;
 
     /// <summary>Application avec plusieurs comptes possibles (liste enregistrée dans le dossier des données).</summary>
-    public MainViewModel(RegistreComptes registre, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null)
-        : this(new DepotSqlite(registre.Chemin(registre.Actif)), dialogues, aujourdHui, apparence, registre)
+    /// <param name="secrets">Identifiants gardés sur ce PC (connexion Google Drive) ; par défaut, en mémoire seulement.</param>
+    public MainViewModel(RegistreComptes registre, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null,
+        ISecretsLocaux? secrets = null)
+        : this(new DepotSqlite(registre.Chemin(registre.Actif)), dialogues, aujourdHui, apparence, registre, secrets)
     {
     }
 
     /// <param name="aujourdHui">Date du jour : premier mois proposé et mois affiché au démarrage.</param>
     /// <param name="apparence">Choix des couleurs ; par défaut, non enregistré.</param>
-    public MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null)
-        : this(depot, dialogues, aujourdHui, apparence, null)
+    public MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence = null,
+        ISecretsLocaux? secrets = null)
+        : this(depot, dialogues, aujourdHui, apparence, null, secrets)
     {
     }
 
     private MainViewModel(DepotSqlite depot, IDialogues dialogues, DateTime aujourdHui, ApparenceViewModel? apparence,
-        RegistreComptes? registre)
+        RegistreComptes? registre, ISecretsLocaux? secrets)
     {
         _depot = depot;
         _registre = registre;
@@ -62,9 +68,14 @@ public sealed partial class MainViewModel : ObservableObject
         Apparence.ModulesChanges += (_, _) =>
         {
             if ((OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)
-                || (OngletSelectionne == OngletBilan && !Apparence.ModuleBilan))
+                || (OngletSelectionne == OngletBilan && !Apparence.ModuleBilan)
+                || (OngletSelectionne == OngletDocuments && !Apparence.ModuleDocuments))
                 OngletSelectionne = OngletConfiguration;
         };
+        // Les documents sont communs à tous les comptes : un seul coffre, à côté des données.
+        var dossier = registre?.Dossier ?? Path.GetDirectoryName(Path.GetFullPath(depot.CheminFichier)) ?? ".";
+        Documents = new DocumentsViewModel(Apparence, dossier, secrets ?? new SecretsEnMemoire(), dialogues,
+            DateOnly.FromDateTime(aujourdHui), () => _compte?.Configuration.Charges.Select(c => c.Nom).ToList() ?? new List<string>());
 
         ChargerCompte(depot);
     }
@@ -280,6 +291,9 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private AideBudgetViewModel _aideBudget = null!;
     [ObservableProperty] private CreditsViewModel _credits = null!;
     [ObservableProperty] private BilanViewModel _bilan = null!;
+
+    /// <summary>Documents importants, communs à tous les comptes.</summary>
+    public DocumentsViewModel Documents { get; }
 
     /// <summary>Import de relevé en cours d'aperçu, ou null.</summary>
     [ObservableProperty] private ImportViewModel? _import;
@@ -736,6 +750,7 @@ public sealed partial class MainViewModel : ObservableObject
         AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
         Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire);
         Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues);
+        Documents?.ChargesModifiees();
     }
 
     /// <summary>Échéances d'un crédit ajoutées ou retirées depuis le module Crédits.</summary>

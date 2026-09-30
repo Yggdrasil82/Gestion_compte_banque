@@ -5,7 +5,9 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using GestionCompte.Core.Documents;
 using GestionCompte.Data;
+using GestionCompte.Data.Documents;
 using GestionCompte.Presentation;
 
 namespace GestionCompte.App;
@@ -137,10 +139,49 @@ internal static class Captures
             vm.Bilan.Selection = vm.Bilan.Choix[0];
             await Capturer(("18-bilan-12-mois-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletBilan, false));
 
+            // Documents : un coffre d'exemple (faux fichiers), dont un document protégé et des échéances proches.
+            await vm.Documents.Chargement;
+            await CreerCoffreDemo(vm.Documents.DossierLocal);
+            await vm.Documents.ActualiserCommand.ExecuteAsync(null);
+            vm.Documents.Selection = vm.Documents.Documents.FirstOrDefault(d => d.Nom == "Assurance voiture");
+            await Capturer(("19-documents-ocean", Ambiance.Ocean, false, MainViewModel.OngletDocuments, false));
+            vm.Documents.Selection = vm.Documents.Documents.FirstOrDefault(d => d.Protege);
+            await Capturer(("20-documents-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletDocuments, false));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
         });
+    }
+
+    private static async Task CreerCoffreDemo(string dossier)
+    {
+        var coffre = new CoffreDocuments(new StockageDossier(dossier), 1_000);
+        await coffre.ChargerAsync();
+        await coffre.ConfigurerProtectionAsync("capture-demo");
+        var documents = new (string Nom, CategorieDocument Categorie, string Fichier, int Taille, DateOnly? Date, DateOnly? Echeance, string? Charge, bool Protege)[]
+        {
+            ("Carte d'identité", CategorieDocument.Identite, "cni-recto-verso.pdf", 412_000, new(2019, 3, 2), new(2034, 3, 2), null, true),
+            ("Passeport", CategorieDocument.Identite, "passeport.jpg", 1_830_000, new(2016, 11, 10), new(2026, 11, 10), null, true),
+            ("RIB compte courant", CategorieDocument.Banque, "rib.pdf", 48_000, new(2024, 1, 15), null, null, false),
+            ("Bail de l'appartement", CategorieDocument.Logement, "bail.pdf", 2_600_000, new(2022, 9, 1), null, null, false),
+            ("Assurance voiture", CategorieDocument.Vehicule, "attestation-assurance.pdf", 156_000, new(2025, 11, 27), new(2026, 11, 27), "Assurance Voiture", false),
+            ("Contrôle technique", CategorieDocument.Vehicule, "controle-technique.pdf", 230_000, new(2024, 12, 20), new(2026, 12, 20), null, false),
+            ("Attestation mutuelle", CategorieDocument.Sante, "mutuelle-2026.pdf", 95_000, new(2026, 1, 5), new(2027, 1, 1), null, false),
+            ("Avis d'impôt 2026", CategorieDocument.Impots, "avis-impot-2026.pdf", 310_000, new(2026, 8, 28), null, null, false),
+            ("Facture lave-linge", CategorieDocument.Garanties, "facture-lave-linge.pdf", 120_000, new(2025, 6, 12), new(2027, 6, 12), null, false),
+        };
+        foreach (var d in documents)
+        {
+            var document = await coffre.AjouterAsync(new DocumentImportant
+            {
+                Nom = d.Nom, Categorie = d.Categorie, NomFichier = d.Fichier, Date = d.Date, Echeance = d.Echeance, Charge = d.Charge,
+                RappelJours = d.Categorie == CategorieDocument.Vehicule ? 45 : 30,
+                Notes = d.Nom == "Assurance voiture" ? "Contrat n° 0000-DEMO, renouvellement automatique" : "",
+            }, new byte[d.Taille]);
+            if (d.Protege)
+                await coffre.ProtegerAsync(document, true);
+        }
     }
 
     private static async Task MettreEnPage(FrameworkElement element, double hauteur)
