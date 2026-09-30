@@ -1,0 +1,306 @@
+<!doctype html>
+<!-- Source du manuel. Pour le refaire : copier à côté les captures de la branche « captures » et logo.png (src/GestionCompte.App/Ressources/icone.png), puis imprimer en PDF avec Chromium : chrome --headless --no-pdf-header-footer --print-to-pdf=manuel.pdf manuel.html -->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mon Budget 2.3.0 – Manuel d'utilisation</title>
+<style>
+@page { size: A4; margin: 16mm 15mm 18mm; }
+:root { --encre:#17303c; --doux:#51646e; --accent:#12799a; --fond:#eef5f8; --ligne:#cfdde4; --alerte:#b5541c; }
+* { box-sizing: border-box; }
+body { font-family: "Liberation Sans", "DejaVu Sans", sans-serif; color: var(--encre); font-size: 10.3pt; line-height: 1.45; margin: 0; }
+h1, h2, h3 { font-family: "Bitstream Charter", "DejaVu Serif", serif; line-height: 1.2; }
+h2 { font-size: 19pt; color: var(--accent); margin: 0 0 4mm; break-after: avoid; }
+h3 { font-size: 12.5pt; margin: 5mm 0 1.5mm; break-after: avoid; }
+p { margin: 0 0 2.5mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; }
+li { margin-bottom: 1.2mm; }
+.page { break-before: page; }
+figure { margin: 3mm 0 4mm; break-inside: avoid; }
+figure img { width: 100%; border: 0.3mm solid var(--ligne); border-radius: 1.5mm; display: block; }
+figure.demi img { width: 78%; margin: 0 auto; }
+figure.grand img { width: 86%; margin: 0 auto; }
+figcaption { font-size: 8.5pt; color: var(--doux); margin-top: 1.5mm; }
+.encart { background: var(--fond); border-left: 1.2mm solid var(--accent); padding: 3mm 4mm; margin: 3mm 0; break-inside: avoid; }
+.encart.attention { border-left-color: var(--alerte); }
+.encart p:last-child, .encart ul:last-child { margin-bottom: 0; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.5pt; break-inside: avoid; }
+th, td { text-align: left; padding: 1.6mm 2mm; border-bottom: 0.3mm solid var(--ligne); vertical-align: top; }
+th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.04em; }
+.couverture { height: 255mm; display: flex; flex-direction: column; justify-content: center; }
+.couverture img.logo { width: 42mm; height: 42mm; }
+.couverture h1 { font-size: 38pt; margin: 8mm 0 2mm; color: var(--accent); }
+.couverture .sous { font-size: 15pt; color: var(--doux); margin: 0 0 14mm; }
+.couverture .note { font-size: 9.5pt; color: var(--doux); max-width: 120mm; }
+.sommaire ol { columns: 2; column-gap: 10mm; font-size: 11pt; }
+.sommaire li { margin-bottom: 2mm; break-inside: avoid; }
+.touche { font-family: "DejaVu Sans Mono", monospace; font-size: 8.8pt; background: var(--fond); padding: 0.2mm 1.2mm; border-radius: 1mm; }
+</style>
+</head>
+<body>
+
+<section class="couverture">
+  <img class="logo" src="logo.png" alt="">
+  <h1>Mon Budget</h1>
+  <p class="sous">Manuel d'utilisation · version 2.3.0</p>
+  <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
+</section>
+
+<section class="page sommaire">
+  <h2>Sommaire</h2>
+  <ol>
+    <li>Premiers pas</li>
+    <li>La barre de gauche</li>
+    <li>Mois</li>
+    <li>Importer un relevé</li>
+    <li>Prévisionnel</li>
+    <li>Aide au budget</li>
+    <li>Bilan</li>
+    <li>Documents</li>
+    <li>Mail</li>
+    <li>Achats</li>
+    <li>Lettres</li>
+    <li>Assistant</li>
+    <li>Crédits</li>
+    <li>Vue d'ensemble</li>
+    <li>Configuration</li>
+    <li>Compte Google et IA gratuites</li>
+    <li>Sauvegarde et confidentialité</li>
+  </ol>
+
+  <h2 style="margin-top:10mm">1. Premiers pas</h2>
+  <h3>Installer</h3>
+  <p>Mon Budget tient en un seul fichier, <b>GestionCompte.exe</b>, sans installation. Copiez-le où vous voulez (par exemple sur le Bureau) et lancez-le.</p>
+  <div class="encart attention">
+    <p><b>Windows ou Chrome peuvent afficher un avertissement</b>, car l'application n'est pas signée par un éditeur payant.</p>
+    <ul>
+      <li>Chrome : ouvrez les téléchargements (<span class="touche">Ctrl + J</span>) et choisissez « Conserver ».</li>
+      <li>Windows : sur « Windows a protégé votre ordinateur », cliquez sur « Informations complémentaires », puis « Exécuter quand même ».</li>
+    </ul>
+  </div>
+  <h3>Le premier lancement</h3>
+  <ol>
+    <li>Le canard grippe-sou s'anime quelques secondes (désactivable dans Configuration › Modules).</li>
+    <li>Ouvrez <b>Configuration</b> : premier mois, solde de départ, charges, revenus et enveloppes.</li>
+    <li>Revenez dans <b>Mois</b> et créez votre premier mois : charges et revenus y sont ajoutés automatiquement.</li>
+    <li>Chaque mois, importez le relevé de la banque ou pointez les opérations à la main.</li>
+  </ol>
+  <p>Tout est enregistré automatiquement, au fil de la saisie.</p>
+</section>
+
+<section class="page">
+  <h2>2. La barre de gauche</h2>
+  <p>Elle est la même dans tous les onglets.</p>
+  <table>
+    <tr><th style="width:28%">Zone</th><th>Rôle</th></tr>
+    <tr><td><b>Compte</b></td><td>Choisit le compte affiché (compte principal, compte joint, livret…). « Nouveau » crée un compte ; le crayon le renomme ; la corbeille le supprime. Chaque compte a son propre fichier et sa propre configuration, qu'on peut copier depuis un autre compte.</td></tr>
+    <tr><td><b>Onglets</b></td><td>Mois, Prévisionnel, Aide au budget, Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Vue d'ensemble, Configuration. Les modules non utilisés se masquent dans Configuration › Modules.</td></tr>
+    <tr><td><b>Apparence</b></td><td>Thème de couleurs (Océan, Pastel, Nuit…) et case « Mode sombre ».</td></tr>
+    <tr><td><b>Données</b></td><td>Importer un relevé, Enregistrer une copie (sauvegarde), Restaurer une sauvegarde, Ouvrir le dossier des données, Réinitialiser (effacer les mois ou tout effacer).</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <h2>3. Mois</h2>
+  <p>L'écran principal : un mois à la fois, avec son solde calculé ligne par ligne.</p>
+  <figure><img src="1-mois-ocean.png" alt="Onglet Mois"><figcaption>Novembre 2026, thème Océan.</figcaption></figure>
+  <ul>
+    <li><b>En haut</b> : flèches et liste pour changer de mois, « Aujourd'hui » pour revenir au mois en cours, « Relevé » pour importer, « Appliquer la configuration » pour reprendre les montants de Configuration, « Excel » pour exporter, et « Créer » pour le mois suivant.</li>
+    <li><b>Les quatre chiffres</b> : solde de fin de mois, revenus, dépenses prévues, épargne cumulée.</li>
+    <li><b>Revenus du mois</b> : cochez « Reçu » quand l'argent est arrivé.</li>
+    <li><b>Enveloppes</b> : budget, déjà dépensé et reste (courses, carburant…). Le reste est réservé dans le solde.</li>
+    <li><b>Opérations</b> : cochez « Pointé » quand l'opération apparaît sur le relevé. Choisissez une enveloppe pour une dépense de courses ou de carburant, ou un compte cumulé pour l'épargne.</li>
+    <li><b>Détail du solde</b> : ancien solde + revenus = solde de départ, puis réservé, débits et crédits jusqu'à la fin de mois.</li>
+    <li><b>Comptes cumulés</b> : total depuis le début (épargne, remboursements) et objectif restant.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>4. Importer un relevé</h2>
+  <p>Téléchargez le relevé sur le site de votre banque au format <b>OFX</b>, puis « Relevé » (onglet Mois) ou « Importer un relevé… » (barre de gauche). Le fichier est lu sur votre PC uniquement.</p>
+  <figure><img src="12-import-ocean.png" alt="Import du relevé"><figcaption>Chaque ligne du relevé est rapprochée d'une opération prévue ou ajoutée.</figcaption></figure>
+  <ul>
+    <li><b>Rapprochée</b> : l'opération prévue est pointée. <b>Montant ajusté</b> : pointée avec le montant de la banque. <b>Revenu reçu</b> : le revenu est coché. <b>Nouvelle</b> : ajoutée au mois.</li>
+    <li>Les règles de classement (Configuration) rangent les nouvelles dépenses dans une enveloppe d'après le libellé (LECLERC → Courses…).</li>
+    <li>Décochez une ligne pour l'ignorer. Les opérations déjà importées sont ignorées automatiquement, et le numéro de compte du relevé est contrôlé.</li>
+    <li>Le cadre de droite compare le solde de la banque et le solde pointé : « Les soldes concordent » quand tout est juste.</li>
+    <li>Rien n'est modifié avant « Valider l'import ». Les mois manquants sont créés après confirmation.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>5. Prévisionnel</h2>
+  <p>Les mois à venir sont simulés avec votre configuration et vos opérations prévues, sur 12 mois ou la durée choisie en haut à droite.</p>
+  <figure><img src="6-previsionnel-ocean.png" alt="Prévisionnel"></figure>
+  <ul>
+    <li>Le graphique montre le solde de fin de mois : trait plein pour le réel, pointillé pour le prévu, point rouge en cas de découvert.</li>
+    <li>« Alerte découvert » prévient si un mois passe sous zéro, et « Point le plus bas » donne le mois le plus serré.</li>
+    <li><b>Opérations ponctuelles prévues</b> : vacances, prime, taxe foncière… Elles sont ajoutées au mois quand vous le créez.</li>
+    <li><b>Objectifs et remboursements</b> : date à laquelle chaque compte cumulé atteint son objectif.</li>
+  </ul>
+
+</section>
+
+<section class="page">
+  <h2>6. Aide au budget</h2>
+  <p>Des conseils calculés sur votre PC à partir de la configuration et des mois passés.</p>
+  <figure><img src="10-aide-ocean.png" alt="Aide au budget"></figure>
+  <ul>
+    <li><b>Alertes</b> : dépenses essentielles trop élevées, épargne faible…</li>
+    <li><b>Répartition 50 / 30 / 20</b> : essentiel, confort, épargne, comparés à la règle courante. Les catégories se choisissent pour chaque charge dans Configuration.</li>
+    <li><b>Analyse des charges</b> : coût par mois et par an, part des revenus, et familles à regarder (plusieurs assurances, plusieurs forfaits mobiles…).</li>
+    <li><b>Suivi réel des enveloppes</b> : dépense moyenne des derniers mois et bouton pour ajuster le budget en un clic.</li>
+    <li><b>Objectifs d'épargne</b> : montant, date visée, mensualité nécessaire et statut « Tenable » ou non. Un objectif peut être alimenté par un compte cumulé, et les flèches changent sa priorité.</li>
+    <li><b>Simulateur « Et si… ? »</b> : décochez une charge ou changez un montant pour voir le gain par mois et le solde dans 12 mois. Rien ne change tant que vous n'appliquez pas.</li>
+  </ul>
+
+</section>
+
+<section class="page">
+  <h2>7. Bilan</h2>
+  <p>Le bilan d'une année, ou des 12 derniers mois, comparé à la même période un an plus tôt.</p>
+  <figure class="grand"><img src="17-bilan-ocean.png" alt="Bilan"></figure>
+  <ul>
+    <li>Quatre chiffres : revenus, dépenses hors épargne, épargne et solde en fin de période, avec l'évolution sur un an.</li>
+    <li><b>Mois par mois</b> : revenus, dépenses et épargne en barres.</li>
+    <li><b>Postes de dépenses</b> : du plus gros au plus petit, avec la part des revenus et l'évolution.</li>
+    <li><b>Pistes d'économie</b> : postes en hausse, enveloppe trop large ou dépassée, abonnements à vérifier, charges à regrouper, avec le gain estimé par an.</li>
+    <li>« Excel » et « PDF » enregistrent le bilan ; « Envoyer » le joint à un mail.</li>
+  </ul>
+
+</section>
+
+<section class="page">
+  <h2>8. Documents</h2>
+  <p>Le coffre des papiers importants, commun à tous les comptes.</p>
+  <figure><img src="19-documents-ocean.png" alt="Documents"></figure>
+  <ul>
+    <li>« Ajouter un document » : nom, catégorie (identité, banque, logement, véhicule, santé, impôts, garanties…), date, échéance et nombre de jours pour être prévenu.</li>
+    <li><b>Échéances à surveiller</b> : passeport, assurance, contrôle technique… Le nombre de rappels s'affiche aussi à côté de l'onglet.</li>
+    <li>Un document peut être lié à une charge (contrat d'assurance) et recevoir des notes.</li>
+    <li><b>Protéger ce document</b> : mot de passe facultatif, avec une clé de secours à noter.</li>
+    <li><b>Emplacement</b> : ce PC, un dossier synchronisé, ou Google Drive en direct pour retrouver les documents sur un autre PC.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>9. Mail</h2>
+  <p>Envoyer un mail avec des pièces jointes du coffre ou du bilan, sans ouvrir de messagerie.</p>
+  <figure><img src="21-mail-ocean.png" alt="Mail"></figure>
+  <ul>
+    <li><b>Envoyer avec</b> : Gmail (compte Google connecté) ou une autre messagerie (Orange, Free…) réglée avec « Régler le serveur d'envoi… ».</li>
+    <li>Pièces jointes : « Documents du coffre… », « Bilan en PDF » ou « Autre fichier… ».</li>
+    <li><b>Carnet d'adresses</b> : « Ajouter… », « Modifier… », « Importer de Google ». Double-clic ou « Écrire » ajoute le contact aux destinataires.</li>
+    <li><b>Nouveau en 2.3.0</b> : <span class="touche">Ctrl + clic</span> ou <span class="touche">Maj + clic</span> pour choisir plusieurs contacts, puis « Écrire » ou « Supprimer » pour toute la sélection. « Vider » retire tous les contacts, après confirmation. Les contacts Google reviennent si vous les importez de nouveau.</li>
+    <li><b>Mails envoyés</b> : historique des envois, « Reprendre » pour renvoyer un mail semblable, « Vider » pour effacer l'historique.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>10. Achats</h2>
+  <p>Trouver le meilleur prix d'un produit et surveiller son prix.</p>
+  <figure><img src="23-achats-ocean.png" alt="Achats"></figure>
+  <ul>
+    <li>Tapez le produit et « Chercher le meilleur prix ». Seul le nom du produit est envoyé à l'IA. Les prix trouvés sont relus sur les pages quand c'est possible (« prix vérifié sur la page », ou « à vérifier »).</li>
+    <li>« Ouvrir sur les sites » lance la recherche sur chaque site de la liste « Sites de recherche », que vous pouvez modifier.</li>
+    <li><b>Suivre le prix</b> : le produit passe dans « Prix suivis », avec un prix cible et l'historique. « Relire les prix » les met à jour.</li>
+    <li><b>Prévoir l'achat</b> : ajoute la dépense au prévisionnel.</li>
+  </ul>
+  <div class="encart attention"><p>La recherche de prix a besoin de la recherche internet, que les clés Gemini gratuites n'incluent pas. Sans elle, l'application le dit et propose « Ouvrir sur les sites ».</p></div>
+</section>
+
+<section class="page">
+  <h2>11. Lettres</h2>
+  <p>Des lettres types rédigées par les IA : résiliation, contestation de frais, réclamation, garantie, délai de paiement… ou lettre libre.</p>
+  <figure><img src="25-lettres-ocean.png" alt="Lettres"></figure>
+  <ul>
+    <li>Choisissez le modèle, remplissez les informations, puis « Rédiger avec les IA ». Une version par IA s'affiche dans « Versions proposées » : « Garder cette version » la reprend dans la lettre.</li>
+    <li>Vos nom, adresse et coordonnées (« Mes coordonnées… ») ne sont <b>jamais</b> envoyés aux IA : l'application les ajoute elle-même.</li>
+    <li>Relisez, puis « Enregistrer en PDF », « Enregistrer en Word », « Envoyer par mail » ou « Garder dans Mes lettres ».</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>12. Assistant</h2>
+  <p>Poser une question sur son budget à Gemini, à Groq ou aux deux.</p>
+  <figure><img src="27-assistant-ocean.png" alt="Assistant"></figure>
+  <ul>
+    <li>Choisissez l'IA en haut, tapez la question ou cliquez sur une question proposée, puis « Demander ».</li>
+    <li><b>Ce qui est envoyé</b> : le résumé chiffré affiché à droite, seulement si la case est cochée. Ni libellés d'opérations, ni numéro de compte, ni nom.</li>
+    <li>L'assistant donne des pistes : il ne modifie jamais votre budget. La conversation n'est pas enregistrée ; « Effacer » la vide.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <h2>13. Crédits</h2>
+  <p>Simuler et comparer des crédits (immobilier, auto / moto, consommation), puis ajouter les échéances au prévisionnel.</p>
+  <figure class="grand"><img src="29-credits-taux-ocean.png" alt="Crédits"></figure>
+  <ul>
+    <li>« + » ajoute une simulation : montant, taux, durée, assurance, première échéance. La mensualité, le coût total et le taux d'endettement se calculent aussitôt.</li>
+    <li>Sélectionnez une simulation pour voir son tableau d'amortissement, le reste par mois, « Excel » et « Ajouter au prévisionnel ».</li>
+    <li><b>Combien puis-je emprunter ?</b> : le montant possible pour une mensualité donnée, avec « Créer la simulation ».</li>
+    <li><b>Taux du moment</b> : les IA cherchent les taux bas, moyens et hauts, le taux d'usure et l'assurance. Seule la catégorie de crédit est envoyée. « Reprendre le taux moyen » l'applique à la simulation. Une alerte rouge prévient si le taux dépasse l'usure.</li>
+  </ul>
+  <div class="encart"><p>Avec les clés gratuites, les IA n'ont pas accès à internet : les taux sont alors marqués « indicatifs » et à vérifier auprès d'une banque ou d'un courtier.</p></div>
+</section>
+
+<section class="page">
+  <h2>14. Vue d'ensemble</h2>
+  <p>Tous vos comptes réunis : solde de fin de mois, évolution et point le plus bas de chacun, et le total sur 12 mois.</p>
+  <figure><img src="14-ensemble-ocean.png" alt="Vue d'ensemble"></figure>
+  <p>Les virements entre vos comptes se saisissent dans chacun des deux comptes.</p>
+</section>
+
+<section class="page">
+  <h2>15. Configuration</h2>
+  <p>Les réglages du compte ouvert et du PC.</p>
+  <figure class="demi"><img src="9-configuration-ocean.png" alt="Configuration"></figure>
+</section>
+
+<section class="page">
+  <table>
+    <tr><th style="width:28%">Carte</th><th>Rôle</th></tr>
+    <tr><td><b>Démarrage</b></td><td>Premier mois et solde du compte au départ.</td></tr>
+    <tr><td><b>Charges</b></td><td>Débits ajoutés à chaque nouveau mois : montant, catégorie (Essentiel, Confort, Épargne), fréquence (tous les mois, tous les 2, 3, 6 ou 12 mois, avec le mois de prélèvement) et compte cumulé éventuel.</td></tr>
+    <tr><td><b>Revenus</b></td><td>Montants habituels (salaire, CAF…).</td></tr>
+    <tr><td><b>Comptes cumulés</b></td><td>Épargne, remboursements… avec un objectif facultatif.</td></tr>
+    <tr><td><b>Enveloppes</b></td><td>Budgets de dépenses (courses, carburant) et leur catégorie.</td></tr>
+    <tr><td><b>Règles de classement</b></td><td>Mot-clé du libellé → enveloppe, utilisé à l'import des relevés.</td></tr>
+    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Crédits, Documents, Mail, Achats, Lettres, Assistant et l'animation du canard. Réglage propre au PC ; vos données restent conservées.</td></tr>
+    <tr><td><b>Compte Google</b></td><td>État « Connecté : adresse » ou « Non connecté », boutons Connecter, Reconnecter et Déconnecter. Pendant la connexion, la carte affiche l'étape en cours.</td></tr>
+    <tr><td><b>Intelligence artificielle</b></td><td>Case pour couper tout envoi aux IA, et clés Gemini et Groq.</td></tr>
+  </table>
+  <p>Les montants de Configuration servent pour chaque nouveau mois. Pour un mois déjà créé, utilisez « Appliquer la configuration » dans l'onglet Mois.</p>
+
+  <h2 style="margin-top:8mm">16. Compte Google et IA gratuites</h2>
+  <h3>Connecter le compte Google</h3>
+  <ol>
+    <li>Configuration › Compte Google › « Connecter… ». La page de Google s'ouvre directement dans le navigateur.</li>
+    <li>Choisissez le compte Google. Sur « Google n'a pas validé cette application », cliquez sur « Paramètres avancés », puis « Accéder à… ».</li>
+    <li>Cochez les accès proposés (Drive, envoi de mails, contacts), puis « Continuer ».</li>
+    <li>La page « Connexion réussie » s'affiche : revenez dans l'application, la carte indique « Connecté ».</li>
+  </ol>
+  <p>Chaque PC se connecte une fois ; la connexion est gardée ensuite. L'application ne voit dans votre Drive que les fichiers qu'elle a créés, et ne lit pas vos mails.</p>
+</section>
+
+<section class="page">
+  <h3>Clés d'IA gratuites</h3>
+  <table>
+    <tr><th style="width:18%">IA</th><th style="width:36%">Où créer la clé</th><th>À savoir</th></tr>
+    <tr><td><b>Gemini</b> (Google)</td><td>Google AI Studio : aistudio.google.com, « Get API key »</td><td>Gratuit sans carte bancaire. Modèle Flash-Lite par défaut (environ 500 demandes par jour). Pas de recherche internet avec une clé gratuite.</td></tr>
+    <tr><td><b>Groq</b></td><td>console.groq.com/keys, « Create API Key »</td><td>Gratuit sans carte bancaire (environ 1 000 demandes par jour). Pas de recherche internet.</td></tr>
+  </table>
+  <p>Collez la clé dans Configuration › Intelligence artificielle › « Saisir la clé… ». Elle est chiffrée par Windows et reste sur votre PC. Ne la communiquez à personne.</p>
+  <div class="encart"><p><b>Tout reste gratuit</b> tant qu'aucune carte bancaire ni compte de facturation n'est ajouté chez Google ou Groq. Si une limite du jour est atteinte, l'application le dit et indique quand réessayer.</p></div>
+
+  <h2 style="margin-top:8mm">17. Sauvegarde et confidentialité</h2>
+  <ul>
+    <li>Les données sont dans <b>Documents\GestionCompte</b> (un fichier par compte). « Ouvrir le dossier » y mène directement.</li>
+    <li><b>Enregistrer une copie…</b> crée une sauvegarde ; <b>Restaurer une sauvegarde…</b> la reprend. Gardez une copie sur une clé USB ou dans Google Drive.</li>
+    <li><b>Réinitialiser…</b> efface les mois, ou tout, pour repartir de zéro (une confirmation est demandée).</li>
+    <li>Il n'existe aucun serveur Mon Budget : rien n'est envoyé au développeur. Seul ce que vous demandez part vers Google ou les IA, comme décrit dans chaque onglet. Les règles complètes sont sur la page « Règles de confidentialité » du dépôt GitHub (docs/confidentialite.md).</li>
+  </ul>
+</section>
+
+</body>
+</html>
