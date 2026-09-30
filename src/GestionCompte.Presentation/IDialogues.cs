@@ -44,6 +44,18 @@ public interface IDialogues
 
     void Information(string titre, string message) { }
 
+    /// <summary>Demande quel fichier joindre à un mail ; null si annulé.</summary>
+    string? ChoisirFichierAJoindre() => null;
+
+    /// <summary>Liste à cocher (ex. documents à joindre) ; renvoie les positions cochées, null si annulé.</summary>
+    IReadOnlyList<int>? ChoisirParmi(string titre, string message, IReadOnlyList<string> elements) => null;
+
+    /// <summary>Saisie ou modification d'un contact ; null si annulé.</summary>
+    Core.Mail.Contact? DemanderContact(Core.Mail.Contact? actuel) => null;
+
+    /// <summary>Réglages du serveur d'envoi (SMTP) ; mot de passe null = garder celui déjà enregistré. Null si annulé.</summary>
+    SaisieSmtp? DemanderReglagesSmtp(Data.Mail.ReglagesSmtp? actuels) => null;
+
     /// <summary>Demande quel relevé bancaire (.ofx) importer ; null si l'utilisateur annule.</summary>
     string? ChoisirReleve();
 
@@ -61,6 +73,9 @@ public interface IDialogues
     /// <summary>Demande un texte (ex. nouveau nom d'un compte) ; null si l'utilisateur annule.</summary>
     string? DemanderNom(string titre, string message, string valeur) => null;
 }
+
+/// <param name="MotDePasse">null : garder le mot de passe déjà enregistré.</param>
+public sealed record SaisieSmtp(Data.Mail.ReglagesSmtp Reglages, string? MotDePasse);
 
 /// <param name="CopierDe">Nom du compte dont la configuration est copiée ; null = configuration vierge.</param>
 public sealed record DemandeNouveauCompte(string Nom, string? CopierDe);

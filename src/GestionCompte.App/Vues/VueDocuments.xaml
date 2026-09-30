@@ -209,6 +209,9 @@
                                 <Button Style="{StaticResource BoutonAction}" Command="{Binding ProtegerCommand}"
                                         Content="{Binding Selection.TexteProtection}"
                                         ToolTip="Chiffre le fichier avec le mot de passe du coffre (pour les documents sensibles)" />
+                                <Button Style="{StaticResource BoutonAction}" Command="{Binding EnvoyerParMailCommand}" Content="Envoyer par mail…"
+                                        Visibility="{Binding EnvoiParMailPossible, Converter={StaticResource Visible}}"
+                                        ToolTip="Ouvre l'onglet Mail avec ce document en pièce jointe" />
                                 <Button Style="{StaticResource BoutonAction}" Command="{Binding SupprimerCommand}" Content="Supprimer"
                                         Foreground="{DynamicResource Negatif}" />
                             </WrapPanel>
@@ -229,12 +232,9 @@
                                 <Button Style="{StaticResource BoutonAction}" Command="{Binding ChoisirDossierSynchroniseCommand}"
                                         Content="Dossier synchronisé…"
                                         ToolTip="Un dossier de « Mon Drive » avec l'application Google Drive pour ordinateur" />
-                                <Button Style="{StaticResource BoutonAction}" Command="{Binding ConnecterGoogleCommand}"
-                                        Content="Connecter Google Drive…"
-                                        Visibility="{Binding GoogleConnecte, Converter={StaticResource MasqueSiVrai}}" />
-                                <Button Style="{StaticResource BoutonAction}" Command="{Binding DeconnecterGoogleCommand}"
-                                        Content="Déconnecter Google Drive"
-                                        Visibility="{Binding GoogleConnecte, Converter={StaticResource Visible}}" />
+                                <Button Style="{StaticResource BoutonAction}" Command="{Binding UtiliserGoogleDriveCommand}"
+                                        Content="Google Drive (connexion directe)"
+                                        ToolTip="Ranger les documents dans votre Google Drive (connexion au compte Google si besoin)" />
                             </WrapPanel>
                             <TextBlock Style="{StaticResource Aide}" Margin="0,4,0,0"
                                        Text="Documents communs à tous les comptes. Avec Google Drive (dossier synchronisé ou connexion directe), vous les retrouvez sur vos autres PC. En changeant d'emplacement, l'application propose d'y copier vos documents." />

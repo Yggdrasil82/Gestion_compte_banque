@@ -38,11 +38,18 @@
                             <TextBlock Text="Excel" />
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource BoutonEntete}" Command="{Binding ExporterPdfCommand}" ToolTip="Exporter le bilan en PDF (à imprimer ou envoyer)"
-                            Margin="0">
+                    <Button Style="{StaticResource BoutonEntete}" Command="{Binding ExporterPdfCommand}" ToolTip="Exporter le bilan en PDF (à imprimer ou envoyer)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icone}" Text="&#xE749;" Margin="0,0,8,0" />
                             <TextBlock Text="PDF" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BoutonEntete}" Command="{Binding EnvoyerParMailCommand}" Margin="0"
+                            ToolTip="Envoyer le bilan en PDF par mail (onglet Mail)"
+                            Visibility="{Binding EnvoiParMailPossible, Converter={StaticResource Visible}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE715;" Margin="0,0,8,0" />
+                            <TextBlock Text="Envoyer" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

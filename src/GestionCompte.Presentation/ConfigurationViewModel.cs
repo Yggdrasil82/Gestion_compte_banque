@@ -14,6 +14,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     /// <summary>Réglages propres au PC (modules affichés), montrés dans la carte « Modules ».</summary>
     public ApparenceViewModel? Apparence { get; init; }
 
+    /// <summary>Compte Google (réglage propre à ce PC, partagé par les modules Documents et Mail).</summary>
+    public CompteGoogle? Google { get; init; }
+
     /// <param name="moisDuJour">Premier mois proposé dans la colonne « À partir de » des charges (par défaut, le premier mois).</param>
     public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee,
         PeriodeMois? moisDuJour = null)

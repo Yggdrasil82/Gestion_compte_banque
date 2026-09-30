@@ -53,7 +53,8 @@ du classeur Excel d'origine.
 - **1.5.0** : la simulation de crédit devient le module « Crédits », un onglet à part qu'on peut masquer dans la configuration (réglage propre au PC).
 - **2.0.0** (en cours) : modules masquables dans Configuration › Modules :
   - « Bilan » : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF ;
-  - « Documents » : documents importants communs à tous les comptes (catégories, échéances avec rappels, charge liée, notes), rangés sur le PC, dans un dossier synchronisé ou directement dans Google Drive ; protection facultative par mot de passe avec clé de secours.
+  - « Documents » : documents importants communs à tous les comptes (catégories, échéances avec rappels, charge liée, notes), rangés sur le PC, dans un dossier synchronisé ou directement dans Google Drive ; protection facultative par mot de passe avec clé de secours ;
+  - « Mail » : envoi par Gmail (compte Google) ou par une autre messagerie (SMTP : Orange, Free…), pièces jointes tirées du coffre, du bilan (PDF) ou d'un fichier, carnet d'adresses (manuel et contacts Google) et historique des envois.
 
 ## Prochainement
 
@@ -69,23 +70,28 @@ captures d'écran. Le fichier `GestionCompte.exe` (aucune installation nécessai
 
 Les données sont enregistrées automatiquement dans `Documents\GestionCompte\compte.db` (un fichier `compte-2.db`, `compte-3.db`… par compte supplémentaire, listés dans `comptes.json`).
 
-## Documents et Google Drive
+## Documents, mails et compte Google
 
 Le module « Documents » range les fichiers dans `Documents\GestionCompte\Documents` (par défaut), dans un dossier
 choisi (par exemple un dossier de « Mon Drive » synchronisé par l'application Google Drive pour ordinateur), ou
 directement dans Google Drive (dossier « Gestion compte - Documents »).
 
-Pour la connexion directe, chacun crée une fois son propre identifiant d'application Google (gratuit) :
+Pour la connexion au compte Google (Drive, Gmail, contacts : Configuration › Compte Google), chacun crée une fois
+son propre identifiant d'application Google (gratuit) :
 
 1. [Console Google Cloud](https://console.cloud.google.com/) : créer un projet.
-2. « API et services » › « Bibliothèque » : activer **Google Drive API**.
+2. « API et services » › « Bibliothèque » : activer **Google Drive API**, **Gmail API** et **People API**.
 3. « Google Auth Platform » : type « Externe », puis dans « Audience », **Publier l'application**
    (sinon la connexion est à refaire tous les 7 jours).
 4. « Clients » › « Créer un client » : type **Application de bureau**.
-5. Dans l'application, « Connecter Google Drive… » : coller l'ID client et le code secret, puis autoriser l'accès dans le navigateur.
+5. Dans l'application, « Connecter… » : coller l'ID client et le code secret, puis autoriser l'accès dans le navigateur
+   (« Paramètres avancés » › « Accéder à… » si Google signale une application non validée : c'est la vôtre).
 
-L'application ne voit que les fichiers qu'elle a créés (autorisation `drive.file`). L'identifiant et la connexion
-restent sur le PC, chiffrés par Windows (`%LOCALAPPDATA%\GestionCompte\secrets`) ; rien n'est enregistré dans ce dépôt.
+Droits demandés : dans Drive, seulement les fichiers créés par l'application (`drive.file`) ; dans Gmail, l'envoi
+seul (`gmail.send`, pas de lecture de la boîte) ; lecture des contacts. L'identifiant et la connexion
+restent sur le PC, chiffrés par Windows (`%LOCALAPPDATA%\GestionCompte\secrets`), comme le mot de passe
+de la messagerie (SMTP) ; rien n'est enregistré dans ce dépôt. Le carnet d'adresses et l'historique des envois
+sont dans `Documents\GestionCompte\mail.json`.
 
 Un document protégé est chiffré (AES-256) avec le mot de passe du coffre ; la clé de secours donnée à la création
 du mot de passe permet d'en choisir un nouveau en cas d'oubli. Sans l'un ni l'autre, un document protégé est perdu.

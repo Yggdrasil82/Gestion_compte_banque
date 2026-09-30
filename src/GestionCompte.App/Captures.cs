@@ -6,8 +6,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using GestionCompte.Core.Documents;
+using GestionCompte.Core.Mail;
 using GestionCompte.Data;
 using GestionCompte.Data.Documents;
+using GestionCompte.Data.Mail;
 using GestionCompte.Presentation;
 
 namespace GestionCompte.App;
@@ -31,7 +33,10 @@ internal static class Captures
     private const double HauteurBilan = 1420;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
-    private const double HauteurConfiguration = 1700;
+    private const double HauteurConfiguration = 1880;
+
+    /// <summary>Mail : rédaction, carnet d'adresses et historique.</summary>
+    private const double HauteurMail = 960;
 
     public static void Lancer(App app, string dossier)
     {
@@ -60,7 +65,13 @@ internal static class Captures
         var registre = RegistreComptes.Charger(dossierDemo);
         new DepotSqlite(registre.Chemin(registre.Actif)).Enregistrer(ConfigurationParDefaut.CreerDemo());
         new DepotSqlite(registre.Chemin(registre.Ajouter("Livret A"))).Enregistrer(ConfigurationParDefaut.CreerDemoLivret());
-        var vm = new MainViewModel(registre, new Dialogues(), new DateTime(2026, 11, 15));
+        CreerCarnetDemo(dossierDemo);
+        // Serveur d'envoi d'exemple (jamais utilisé : aucune connexion pendant les captures).
+        var secrets = new SecretsEnMemoire();
+        secrets.Ecrire(MailViewModel.SecretSmtp, System.Text.Json.JsonSerializer.Serialize(
+            new ReglagesSmtp("smtp.orange.fr", 465, SecuriteSmtp.Ssl, "prenom.nom@exemple.fr", "", "Prénom Nom")));
+        secrets.Ecrire(MailViewModel.SecretSmtpMotDePasse, "demo");
+        var vm = new MainViewModel(registre, new Dialogues(), new DateTime(2026, 11, 15), null, secrets);
         vm.Apparence.Changee += (_, _) => Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
         Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
 
@@ -117,6 +128,7 @@ internal static class Captures
                 MainViewModel.OngletCredits => HauteurCredits,
                 MainViewModel.OngletBilan => HauteurBilan,
                 MainViewModel.OngletConfiguration => HauteurConfiguration,
+                MainViewModel.OngletMail => HauteurMail,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -148,10 +160,51 @@ internal static class Captures
             vm.Documents.Selection = vm.Documents.Documents.FirstOrDefault(d => d.Protege);
             await Capturer(("20-documents-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletDocuments, false));
 
+            // Mail : un mail prêt à partir avec un document du coffre et le bilan en pièces jointes.
+            vm.Mail.ModeSmtp = true;
+            vm.Mail.Destinataires = "contact@assurance-exemple.fr";
+            vm.Mail.Corps = "Bonjour,\n\nVeuillez trouver ci-joint mon attestation d'assurance et le bilan de mon budget.\n\nCordialement,\nPrénom Nom";
+            await vm.Mail.JoindreDocumentAsync(vm.Documents.Tous.First(d => d.Nom == "Assurance voiture"));
+            vm.Mail.JoindreBilanPdf();
+            vm.Mail.Objet = "Attestation d'assurance voiture";
+            vm.Mail.ContactSelectionne = vm.Mail.Contacts.FirstOrDefault();
+            await Capturer(("21-mail-ocean", Ambiance.Ocean, false, MainViewModel.OngletMail, false));
+            vm.Mail.ModeGmail = true;
+            await Capturer(("22-mail-gmail-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletMail, false));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
         });
+    }
+
+    private static void CreerCarnetDemo(string dossier)
+    {
+        var carnet = new CarnetMail(dossier);
+        carnet.Contacts.AddRange(new[]
+        {
+            new Contact { Nom = "Assurance auto (exemple)", Email = "contact@assurance-exemple.fr", Notes = "Contrat voiture n° 0000-DEMO" },
+            new Contact { Nom = "Agence immobilière (exemple)", Email = "gestion@agence-exemple.fr", Notes = "Bail de l'appartement" },
+            new Contact { Nom = "Conseiller bancaire (exemple)", Email = "conseiller@banque-exemple.fr", Notes = "Agence du centre" },
+            new Contact { Nom = "Mutuelle (exemple)", Email = "adherents@mutuelle-exemple.fr", Source = SourceContact.Google },
+            new Contact { Nom = "Camille", Email = "camille@exemple.fr", Source = SourceContact.Google },
+        });
+        carnet.NoterEnvoi(new EnvoiMail
+        {
+            Date = new DateTime(2026, 10, 2, 9, 15, 0), Compte = "prenom.nom@exemple.fr", Destinataires = { "conseiller@banque-exemple.fr" },
+            Objet = "Demande de RIB", Reussi = false, Erreur = "Le serveur d'envoi n'a pas répondu.",
+        });
+        carnet.NoterEnvoi(new EnvoiMail
+        {
+            Date = new DateTime(2026, 10, 2, 9, 20, 0), Compte = "prenom.nom@exemple.fr", Destinataires = { "conseiller@banque-exemple.fr" },
+            Objet = "Demande de RIB", Reussi = true,
+        });
+        carnet.NoterEnvoi(new EnvoiMail
+        {
+            Date = new DateTime(2026, 11, 3, 18, 42, 0), Compte = "prenom.nom@exemple.fr", Destinataires = { "gestion@agence-exemple.fr" },
+            Objet = "Attestation d'assurance habitation", PiecesJointes = { "attestation-habitation.pdf" }, Reussi = true,
+        });
+        carnet.Enregistrer();
     }
 
     private static async Task CreerCoffreDemo(string dossier)

@@ -31,6 +31,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Documents » (masquable dans la configuration).</summary>
     public const int OngletDocuments = 8;
 
+    /// <summary>Module « Mail » (masquable dans la configuration).</summary>
+    public const int OngletMail = 9;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -65,17 +68,33 @@ public sealed partial class MainViewModel : ObservableObject
         _dialogues = dialogues;
         _moisDuJour = new PeriodeMois(aujourdHui.Year, aujourdHui.Month);
         Apparence = apparence ?? new ApparenceViewModel(null);
+        // Documents et mails sont communs à tous les comptes, à côté des données.
+        var dossier = registre?.Dossier ?? Path.GetDirectoryName(Path.GetFullPath(depot.CheminFichier)) ?? ".";
+        secrets ??= new SecretsEnMemoire();
+        Google = new CompteGoogle(secrets, dialogues);
+        Documents = new DocumentsViewModel(Apparence, dossier, Google, dialogues,
+            DateOnly.FromDateTime(aujourdHui), () => _compte?.Configuration.Charges.Select(c => c.Nom).ToList() ?? new List<string>())
+        {
+            EnvoiParMailPossible = Apparence.ModuleMail,
+        };
+        Mail = new MailViewModel(Apparence, dossier, Google, secrets, dialogues, Documents, () => Bilan);
+        Documents.EnvoiParMailDemande += async (_, fiche) =>
+        {
+            if (await Mail.JoindreDocumentAsync(fiche))
+                OngletSelectionne = OngletMail;
+        };
         Apparence.ModulesChanges += (_, _) =>
         {
             if ((OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)
                 || (OngletSelectionne == OngletBilan && !Apparence.ModuleBilan)
-                || (OngletSelectionne == OngletDocuments && !Apparence.ModuleDocuments))
+                || (OngletSelectionne == OngletDocuments && !Apparence.ModuleDocuments)
+                || (OngletSelectionne == OngletMail && !Apparence.ModuleMail))
                 OngletSelectionne = OngletConfiguration;
+            Documents.EnvoiParMailPossible = Apparence.ModuleMail;
+            if (Bilan is not null)
+                Bilan.EnvoiParMailPossible = Apparence.ModuleMail;
+            Mail.ModulesModifies();
         };
-        // Les documents sont communs à tous les comptes : un seul coffre, à côté des données.
-        var dossier = registre?.Dossier ?? Path.GetDirectoryName(Path.GetFullPath(depot.CheminFichier)) ?? ".";
-        Documents = new DocumentsViewModel(Apparence, dossier, secrets ?? new SecretsEnMemoire(), dialogues,
-            DateOnly.FromDateTime(aujourdHui), () => _compte?.Configuration.Charges.Select(c => c.Nom).ToList() ?? new List<string>());
 
         ChargerCompte(depot);
     }
@@ -294,6 +313,12 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Documents importants, communs à tous les comptes.</summary>
     public DocumentsViewModel Documents { get; }
+
+    /// <summary>Compte Google (Google Drive, Gmail, contacts), propre à ce PC.</summary>
+    public CompteGoogle Google { get; }
+
+    /// <summary>Envoi de mails, carnet d'adresses et historique, communs à tous les comptes.</summary>
+    public MailViewModel Mail { get; }
 
     /// <summary>Import de relevé en cours d'aperçu, ou null.</summary>
     [ObservableProperty] private ImportViewModel? _import;
@@ -738,7 +763,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void Reconstruire()
     {
         Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour)
-            { Apparence = Apparence };
+            { Apparence = Apparence, Google = Google };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }
@@ -749,7 +774,12 @@ public sealed partial class MainViewModel : ObservableObject
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
         AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
         Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire);
-        Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues);
+        Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues) { EnvoiParMailPossible = Apparence.ModuleMail };
+        Bilan.EnvoiParMailDemande += (_, _) =>
+        {
+            if (Mail.JoindreBilanPdf())
+                OngletSelectionne = OngletMail;
+        };
         Documents?.ChargesModifiees();
     }
 

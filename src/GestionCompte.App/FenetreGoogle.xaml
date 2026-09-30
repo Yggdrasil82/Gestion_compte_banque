@@ -1,20 +1,20 @@
 <Window x:Class="GestionCompte.App.FenetreGoogle"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Connecter Google Drive" Width="580" SizeToContent="Height" ResizeMode="NoResize"
+        Title="Connecter le compte Google" Width="580" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
         Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
         FontFamily="Segoe UI" FontSize="13">
     <StackPanel Margin="20">
         <TextBlock TextWrapping="Wrap" Margin="0,0,0,10"
-                   Text="Pour que l'application range vos documents dans votre Google Drive, créez une fois (gratuitement) votre propre « identifiant d'application » Google :" />
+                   Text="Pour que l'application utilise votre Google Drive, Gmail et vos contacts, créez une fois (gratuitement) votre propre « identifiant d'application » Google :" />
         <Border Background="{DynamicResource FondCarte}" BorderBrush="{DynamicResource Bordure}" BorderThickness="1" CornerRadius="8" Padding="12">
             <StackPanel>
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,4" Text="1. Ouvrez la console Google Cloud et créez un projet (par exemple « Gestion compte »)." />
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,4" Text="2. « API et services » › « Bibliothèque » : activez « Google Drive API »." />
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,4" Text="2. « API et services » › « Bibliothèque » : activez « Google Drive API », « Gmail API » et « People API » (contacts)." />
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,4" Text="3. « Google Auth Platform » : type « Externe », nom de l'application et votre adresse Gmail. Dans « Audience », cliquez sur « Publier l'application » (sinon la connexion est à refaire chaque semaine)." />
                 <TextBlock TextWrapping="Wrap" Margin="0,0,0,4" Text="4. « Clients » › « Créer un client » : type « Application de bureau »." />
-                <TextBlock TextWrapping="Wrap" Text="5. Copiez ci-dessous l'ID client et le code secret du client, puis validez : Google s'ouvre dans votre navigateur pour autoriser l'accès." />
+                <TextBlock TextWrapping="Wrap" Text="5. Copiez ci-dessous l'ID client et le code secret du client, puis validez : Google s'ouvre dans votre navigateur. S'il affiche « Google n'a pas validé cette application », cliquez sur « Paramètres avancés » puis « Accéder à… » (c'est votre propre application), et cochez tous les accès." />
                 <Button Content="Ouvrir la console Google Cloud" HorizontalAlignment="Left" Padding="14,6" Margin="0,10,0,0" Click="OuvrirConsole" />
             </StackPanel>
         </Border>
@@ -24,7 +24,7 @@
         <PasswordBox x:Name="Secret" Height="28" Padding="4,3" VerticalContentAlignment="Center"
                      Background="{DynamicResource Saisie}" Foreground="{DynamicResource Texte}" BorderBrush="{DynamicResource Bordure}" />
         <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
-                   Text="Ces informations restent sur ce PC, chiffrées par Windows. L'application n'accède qu'aux fichiers qu'elle a elle-même créés dans votre Drive (dossier « Gestion compte - Documents »)." />
+                   Text="Ces informations restent sur ce PC, chiffrées par Windows. Dans Drive, l'application ne voit que les fichiers qu'elle a créés (dossier « Gestion compte - Documents ») ; dans Gmail, elle peut envoyer des mails mais pas lire votre boîte ; les contacts sont seulement lus." />
         <TextBlock x:Name="Probleme" Foreground="{DynamicResource Negatif}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="Annuler" IsCancel="True" Padding="16,7" />

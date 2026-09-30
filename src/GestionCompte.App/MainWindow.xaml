@@ -69,6 +69,11 @@
                                  ToolTip="Documents importants : pièces d'identité, contrats, factures, échéances"
                                  Visibility="{Binding Apparence.ModuleDocuments, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=8}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Mail"
+                                 Tag="&#xE715;" Background="{DynamicResource Accent1}"
+                                 ToolTip="Envoyer un mail avec des documents ou le bilan en pièce jointe"
+                                 Visibility="{Binding Apparence.ModuleMail, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=9}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Crédits"
                                  Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
                                  Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
@@ -226,6 +231,10 @@
                 <!-- Module Documents (commun à tous les comptes) -->
                 <ContentControl Content="{Binding Documents}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=8}" />
+
+                <!-- Module Mail (commun à tous les comptes) -->
+                <ContentControl Content="{Binding Mail}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=9}" />
 
                 <!-- Module Crédits -->
                 <ContentControl Content="{Binding Credits}"

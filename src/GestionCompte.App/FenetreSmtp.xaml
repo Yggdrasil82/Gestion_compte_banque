@@ -1,0 +1,60 @@
+<Window x:Class="GestionCompte.App.FenetreSmtp"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Serveur d'envoi des mails" Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="20">
+        <TextBlock Text="Messagerie (pour pré-remplir le serveur)" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+        <ComboBox x:Name="Connus" Height="28" SelectionChanged="ServeurChoisi" />
+        <Grid Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="130" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Serveur SMTP" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+                <TextBox x:Name="Serveur" Height="28" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Port" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+                <TextBox x:Name="Port" Height="28" MaxLength="5" />
+            </StackPanel>
+            <StackPanel Grid.Column="4">
+                <TextBlock Text="Sécurité" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+                <ComboBox x:Name="Securite" Height="28" />
+            </StackPanel>
+        </Grid>
+        <TextBlock Text="Identifiant (souvent votre adresse mail)" Style="{StaticResource Discret}" Margin="0,10,0,3" />
+        <TextBox x:Name="Identifiant" Height="28" />
+        <TextBlock x:Name="LibelleMotDePasse" Text="Mot de passe" Style="{StaticResource Discret}" Margin="0,10,0,3" />
+        <PasswordBox x:Name="MotDePasse" Height="28" Padding="4,3" VerticalContentAlignment="Center"
+                     Background="{DynamicResource Saisie}" Foreground="{DynamicResource Texte}" BorderBrush="{DynamicResource Bordure}" />
+        <Grid Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="10" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Adresse d'expédition (si différente)" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+                <TextBox x:Name="Expediteur" Height="28" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Nom affiché" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+                <TextBox x:Name="NomAffiche" Height="28" />
+            </StackPanel>
+        </Grid>
+        <TextBlock Style="{StaticResource Aide}" Margin="0,10,0,0"
+                   Text="Le mot de passe reste sur ce PC, chiffré par Windows. Certaines messageries demandent un « mot de passe d'application » créé dans les réglages de sécurité du compte." />
+        <TextBlock x:Name="Probleme" Foreground="{DynamicResource Negatif}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Annuler" IsCancel="True" Padding="16,7" />
+            <Button Content="Enregistrer" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="16,7" Margin="0" Click="Valider" />
+        </StackPanel>
+    </StackPanel>
+</Window>

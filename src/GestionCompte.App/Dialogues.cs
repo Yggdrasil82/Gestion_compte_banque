@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using GestionCompte.Core.Mail;
 using GestionCompte.Data.Documents;
+using GestionCompte.Data.Mail;
 using GestionCompte.Presentation;
 using Microsoft.Win32;
 
@@ -149,6 +151,35 @@ public sealed class Dialogues : IDialogues
     {
         var fenetre = new FenetreGoogle(actuels) { Owner = Fenetre };
         return fenetre.ShowDialog() == true ? fenetre.Identifiants : null;
+    }
+
+    public string? ChoisirFichierAJoindre()
+    {
+        var dialogue = new OpenFileDialog
+        {
+            Title = "Joindre un fichier au mail",
+            Filter = "Tous les fichiers (*.*)|*.*",
+            CheckFileExists = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
+    public IReadOnlyList<int>? ChoisirParmi(string titre, string message, IReadOnlyList<string> elements)
+    {
+        var fenetre = new FenetreChoix(titre, message, elements) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Choix : null;
+    }
+
+    public Contact? DemanderContact(Contact? actuel)
+    {
+        var fenetre = new FenetreContact(actuel) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Contact : null;
+    }
+
+    public SaisieSmtp? DemanderReglagesSmtp(ReglagesSmtp? actuels)
+    {
+        var fenetre = new FenetreSmtp(actuels) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Saisie : null;
     }
 
     public void OuvrirFichier(string chemin) => Lancer(chemin, "Aucun programme n'est installé pour ouvrir ce type de fichier.");

@@ -12,13 +12,23 @@ namespace GestionCompte.Data.Documents;
 public sealed record IdentifiantsGoogle(string ClientId, string ClientSecret);
 
 /// <summary>
-/// Connexion à Google Drive sans bibliothèque Google : le navigateur ouvre la page de connexion de Google,
+/// Connexion au compte Google sans bibliothèque Google : le navigateur ouvre la page de connexion de Google,
 /// qui renvoie vers un petit serveur local (127.0.0.1) ; le code reçu est échangé contre un jeton.
-/// Droit demandé : « drive.file », l'application ne voit que les fichiers qu'elle a créés.
+/// Droits demandés : « drive.file » (l'application ne voit que les fichiers qu'elle a créés), envoi de mails
+/// (sans lecture de la boîte), lecture des contacts et adresse du compte.
 /// </summary>
 public sealed class ConnexionGoogle
 {
-    public const string Portee = "https://www.googleapis.com/auth/drive.file";
+    public const string PorteeDrive = "https://www.googleapis.com/auth/drive.file";
+    public const string PorteeEnvoiMail = "https://www.googleapis.com/auth/gmail.send";
+    public const string PorteeContacts = "https://www.googleapis.com/auth/contacts.readonly";
+    public const string PorteeAutresContacts = "https://www.googleapis.com/auth/contacts.other.readonly";
+    public const string PorteeAdresse = "email";
+
+    public static IReadOnlyList<string> Portees { get; } =
+        new[] { PorteeAdresse, PorteeDrive, PorteeEnvoiMail, PorteeContacts, PorteeAutresContacts };
+
+    private const string AdresseInfos = "https://openidconnect.googleapis.com/v1/userinfo";
     private const string AdresseAutorisation = "https://accounts.google.com/o/oauth2/v2/auth";
     private const string AdresseJeton = "https://oauth2.googleapis.com/token";
 
@@ -40,6 +50,21 @@ public sealed class ConnexionGoogle
 
     public bool Connecte => JetonRenouvellement is not null;
 
+    /// <summary>Droits accordés lors de la connexion (séparés par des espaces).</summary>
+    public string? PorteesAccordees { get; private set; }
+
+    /// <summary>Adresse Gmail du compte connecté.</summary>
+    public async Task<string?> AdresseAsync(CancellationToken annulation = default)
+    {
+        using var requete = new HttpRequestMessage(HttpMethod.Get, AdresseInfos);
+        requete.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await JetonAsync(annulation));
+        using var reponse = await _http.SendAsync(requete, annulation);
+        if (!reponse.IsSuccessStatusCode)
+            return null;
+        using var json = JsonDocument.Parse(await reponse.Content.ReadAsStringAsync(annulation));
+        return json.RootElement.TryGetProperty("email", out var adresse) ? adresse.GetString() : null;
+    }
+
     /// <summary>Ouvre la page de connexion Google et attend la réponse (5 minutes au plus).</summary>
     /// <param name="ouvrirNavigateur">Ouvre l'adresse dans le navigateur de l'utilisateur.</param>
     public async Task ConnecterAsync(Action<string> ouvrirNavigateur, CancellationToken annulation = default)
@@ -55,7 +80,7 @@ public sealed class ConnexionGoogle
             var etat = Base64Url(RandomNumberGenerator.GetBytes(16));
 
             ouvrirNavigateur($"{AdresseAutorisation}?response_type=code&client_id={Uri.EscapeDataString(_identifiants.ClientId)}" +
-                             $"&redirect_uri={Uri.EscapeDataString(redirection)}&scope={Uri.EscapeDataString(Portee)}" +
+                             $"&redirect_uri={Uri.EscapeDataString(redirection)}&scope={Uri.EscapeDataString(string.Join(' ', Portees))}" +
                              $"&code_challenge={defi}&code_challenge_method=S256&state={etat}&access_type=offline&prompt=consent");
 
             using var delai = CancellationTokenSource.CreateLinkedTokenSource(annulation);
@@ -96,6 +121,8 @@ public sealed class ConnexionGoogle
             }, annulation);
             JetonRenouvellement = reponse.RefreshToken
                 ?? throw new InvalidOperationException("Google n'a pas renvoyé de jeton de renouvellement.");
+            // L'utilisateur peut décocher certains droits sur la page de Google.
+            PorteesAccordees = reponse.Scope ?? string.Join(' ', Portees);
         }
         finally
         {
@@ -176,6 +203,7 @@ public sealed class ConnexionGoogle
     private sealed record ReponseJeton(
         [property: JsonPropertyName("access_token")] string? AccessToken,
         [property: JsonPropertyName("refresh_token")] string? RefreshToken,
+        [property: JsonPropertyName("scope")] string? Scope,
         [property: JsonPropertyName("expires_in")] int ExpiresIn);
 }
 

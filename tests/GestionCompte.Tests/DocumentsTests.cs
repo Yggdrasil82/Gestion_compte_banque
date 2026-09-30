@@ -167,7 +167,7 @@ public sealed class DocumentsTests : IDisposable
         var source = Path.Combine(_dossier, "Attestation mutuelle.pdf");
         await File.WriteAllBytesAsync(source, new byte[] { 9, 9, 9 });
         var dialogues = new Dialogues { Document = source };
-        var vm = new DocumentsViewModel(new ApparenceViewModel(null), _dossier, new SecretsEnMemoire(), dialogues, Aujourdhui,
+        var vm = new DocumentsViewModel(new ApparenceViewModel(null), _dossier, new CompteGoogle(new SecretsEnMemoire(), dialogues), dialogues, Aujourdhui,
             () => new[] { "Mutuelle", "Loyer" }, Iterations);
         await vm.Chargement;
         Assert.True(vm.Vide);
@@ -187,7 +187,7 @@ public sealed class DocumentsTests : IDisposable
         await vm.AttendreEnregistrementAsync();
         Assert.Equal("Documents (1)", vm.TitreNavigation);
 
-        var relu = new DocumentsViewModel(new ApparenceViewModel(null), _dossier, new SecretsEnMemoire(), dialogues, Aujourdhui,
+        var relu = new DocumentsViewModel(new ApparenceViewModel(null), _dossier, new CompteGoogle(new SecretsEnMemoire(), dialogues), dialogues, Aujourdhui,
             () => Array.Empty<string>(), Iterations);
         await relu.Chargement;
         var ficheRelue = Assert.Single(relu.Documents);
@@ -208,7 +208,7 @@ public sealed class DocumentsTests : IDisposable
         var source = Path.Combine(_dossier, "Passeport.pdf");
         await File.WriteAllBytesAsync(source, new byte[] { 7, 7 });
         var dialogues = new Dialogues { Document = source, MotDePasse = "secret-du-coffre" };
-        var vm = new DocumentsViewModel(new ApparenceViewModel(null), _dossier, new SecretsEnMemoire(), dialogues, Aujourdhui,
+        var vm = new DocumentsViewModel(new ApparenceViewModel(null), _dossier, new CompteGoogle(new SecretsEnMemoire(), dialogues), dialogues, Aujourdhui,
             () => Array.Empty<string>(), Iterations);
         await vm.Chargement;
         await vm.AjouterCommand.ExecuteAsync(null);
@@ -237,7 +237,7 @@ public sealed class DocumentsTests : IDisposable
         var synchronise = Path.Combine(_dossier, "Mon Drive", "Documents");
         var dialogues = new Dialogues { Document = source, Dossier = synchronise };
         var reglages = new ApparenceViewModel(null);
-        var vm = new DocumentsViewModel(reglages, _dossier, new SecretsEnMemoire(), dialogues, Aujourdhui,
+        var vm = new DocumentsViewModel(reglages, _dossier, new CompteGoogle(new SecretsEnMemoire(), dialogues), dialogues, Aujourdhui,
             () => Array.Empty<string>(), Iterations);
         await vm.Chargement;
         await vm.AjouterCommand.ExecuteAsync(null);

@@ -40,7 +40,7 @@ public sealed partial class BilanViewModel : ObservableObject
     partial void OnSelectionChanged(ChoixBilan? value) => Calculer();
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ExporterExcelCommand), nameof(ExporterPdfCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ExporterExcelCommand), nameof(ExporterPdfCommand), nameof(EnvoyerParMailCommand))]
     private ResultatBilan? _resultat;
 
     [ObservableProperty] private string _titre = "Bilan";
@@ -133,6 +133,15 @@ public sealed partial class BilanViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(PeutExporter))]
     private void ExporterPdf() => Exporter(_dialogues.ChoisirFichierPdf($"{Titre}.pdf"), ExportPdf.ExporterBilan, "PDF");
+
+    /// <summary>Le module Mail est affiché : le bouton « Envoyer par mail » est proposé.</summary>
+    [ObservableProperty] private bool _envoiParMailPossible;
+
+    /// <summary>Demande d'envoi du bilan en PDF par mail.</summary>
+    public event EventHandler? EnvoiParMailDemande;
+
+    [RelayCommand(CanExecute = nameof(PeutExporter))]
+    private void EnvoyerParMail() => EnvoiParMailDemande?.Invoke(this, EventArgs.Empty);
 
     private void Exporter(string? destination, Action<ResultatBilan, string, string> exporter, string format)
     {

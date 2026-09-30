@@ -17,6 +17,16 @@ public enum EmplacementDocuments
     GoogleDrive,
 }
 
+/// <summary>Compte utilisé pour envoyer les mails.</summary>
+public enum ModeEnvoiMail
+{
+    /// <summary>Gmail, avec la connexion au compte Google.</summary>
+    Gmail,
+
+    /// <summary>Serveur d'envoi (SMTP) réglé à la main : Orange, Free…</summary>
+    Smtp,
+}
+
 public enum Ambiance
 {
     Ocean,
@@ -46,6 +56,12 @@ public sealed class PreferencesAffichage
 
     /// <summary>Dossier du coffre quand <see cref="EmplacementDocuments"/> vaut Dossier.</summary>
     public string? DossierDocuments { get; set; }
+
+    /// <summary>Onglet « Mail » affiché dans la barre de gauche.</summary>
+    public bool ModuleMail { get; set; } = true;
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ModeEnvoiMail ModeEnvoiMail { get; set; } = ModeEnvoiMail.Gmail;
 
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
@@ -158,6 +174,30 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Mail » affiché.</summary>
+    public bool ModuleMail
+    {
+        get => _preferences.ModuleMail;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleMail, value, _preferences, (p, v) => p.ModuleMail = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Compte d'envoi des mails (réglage propre au PC).</summary>
+    public ModeEnvoiMail ModeEnvoiMail
+    {
+        get => _preferences.ModeEnvoiMail;
+        set
+        {
+            if (SetProperty(_preferences.ModeEnvoiMail, value, _preferences, (p, v) => p.ModeEnvoiMail = v))
+                Enregistrer();
+        }
+    }
+
     /// <summary>Emplacement du coffre des documents (réglage propre au PC).</summary>
     public EmplacementDocuments EmplacementDocuments => _preferences.EmplacementDocuments;
 
@@ -181,6 +221,7 @@ public sealed class ApparenceViewModel : ObservableObject
         ModuleCredits = true;
         ModuleBilan = true;
         ModuleDocuments = true;
+        ModuleMail = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }

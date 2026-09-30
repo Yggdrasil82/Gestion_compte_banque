@@ -16,33 +16,34 @@ public sealed partial class DocumentsViewModel : ObservableObject
 {
     public const string Toutes = "Toutes";
     public const string Aucune = "(aucune)";
-    public const string SecretClientId = "google-client-id";
-    public const string SecretClientSecret = "google-client-secret";
-    public const string SecretJeton = "google-jeton";
-
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(2) };
-
     private readonly ApparenceViewModel _reglages;
     private readonly string _dossierLocal;
-    private readonly ISecretsLocaux _secrets;
+    private readonly CompteGoogle _google;
     private readonly IDialogues _dialogues;
     private readonly DateOnly _aujourdHui;
     private readonly Func<IReadOnlyList<string>> _charges;
     private readonly int _iterations;
     private readonly SemaphoreSlim _enregistrement = new(1, 1);
     private CoffreDocuments? _coffre;
-    private ConnexionGoogle? _google;
     private List<DocumentViewModel> _tous = new();
 
     /// <param name="dossierLocal">Dossier des données de l'application ; le coffre local est son sous-dossier « Documents ».</param>
     /// <param name="charges">Noms des charges du compte ouvert (pour lier un contrat à sa charge).</param>
     /// <param name="iterations">Coût du calcul de la clé depuis le mot de passe (réduit dans les tests).</param>
-    public DocumentsViewModel(ApparenceViewModel reglages, string dossierLocal, ISecretsLocaux secrets, IDialogues dialogues,
+    /// <param name="google">Compte Google partagé (connexion directe à Google Drive).</param>
+    public DocumentsViewModel(ApparenceViewModel reglages, string dossierLocal, CompteGoogle google, IDialogues dialogues,
         DateOnly aujourdHui, Func<IReadOnlyList<string>> charges, int iterations = ChiffrementDocuments.IterationsParDefaut)
     {
         _reglages = reglages;
         _dossierLocal = dossierLocal;
-        _secrets = secrets;
+        _google = google;
+        _google.Deconnecte += async (_, _) =>
+        {
+            if (_reglages.EmplacementDocuments != EmplacementDocuments.GoogleDrive)
+                return;
+            _reglages.ChoisirEmplacementDocuments(EmplacementDocuments.Local, null);
+            await OuvrirCoffreAsync(new StockageDossier(DossierLocal));
+        };
         _dialogues = dialogues;
         _aujourdHui = aujourdHui;
         _charges = charges;
@@ -72,7 +73,7 @@ public sealed partial class DocumentsViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ASelection))]
     [NotifyCanExecuteChangedFor(nameof(OuvrirCommand), nameof(RemplacerCommand), nameof(SupprimerCommand),
-        nameof(EnregistrerSousCommand), nameof(ProtegerCommand))]
+        nameof(EnregistrerSousCommand), nameof(ProtegerCommand), nameof(EnvoyerParMailCommand))]
     private DocumentViewModel? _selection;
 
     public bool ASelection => Selection is not null;
@@ -91,7 +92,9 @@ public sealed partial class DocumentsViewModel : ObservableObject
     [ObservableProperty] private bool _occupe;
     [ObservableProperty] private bool _protectionConfiguree;
     [ObservableProperty] private bool _deverrouille;
-    [ObservableProperty] private bool _googleConnecte;
+
+    /// <summary>Les documents sont rangés dans Google Drive.</summary>
+    public bool SurGoogleDrive => _coffre?.Stockage is StockageGoogleDrive;
 
     public bool AvecRappels => Rappels.Count > 0;
 
@@ -105,22 +108,13 @@ public sealed partial class DocumentsViewModel : ObservableObject
         {
             case EmplacementDocuments.Dossier when !string.IsNullOrWhiteSpace(_reglages.DossierDocuments):
                 return new StockageDossier(_reglages.DossierDocuments);
-            case EmplacementDocuments.GoogleDrive when Identifiants() is { } identifiants:
-                _google = new ConnexionGoogle(Http, identifiants, _secrets.Lire(SecretJeton));
-                GoogleConnecte = _google.Connecte;
-                if (_google.Connecte)
-                    return new StockageGoogleDrive(Http, _google.JetonAsync);
-                break;
+            case EmplacementDocuments.GoogleDrive when _google.Connecte:
+                return new StockageGoogleDrive(_google.Http, _google.JetonAsync);
         }
         return new StockageDossier(DossierLocal);
     }
 
     public string DossierLocal => Path.Combine(_dossierLocal, "Documents");
-
-    private IdentifiantsGoogle? Identifiants() =>
-        _secrets.Lire(SecretClientId) is { Length: > 0 } id && _secrets.Lire(SecretClientSecret) is { Length: > 0 } secret
-            ? new IdentifiantsGoogle(id, secret)
-            : null;
 
     private async Task OuvrirCoffreAsync(IStockageDocuments stockage)
     {
@@ -151,42 +145,24 @@ public sealed partial class DocumentsViewModel : ObservableObject
             : ChangerEmplacementAsync(new StockageDossier(dossier), EmplacementDocuments.Dossier, dossier);
     }
 
+    /// <summary>Range les documents directement dans Google Drive (connexion au compte Google si besoin).</summary>
     [RelayCommand]
-    private async Task ConnecterGoogle()
+    private async Task UtiliserGoogleDrive()
     {
-        var identifiants = _dialogues.DemanderIdentifiantsGoogle(Identifiants());
-        if (identifiants is null)
-            return;
-        _secrets.Ecrire(SecretClientId, identifiants.ClientId.Trim());
-        _secrets.Ecrire(SecretClientSecret, identifiants.ClientSecret.Trim());
-        var connexion = new ConnexionGoogle(Http, new IdentifiantsGoogle(identifiants.ClientId.Trim(), identifiants.ClientSecret.Trim()), null);
-
-        var reussi = false;
-        await Executer("Connexion à Google Drive : terminez la connexion dans votre navigateur…", async () =>
+        if (!_google.Connecte)
         {
-            await connexion.ConnecterAsync(_dialogues.OuvrirLien);
-            _secrets.Ecrire(SecretJeton, connexion.JetonRenouvellement);
-            reussi = true;
-        });
-        if (!reussi)
+            var connecte = false;
+            await Executer("Connexion au compte Google : terminez la connexion dans votre navigateur…",
+                async () => connecte = await _google.ConnecterAsync());
+            if (!connecte)
+                return;
+        }
+        if (!_google.Autorise(ConnexionGoogle.PorteeDrive))
+        {
+            Erreur = "Le compte Google n'autorise pas Google Drive : reconnectez-le (Configuration › Compte Google) en cochant l'accès aux fichiers.";
             return;
-
-        _google = connexion;
-        GoogleConnecte = true;
-        await ChangerEmplacementAsync(new StockageGoogleDrive(Http, connexion.JetonAsync), EmplacementDocuments.GoogleDrive, null);
-    }
-
-    [RelayCommand]
-    private async Task DeconnecterGoogle()
-    {
-        if (!_dialogues.Confirmer("Se déconnecter de Google Drive",
-                "Les documents restent dans votre Google Drive. L'application reviendra au dossier de documents de ce PC.\n\nContinuer ?"))
-            return;
-        _google?.Deconnecter();
-        _secrets.Ecrire(SecretJeton, null);
-        GoogleConnecte = false;
-        _reglages.ChoisirEmplacementDocuments(EmplacementDocuments.Local, null);
-        await OuvrirCoffreAsync(new StockageDossier(DossierLocal));
+        }
+        await ChangerEmplacementAsync(new StockageGoogleDrive(_google.Http, _google.JetonAsync), EmplacementDocuments.GoogleDrive, null);
     }
 
     /// <summary>
@@ -267,6 +243,29 @@ public sealed partial class DocumentsViewModel : ObservableObject
             await File.WriteAllBytesAsync(chemin, await _coffre!.LireAsync(document));
             Statut = $"Copie enregistrée : {chemin}";
         });
+    }
+
+    /// <summary>Tous les documents du coffre (sans filtre), pour les joindre à un mail.</summary>
+    public IReadOnlyList<DocumentViewModel> Tous => _tous;
+
+    /// <summary>Demande d'envoi du document sélectionné par mail (le module Mail s'ouvre avec la pièce jointe).</summary>
+    public event EventHandler<DocumentViewModel>? EnvoiParMailDemande;
+
+    /// <summary>Le module Mail est affiché : le bouton « Envoyer par mail » est proposé.</summary>
+    [ObservableProperty] private bool _envoiParMailPossible;
+
+    [RelayCommand(CanExecute = nameof(ASelection))]
+    private void EnvoyerParMail() => EnvoiParMailDemande?.Invoke(this, Selection!);
+
+    /// <summary>Contenu d'un document pour une pièce jointe (mot de passe demandé s'il est protégé) ; null si annulé ou en erreur.</summary>
+    public async Task<Data.Mail.PieceJointe?> PieceJointeAsync(DocumentViewModel fiche)
+    {
+        var document = fiche.Modele;
+        if (!await DeverrouillerSiBesoinAsync(document))
+            return null;
+        Data.Mail.PieceJointe? piece = null;
+        await Executer("Lecture du document…", async () => piece = new Data.Mail.PieceJointe(NomSur(document), await _coffre!.LireAsync(document)));
+        return piece;
     }
 
     [RelayCommand(CanExecute = nameof(ASelection))]
@@ -463,6 +462,7 @@ public sealed partial class DocumentsViewModel : ObservableObject
         MettreAJourEtat();
         OnPropertyChanged(nameof(Vide));
         OnPropertyChanged(nameof(Charges));
+        OnPropertyChanged(nameof(SurGoogleDrive));
     }
 
     private void Filtrer()

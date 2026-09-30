@@ -188,9 +188,33 @@
                         <CheckBox Content="Crédits : simulation et comparaison de crédits"
                                   IsChecked="{Binding Apparence.ModuleCredits}" Margin="0,0,0,6" />
                         <CheckBox Content="Documents : documents importants, échéances, Google Drive"
-                                  IsChecked="{Binding Apparence.ModuleDocuments}" />
+                                  IsChecked="{Binding Apparence.ModuleDocuments}" Margin="0,0,0,6" />
+                        <CheckBox Content="Mail : envoi de mails (Gmail ou autre messagerie), carnet d'adresses"
+                                  IsChecked="{Binding Apparence.ModuleMail}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Compte Google (réglage propre à ce PC) -->
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                            <TextBlock Text="Compte Google" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Google.Etat}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Connecter…" Command="{Binding Google.ConnecterCommand}" Padding="12,6" Margin="0,0,6,0"
+                                    Visibility="{Binding Google.Connecte, Converter={StaticResource MasqueSiVrai}}" />
+                            <Button Content="Reconnecter…" Command="{Binding Google.ConnecterCommand}" Padding="12,6" Margin="0,0,6,0"
+                                    ToolTip="Pour accorder un accès oublié (Drive, Gmail ou contacts)"
+                                    Visibility="{Binding Google.Connecte, Converter={StaticResource Visible}}" />
+                            <Button Content="Déconnecter" Command="{Binding Google.DemanderDeconnexionCommand}" Padding="12,6"
+                                    Visibility="{Binding Google.Connecte, Converter={StaticResource Visible}}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
+                                   Text="Sert aux documents dans Google Drive, à l'envoi par Gmail et à l'import des contacts. Chacun crée son propre identifiant d'application Google (guide à la connexion). Réglage propre à ce PC." />
                     </StackPanel>
                 </Border>
             </StackPanel>

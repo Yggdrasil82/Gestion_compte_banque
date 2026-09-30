@@ -1,0 +1,26 @@
+<Window x:Class="GestionCompte.App.FenetreChoix"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="20">
+        <TextBlock x:Name="Message" Margin="0,0,0,8" TextWrapping="Wrap" />
+        <Border BorderBrush="{DynamicResource Bordure}" BorderThickness="1" CornerRadius="8" Padding="8" MaxHeight="360">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="Liste">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Content="{Binding Texte}" IsChecked="{Binding Coche}" Margin="0,3" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Annuler" IsCancel="True" Padding="16,7" />
+            <Button Content="OK" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="16,7" Margin="0" Click="Valider" />
+        </StackPanel>
+    </StackPanel>
+</Window>
