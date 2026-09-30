@@ -70,10 +70,11 @@ public sealed partial class CompteGoogle : ObservableObject
         _secrets.Ecrire(SecretClientSecret, identifiants.ClientSecret);
 
         var connexion = new ConnexionGoogle(Http, identifiants, null);
-        await connexion.ConnecterAsync(_dialogues.OuvrirLien, annulation);
+        await connexion.ConnecterAsync(_dialogues.OuvrirLien, annulation, e => Etat = e);
         _secrets.Ecrire(SecretJeton, connexion.JetonRenouvellement);
         _secrets.Ecrire(SecretPortees, connexion.PorteesAccordees);
         Connexion = connexion;
+        Etat = "Connexion acceptée, lecture de l'adresse du compte…";
         _secrets.Ecrire(SecretAdresse, await connexion.AdresseAsync(annulation));
         MettreAJour();
         return true;
@@ -84,21 +85,34 @@ public sealed partial class CompteGoogle : ObservableObject
     private async Task Connecter()
     {
         Etat = "Terminez la connexion dans votre navigateur…";
+        var chrono = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             await ConnecterAsync();
         }
-        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or OperationCanceledException
+        catch (Exception e) when (e is HttpRequestException or InvalidOperationException or OperationCanceledException or TimeoutException
                                       or IOException or System.Net.Sockets.SocketException or System.Text.Json.JsonException)
         {
-            _dialogues.Erreur(e is OperationCanceledException
-                ? "La connexion à Google n'a pas été terminée à temps (5 minutes)."
-                : $"La connexion à Google a échoué.\n\n{e.Message}");
+            _dialogues.Erreur(MessageEchec(Etat, e, chrono.Elapsed));
         }
         finally
         {
             MettreAJour();
         }
+    }
+
+    /// <summary>Message d'échec : étape en cours, vraie raison (y compris l'erreur réseau d'origine) et temps écoulé.</summary>
+    public static string MessageEchec(string etape, Exception e, TimeSpan duree)
+    {
+        var raison = e switch
+        {
+            TimeoutException => e.Message,
+            OperationCanceledException => "Délai dépassé (Google ou le réseau n'a pas répondu à temps).",
+            _ => e.Message,
+        };
+        if (e.InnerException is { } origine && !raison.Contains(origine.Message))
+            raison += $"\n({origine.Message})";
+        return $"La connexion à Google a échoué.\n\nÉtape : {etape.TrimEnd('…')}\nRaison : {raison}\nAprès {(int)duree.TotalMinutes} min {duree.Seconds:00} s.";
     }
 
     [RelayCommand]

@@ -66,6 +66,7 @@ du classeur Excel d'origine.
 - **2.2.1** : sans recherche internet, les IA doivent toujours donner un chiffre approximatif (jamais « null ») et Groq répond obligatoirement en JSON ; quand une IA ne donne pas de taux, le message montre le début de sa réponse.
 - **2.2.2** : connexion Google : une connexion ouverte à l'avance par le navigateur ne bloque plus le retour de Google (la connexion échouait après 5 minutes d'attente).
 - **2.2.3** : connexion Google : le code renvoyé par Google est enregistré dès son arrivée, même si le navigateur coupe la page (la connexion échouait encore après 5 minutes).
+- **2.2.4** : connexion Google : la carte « Compte Google » affiche chaque étape de la connexion, et un échec indique l'étape, la vraie raison et le temps écoulé.
 
 ## Prochainement
 

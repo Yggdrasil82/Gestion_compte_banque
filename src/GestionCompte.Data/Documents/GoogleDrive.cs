@@ -67,7 +67,9 @@ public sealed class ConnexionGoogle
 
     /// <summary>Ouvre la page de connexion Google et attend la réponse (5 minutes au plus).</summary>
     /// <param name="ouvrirNavigateur">Ouvre l'adresse dans le navigateur de l'utilisateur.</param>
-    public async Task ConnecterAsync(Action<string> ouvrirNavigateur, CancellationToken annulation = default)
+    /// <param name="etape">Annonce l'étape en cours (affichée dans la configuration).</param>
+    public async Task ConnecterAsync(Action<string> ouvrirNavigateur, CancellationToken annulation = default,
+        Action<string>? etape = null)
     {
         // Petit serveur local (sans HttpListener, qui demande des droits administrateur sous Windows).
         var ecoute = new TcpListener(IPAddress.Loopback, 0);
@@ -101,11 +103,21 @@ public sealed class ConnexionGoogle
                     // Écoute arrêtée : connexion terminée, annulée ou délai dépassé.
                 }
             });
-            var requete = await retour.Task;
+            etape?.Invoke("Attente de la réponse de Google dans le navigateur…");
+            Dictionary<string, string> requete;
+            try
+            {
+                requete = await retour.Task;
+            }
+            catch (OperationCanceledException) when (!annulation.IsCancellationRequested)
+            {
+                throw new TimeoutException("L'application n'a pas reçu la réponse de Google dans le navigateur en 5 minutes.");
+            }
 
             if (requete.GetValueOrDefault("code") is not { } code || requete.GetValueOrDefault("state") != etat)
                 throw new InvalidOperationException($"Connexion refusée par Google ({requete.GetValueOrDefault("error") ?? "réponse inattendue"}).");
 
+            etape?.Invoke("Code reçu de Google, validation…");
             var reponse = await DemanderJetonAsync(new Dictionary<string, string>
             {
                 ["grant_type"] = "authorization_code",
@@ -218,7 +230,16 @@ public sealed class ConnexionGoogle
     {
         parametres["client_id"] = _identifiants.ClientId;
         parametres["client_secret"] = _identifiants.ClientSecret;
-        using var reponse = await _http.PostAsync(AdresseJeton, new FormUrlEncodedContent(parametres), annulation);
+        HttpResponseMessage envoi;
+        try
+        {
+            envoi = await _http.PostAsync(AdresseJeton, new FormUrlEncodedContent(parametres), annulation);
+        }
+        catch (OperationCanceledException) when (!annulation.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Google n'a pas répondu à la validation du code ({AdresseJeton}) dans le délai de {_http.Timeout.TotalSeconds:0} secondes.");
+        }
+        using var reponse = envoi;
         var texte = await reponse.Content.ReadAsStringAsync(annulation);
         if (!reponse.IsSuccessStatusCode)
         {
