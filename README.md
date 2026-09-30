@@ -58,12 +58,12 @@ du classeur Excel d'origine.
   - « Achats » : recherche du meilleur prix par Gemini et Mistral (offres regroupées, triées, prix relus sur les pages), liste de sites marchands modifiable, suivi du prix de produits avec prix cible, et « Prévoir l'achat » dans le prévisionnel ;
   - « Lettres » : lettres types (résiliation, contestation de frais, réclamation, garantie, délai de paiement…) ou libres, une version proposée par Gemini et une par Mistral, relues puis enregistrées en PDF ou Word ou envoyées par mail ;
   - « Assistant » : questions sur le budget posées à Gemini et/ou Mistral à partir d'un résumé des chiffres affiché avant l'envoi ; il ne modifie rien.
+- **2.1.0** : dans « Crédits », « Chercher les taux du moment » : Gemini et Mistral cherchent sur internet les taux bas, moyen et haut, le taux d'usure et le taux de l'assurance emprunteur pour le type et la durée du crédit (sources cliquables) ; « Reprendre le taux moyen » et alerte si la simulation dépasse le taux d'usure.
 
 ## Prochainement
 
 - Module Bourse / Trade Republic (en attente).
 - Virements liés entre comptes.
-- Taux de crédit de référence (Banque de France : taux moyens et taux d'usure) pour les simulations de crédit.
 
 ## Télécharger l'application
 
@@ -100,7 +100,7 @@ sont dans `Documents\GestionCompte\mail.json`.
 
 Dans Configuration › Intelligence artificielle, chacun saisit ses propres clés gratuites :
 [Google AI Studio](https://aistudio.google.com/apikey) pour Gemini et [Mistral](https://console.mistral.ai/api-keys).
-Elles restent sur le PC, chiffrées par Windows. Pour une recherche de prix, seul le nom du produit est envoyé ;
+Elles restent sur le PC, chiffrées par Windows. Pour une recherche de prix, seul le nom du produit est envoyé ; pour les taux de crédit, seulement le type, la durée et la tranche de montant (celle de la Banque de France) ;
 une case coupe tout envoi aux IA. Les produits suivis et la liste des sites sont dans `Documents\GestionCompte\achats.json`.
 
 Pour une lettre, seules les informations saisies (organisme, numéro de contrat…) partent aux IA : le nom, l'adresse

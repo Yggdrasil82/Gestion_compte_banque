@@ -47,6 +47,7 @@ public sealed partial class MainViewModel : ObservableObject
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
+    private readonly DateTime _aujourdhui;
     private CompteBancaire _compte = null!;
     private int _indexMois = -1;
     private bool _erreurEnregistrementSignalee;
@@ -77,6 +78,7 @@ public sealed partial class MainViewModel : ObservableObject
         _registre = registre;
         _dialogues = dialogues;
         _moisDuJour = new PeriodeMois(aujourdHui.Year, aujourdHui.Month);
+        _aujourdhui = aujourdHui.Date;
         Apparence = apparence ?? new ApparenceViewModel(null);
         // Documents et mails sont communs à tous les comptes, à côté des données.
         var dossier = registre?.Dossier ?? Path.GetDirectoryName(Path.GetFullPath(depot.CheminFichier)) ?? ".";
@@ -826,7 +828,7 @@ public sealed partial class MainViewModel : ObservableObject
         var horizon = Previsionnel?.Horizon ?? 12;
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
         AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
-        Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire);
+        Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire, IA, () => _aujourdhui);
         Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues) { EnvoiParMailPossible = Apparence.ModuleMail };
         Bilan.EnvoiParMailDemande += (_, _) =>
         {

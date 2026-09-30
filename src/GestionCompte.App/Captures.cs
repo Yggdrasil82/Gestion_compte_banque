@@ -31,7 +31,7 @@ internal static class Captures
     private const double HauteurAide = 1260;
 
     /// <summary>Le module Crédits : comparaison, tableau d'amortissement et calcul inverse.</summary>
-    private const double HauteurCredits = 960;
+    private const double HauteurCredits = 1380;
 
     /// <summary>Le bilan : chiffres clés, graphique, pistes et tous les postes.</summary>
     private const double HauteurBilan = 1420;
@@ -230,6 +230,20 @@ internal static class Captures
             await Capturer(("27-assistant-ocean", Ambiance.Ocean, false, MainViewModel.OngletAssistant, false));
             await Capturer(("28-assistant-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletAssistant, false));
 
+            // Crédits : taux du moment d'exemple (aucune IA n'est appelée) et alerte d'usure.
+            vm.CompteActif = vm.NomsComptes[0];
+            if (vm.Credits.Selection is null)
+                vm.Credits.Liste.AjouterCommand.Execute(null);
+            vm.Credits.Selection!.Type = CreditsViewModel.NomsTypes[0];
+            vm.Credits.Selection.TauxAnnuel = 5.8m;
+            vm.Credits.TauxTrouves = TauxDemo().Select(t => new TauxMarcheViewModel(t)).ToList();
+            vm.Credits.CategorieCherchee = vm.Credits.CategorieSelection;
+            vm.Credits.Usure = 5.87m;
+            vm.Credits.StatutTaux = "Moyennes trouvées sur internet, à vérifier sur les sources : ce ne sont pas des offres de banque.";
+            await Capturer(("29-credits-taux-ocean", Ambiance.Ocean, false, MainViewModel.OngletCredits, false));
+            vm.Credits.ReprendreTauxCommand.Execute(vm.Credits.TauxTrouves[0]);
+            await Capturer(("30-credits-taux-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletCredits, false));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);
@@ -260,6 +274,17 @@ internal static class Captures
             Corps = "Madame, Monsieur,\n\n…",
         });
         fichier.Enregistrer();
+    }
+
+    private static IEnumerable<Core.Calculs.TauxMarche> TauxDemo()
+    {
+        var gemini = new Core.Calculs.TauxMarche { Source = "Gemini", Bas = 3.05m, Moyen = 3.40m, Haut = 3.90m, Usure = 5.87m, Assurance = 0.28m, Periode = "novembre 2026" };
+        gemini.Liens.Add(new Core.Calculs.SourceTaux("Courtier exemple", "https://www.courtier-exemple.fr/barometre"));
+        gemini.Liens.Add(new Core.Calculs.SourceTaux("Taux d'usure (exemple)", "https://www.exemple.fr/taux-usure"));
+        yield return gemini;
+        var mistral = new Core.Calculs.TauxMarche { Source = "Mistral", Bas = 3.15m, Moyen = 3.50m, Haut = 4.00m, Usure = 5.87m, Assurance = 0.30m, Periode = "novembre 2026" };
+        mistral.Liens.Add(new Core.Calculs.SourceTaux("Comparateur exemple", "https://www.comparateur-exemple.fr/taux-immobilier"));
+        yield return mistral;
     }
 
     private static void CreerAchatsDemo(string dossier)

@@ -18,12 +18,18 @@ public sealed partial class CreditsViewModel : ObservableObject
     private readonly IDialogues _dialogues;
     private readonly Action _donneesModifiees;
     private readonly Action _previsionnelModifie;
+    private readonly ServicesIA? _ia;
+    private readonly Func<DateTime> _aujourdhui;
 
     /// <param name="donneesModifiees">Appelé après une modification des simulations (à enregistrer).</param>
     /// <param name="previsionnelModifie">Appelé après l'ajout ou le retrait des échéances (à enregistrer, prévisionnel à recalculer).</param>
     public CreditsViewModel(CompteBancaire compte, IReadOnlyList<ChoixPeriode> periodes, IDialogues dialogues,
-        Action donneesModifiees, Action previsionnelModifie)
+        Action donneesModifiees, Action previsionnelModifie, ServicesIA? ia = null, Func<DateTime>? aujourdhui = null)
     {
+        _ia = ia;
+        _aujourdhui = aujourdhui ?? (() => DateTime.Today);
+        if (ia is not null)
+            ia.PropertyChanged += (_, _) => OnPropertyChanged(nameof(IADisponibles));
         _compte = compte;
         _dialogues = dialogues;
         _donneesModifiees = donneesModifiees;
@@ -165,8 +171,122 @@ public sealed partial class CreditsViewModel : ObservableObject
         _donneesModifiees();
     }
 
+    // ---- Taux du moment (Gemini et Mistral cherchent sur internet) ----
+
+    public bool IADisponibles => _ia?.Disponibles == true;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ChercherTauxCommand))]
+    private bool _rechercheEnCours;
+
+    [ObservableProperty] private IReadOnlyList<TauxMarcheViewModel> _tauxTrouves = Array.Empty<TauxMarcheViewModel>();
+    [ObservableProperty] private string _statutTaux = "";
+    [ObservableProperty] private string _erreurTaux = "";
+
+    /// <summary>Catégorie cherchée (ex. « crédit immobilier à taux fixe sur 20 ans… »).</summary>
+    [ObservableProperty] private string _categorieCherchee = "";
+
+    /// <summary>Taux d'usure trouvé pour la catégorie cherchée.</summary>
+    [ObservableProperty] private decimal? _usure;
+
+    public bool AvecTaux => TauxTrouves.Count > 0;
+
+    partial void OnTauxTrouvesChanged(IReadOnlyList<TauxMarcheViewModel> value) => OnPropertyChanged(nameof(AvecTaux));
+
+    partial void OnUsureChanged(decimal? value) => OnPropertyChanged(nameof(AlerteUsure));
+
+    partial void OnCategorieChercheeChanged(string value) => OnPropertyChanged(nameof(AlerteUsure));
+
+    /// <summary>Catégorie de la simulation sélectionnée (ce qui sera envoyé aux IA).</summary>
+    public string CategorieSelection => Selection is { } s ? RechercheTaux.Categorie(s.Modele.Type, s.Modele.DureeMois, s.Modele.Montant) : "";
+
+    /// <summary>Avertissement si le TAEG approché de la simulation dépasse le taux d'usure trouvé pour sa catégorie.</summary>
+    public string AlerteUsure
+    {
+        get
+        {
+            if (Selection is not { } s || Usure is not { } usure || CategorieSelection != CategorieCherchee)
+                return "";
+            var taeg = RechercheTaux.TaegApproche(s.Modele);
+            return taeg > usure
+                ? $"Attention : avec l'assurance, le taux de « {s.Nom} » (environ {taeg.ToString("0.00", CultureInfo.GetCultureInfo("fr-FR"))} %) dépasse le taux d'usure ({usure.ToString("0.00", CultureInfo.GetCultureInfo("fr-FR"))} %) : une banque ne peut pas le proposer."
+                : "";
+        }
+    }
+
+    private bool PeutChercherTaux() => ASelection && !RechercheEnCours;
+
+    [RelayCommand(CanExecute = nameof(PeutChercherTaux))]
+    private async Task ChercherTaux()
+    {
+        if (Selection is null)
+            return;
+        var assistants = _ia?.Assistants() ?? Array.Empty<Data.Achats.IAssistantIA>();
+        if (assistants.Count == 0)
+        {
+            ErreurTaux = _ia?.Actives == false
+                ? "Les IA sont coupées (Configuration › Intelligence artificielle)."
+                : "Aucune IA réglée : saisissez une clé Gemini ou Mistral (Configuration › Intelligence artificielle).";
+            return;
+        }
+
+        var categorie = CategorieSelection;
+        var demande = RechercheTaux.Demande(categorie, _aujourdhui());
+        RechercheEnCours = true;
+        ErreurTaux = "";
+        TauxTrouves = Array.Empty<TauxMarcheViewModel>();
+        StatutTaux = $"Recherche des taux par {string.Join(" et ", assistants.Select(a => a.Nom))}…";
+        try
+        {
+            var reponses = await Task.WhenAll(assistants.Select(async ia =>
+            {
+                try
+                {
+                    var taux = RechercheTaux.Extraire(await ia.DemanderAsync(demande, avecRecherche: true), ia.Nom);
+                    return (ia.Nom, Taux: taux, Erreur: taux is null ? $"{ia.Nom} n'a pas trouvé de taux." : null);
+                }
+                catch (Exception e) when (e is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
+                {
+                    return (ia.Nom, Taux: (TauxMarche?)null, Erreur: e is OperationCanceledException ? $"{ia.Nom} n'a pas répondu à temps." : e.Message);
+                }
+            }));
+            var trouves = reponses.Where(r => r.Taux is not null).Select(r => r.Taux!).ToList();
+            TauxTrouves = trouves.Select(t => new TauxMarcheViewModel(t)).ToList();
+            CategorieCherchee = categorie;
+            Usure = RechercheTaux.Usure(trouves);
+            ErreurTaux = string.Join("\n", reponses.Where(r => r.Erreur is not null).Select(r => r.Erreur));
+            StatutTaux = trouves.Count == 0 ? "" : "Moyennes trouvées sur internet, à vérifier sur les sources : ce ne sont pas des offres de banque.";
+        }
+        finally
+        {
+            RechercheEnCours = false;
+        }
+    }
+
+    /// <summary>Reprend le taux moyen trouvé (et l'assurance, si elle est en % par an) dans la simulation sélectionnée.</summary>
+    [RelayCommand]
+    private void ReprendreTaux(TauxMarcheViewModel? taux)
+    {
+        if (taux is null || Selection is not { } s || taux.Taux.Moyen is not { } moyen)
+            return;
+        s.TauxAnnuel = moyen;
+        if (taux.Taux.Assurance is { } assurance && s.Modele.TypeAssurance == Core.Modeles.TypeAssurance.Pourcentage)
+            s.Assurance = assurance;
+        StatutTaux = $"Taux moyen de {taux.Nom} repris dans « {s.Nom} ».";
+    }
+
+    [RelayCommand]
+    private void OuvrirSource(SourceTaux? source)
+    {
+        if (source is not null)
+            _dialogues.OuvrirLien(source.Adresse);
+    }
+
     private void SelectionChangee()
     {
+        OnPropertyChanged(nameof(CategorieSelection));
+        OnPropertyChanged(nameof(AlerteUsure));
+        ChercherTauxCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(Selection));
         OnPropertyChanged(nameof(ASelection));
         OnPropertyChanged(nameof(MontantEmpruntable));
@@ -343,4 +463,25 @@ public sealed class SimulationCreditViewModel : ObservableObject
         Rafraichir();
         _modifie();
     }
+}
+
+/// <summary>Taux trouvés par une IA, pour l'affichage.</summary>
+public sealed class TauxMarcheViewModel
+{
+    private static readonly CultureInfo Francais = CultureInfo.GetCultureInfo("fr-FR");
+
+    public TauxMarcheViewModel(TauxMarche taux) => Taux = taux;
+
+    public TauxMarche Taux { get; }
+    public string Nom => Taux.Source;
+    public string Bas => Texte(Taux.Bas);
+    public string Moyen => Texte(Taux.Moyen);
+    public string Haut => Texte(Taux.Haut);
+    public string Usure => Texte(Taux.Usure);
+    public string Assurance => Texte(Taux.Assurance);
+    public string Periode => Taux.Periode;
+    public bool Reprenable => Taux.Moyen is not null;
+    public IReadOnlyList<SourceTaux> Liens => Taux.Liens;
+
+    private static string Texte(decimal? taux) => taux is { } t ? t.ToString("0.00", Francais) + " %" : "—";
 }
