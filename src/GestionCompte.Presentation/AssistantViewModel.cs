@@ -25,6 +25,7 @@ public sealed partial class AssistantViewModel : ObservableObject
     public AssistantViewModel(ServicesIA ia, Func<string> resume)
     {
         _ia = ia;
+        _ia.Patiente += (_, message) => { if (Occupe) Statut = message; };
         _calculerResume = resume;
         _ia.PropertyChanged += (_, _) => OnPropertyChanged(nameof(IADisponibles));
         Conversation.CollectionChanged += (_, _) => OnPropertyChanged(nameof(AvecConversation));

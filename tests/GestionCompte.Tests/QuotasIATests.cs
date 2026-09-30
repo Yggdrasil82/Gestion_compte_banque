@@ -8,7 +8,13 @@ public sealed class QuotasIATests
 {
     private const string ReponseMistral = """{"choices":[{"message":{"content":"Bonjour"}}]}""";
 
-    public QuotasIATests() => ErreursIA.AttenteParDefaut = TimeSpan.FromMilliseconds(10);
+    private const string ReponseGemini = """{"candidates":[{"content":{"parts":[{"text":"Bonjour"}]}}]}""";
+
+    public QuotasIATests()
+    {
+        ErreursIA.AttenteParDefaut = TimeSpan.FromMilliseconds(10);
+        ErreursIA.AttenteLongue = TimeSpan.FromMilliseconds(20);
+    }
 
     [Fact]
     public async Task Mistral_reessaie_une_fois_apres_trop_de_demandes()
@@ -21,14 +27,45 @@ public sealed class QuotasIATests
     }
 
     [Fact]
-    public async Task Mistral_explique_la_limite_si_le_nouvel_essai_echoue_aussi()
+    public async Task Mistral_patiente_la_minute_puis_explique_la_limite_avec_sa_raison()
     {
-        var http = new FauxHttp(HttpStatusCode.TooManyRequests, HttpStatusCode.TooManyRequests, HttpStatusCode.OK);
+        var http = new FauxHttp(HttpStatusCode.TooManyRequests);
+        var attentes = new List<string>();
         var erreur = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            new Mistral(new HttpClient(http), "cle").DemanderAsync("Bonjour ?", avecRecherche: false));
+            new Mistral(new HttpClient(http), "cle", patienter: attentes.Add).DemanderAsync("Bonjour ?", avecRecherche: false));
 
-        Assert.Contains("1 par seconde", erreur.Message);
+        Assert.Equal(3, http.Appels);
+        Assert.StartsWith("Mistral : limite gratuite par minute atteinte, nouvel essai dans", Assert.Single(attentes));
+        Assert.Contains("tokens par minute", erreur.Message);
+        Assert.Contains("« Requests rate limit exceeded »", erreur.Message);
+    }
+
+    [Fact]
+    public async Task Sans_recherche_internet_autorisee_gemini_repond_de_memoire()
+    {
+        var http = new FauxHttp(HttpStatusCode.TooManyRequests, HttpStatusCode.OK) { Succes = ReponseGemini };
+        var gemini = new Gemini(new HttpClient(http), "cle");
+        var reponse = await gemini.DemanderAsync("Taux ?", avecRecherche: true);
+
+        Assert.Equal("Bonjour", reponse);
+        Assert.True(gemini.SansRecherche);
         Assert.Equal(2, http.Appels);
+        Assert.Contains("google_search", http.Envois[0]);
+        Assert.DoesNotContain("google_search", http.Envois[1]);
+
+        await gemini.DemanderAsync("Bonjour ?", avecRecherche: false);
+        Assert.False(gemini.SansRecherche);
+    }
+
+    [Fact]
+    public async Task Les_achats_ne_se_contentent_pas_d_une_reponse_sans_recherche()
+    {
+        var http = new FauxHttp(HttpStatusCode.TooManyRequests, HttpStatusCode.TooManyRequests, HttpStatusCode.TooManyRequests, HttpStatusCode.OK)
+            { Succes = ReponseGemini };
+        await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(new Gemini(new HttpClient(http), "cle"), "Casque"));
+
+        Assert.Equal(3, http.Appels);
+        Assert.All(http.Envois, e => Assert.Contains("google_search", e));
     }
 
     [Fact]
@@ -59,14 +96,17 @@ public sealed class QuotasIATests
         public FauxHttp(params HttpStatusCode[] statuts) => _statuts = new Queue<HttpStatusCode>(statuts);
 
         public string Corps { get; init; } = """{"message":"Requests rate limit exceeded"}""";
+        public string Succes { get; init; } = ReponseMistral;
         public int Appels { get; private set; }
+        public List<string> Envois { get; } = new();
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage requete, CancellationToken annulation)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage requete, CancellationToken annulation)
         {
             Appels++;
+            Envois.Add(requete.Content is null ? "" : await requete.Content.ReadAsStringAsync(annulation));
             var statut = _statuts.Count > 1 ? _statuts.Dequeue() : _statuts.Peek();
-            var corps = statut == HttpStatusCode.OK ? ReponseMistral : Corps;
-            return Task.FromResult(new HttpResponseMessage(statut) { Content = new StringContent(corps, Encoding.UTF8, "application/json") });
+            var corps = statut == HttpStatusCode.OK ? Succes : Corps;
+            return new HttpResponseMessage(statut) { Content = new StringContent(corps, Encoding.UTF8, "application/json") };
         }
     }
 }

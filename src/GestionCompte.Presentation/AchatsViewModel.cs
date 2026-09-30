@@ -29,6 +29,7 @@ public sealed partial class AchatsViewModel : ObservableObject
         Func<DateTime>? maintenant = null, bool relirePrix = true)
     {
         _ia = ia;
+        _ia.Patiente += (_, message) => { if (Occupe) Statut = message; };
         _dialogues = dialogues;
         _lecteur = new LecteurPages(http ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
         {

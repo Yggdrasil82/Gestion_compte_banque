@@ -26,6 +26,7 @@ public sealed partial class LettresViewModel : ObservableObject
     public LettresViewModel(string dossier, ServicesIA ia, IDialogues dialogues, Func<DateTime>? aujourdhui = null)
     {
         _ia = ia;
+        _ia.Patiente += (_, message) => { if (Occupe) Statut = message; };
         _dialogues = dialogues;
         _aujourdhui = aujourdhui ?? (() => DateTime.Today);
         _fichier = new FichierLettres(dossier);

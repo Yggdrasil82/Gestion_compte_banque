@@ -60,6 +60,7 @@ du classeur Excel d'origine.
   - « Assistant » : questions sur le budget posées à Gemini et/ou Mistral à partir d'un résumé des chiffres affiché avant l'envoi ; il ne modifie rien.
 - **2.1.0** : dans « Crédits », « Chercher les taux du moment » : Gemini et Mistral cherchent sur internet les taux bas, moyen et haut, le taux d'usure et le taux de l'assurance emprunteur pour le type et la durée du crédit (sources cliquables) ; « Reprendre le taux moyen » et alerte si la simulation dépasse le taux d'usure.
 - **2.1.1** : Gemini utilise par défaut Flash-Lite (environ 500 demandes gratuites par jour au lieu d'une vingtaine) ; Mistral patiente 2 secondes et réessaie seul s'il répond « trop de demandes » ; les messages de quota donnent l'heure de remise à zéro (Gemini : 9 h, heure de Paris).
+- **2.1.2** : les messages d'erreur des IA donnent la raison exacte de leur refus ; si la limite par minute est atteinte, l'IA patiente la minute (en l'annonçant) puis réessaie ; si la clé gratuite refuse la recherche internet, les taux sont donnés de mémoire avec la mention « taux indicatifs, non vérifiés sur internet » (les Achats, eux, ne proposent jamais d'offres sans recherche).
 
 ## Prochainement
 

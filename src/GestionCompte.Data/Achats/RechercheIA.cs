@@ -16,6 +16,16 @@ public interface IAssistantIA
 
     /// <summary>Réponse texte à une demande ; <paramref name="avecRecherche"/> : l'IA peut chercher sur internet.</summary>
     Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default);
+
+    /// <summary>
+    /// Comme <see cref="DemanderAsync(string, bool, CancellationToken)"/> ; si <paramref name="repliSansRecherche"/> est faux,
+    /// une recherche internet refusée par la clé est une erreur au lieu d'une réponse sans recherche.
+    /// </summary>
+    Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default) =>
+        DemanderAsync(demande, avecRecherche, annulation);
+
+    /// <summary>Vrai si la dernière demande avec recherche a été faite sans recherche internet (refusée par la clé gratuite).</summary>
+    bool SansRecherche => false;
 }
 
 public static class RechercheOffres
@@ -29,7 +39,8 @@ public static class RechercheOffres
         "N'invente aucune offre ni adresse : n'inclus que des pages trouvées pendant la recherche. Si le produit est d'occasion ou reconditionné, dis-le dans la remarque.";
 
     public static async Task<IReadOnlyList<OffreTrouvee>> RechercherAsync(IAssistantIA ia, string produit, CancellationToken annulation = default) =>
-        Extraire(await ia.DemanderAsync(Demande(produit), avecRecherche: true, annulation), ia.Source);
+        // Des offres sans recherche internet seraient inventées : pas de repli.
+        Extraire(await ia.DemanderAsync(Demande(produit), avecRecherche: true, repliSansRecherche: false, annulation), ia.Source);
 
     /// <summary>Offres du tableau JSON contenu dans la réponse (même entouré de texte ou de ```json).</summary>
     public static IReadOnlyList<OffreTrouvee> Extraire(string reponse, SourceOffre source)
@@ -87,9 +98,13 @@ public sealed class Gemini : IAssistantIA
     private readonly string _cle;
     private readonly string _modele;
 
-    public Gemini(HttpClient http, string cle, string? modele = null)
+    private readonly Action<string>? _patienter;
+
+    /// <param name="patienter">Prévenu quand l'IA attend la fin d'une limite par minute avant un nouvel essai.</param>
+    public Gemini(HttpClient http, string cle, string? modele = null, Action<string>? patienter = null)
     {
         _http = http;
+        _patienter = patienter;
         _cle = cle;
         _modele = string.IsNullOrWhiteSpace(modele) ? ModeleParDefaut : modele.Trim();
     }
@@ -97,29 +112,16 @@ public sealed class Gemini : IAssistantIA
     public SourceOffre Source => SourceOffre.Gemini;
     public string Nom => "Gemini";
 
-    public async Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default)
-    {
-        var corps = new JsonObject
-        {
-            ["contents"] = new JsonArray(new JsonObject
-            {
-                ["role"] = "user",
-                ["parts"] = new JsonArray(new JsonObject { ["text"] = demande }),
-            }),
-        };
-        if (avecRecherche)
-            corps["tools"] = new JsonArray(new JsonObject { ["google_search"] = new JsonObject() });
+    public bool SansRecherche { get; private set; }
 
-        var (statut, texte) = await ErreursIA.EnvoyerAsync(_http, () =>
-        {
-            var requete = new HttpRequestMessage(HttpMethod.Post,
-                $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(_modele)}:generateContent")
-            {
-                Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
-            };
-            requete.Headers.Add("x-goog-api-key", _cle);
-            return requete;
-        }, annulation);
+    public Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default) =>
+        DemanderAsync(demande, avecRecherche, repliSansRecherche: true, annulation);
+
+    public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
+    {
+        var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
+            (recherche, essais) => ErreursIA.EnvoyerAsync(_http, () => Requete(demande, recherche), annulation, _patienter, Nom, essais),
+            sans => SansRecherche = sans);
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
@@ -134,6 +136,27 @@ public sealed class Gemini : IAssistantIA
         }
         return resultat.ToString();
     }
+
+    private HttpRequestMessage Requete(string demande, bool avecRecherche)
+    {
+        var corps = new JsonObject
+        {
+            ["contents"] = new JsonArray(new JsonObject
+            {
+                ["role"] = "user",
+                ["parts"] = new JsonArray(new JsonObject { ["text"] = demande }),
+            }),
+        };
+        if (avecRecherche)
+            corps["tools"] = new JsonArray(new JsonObject { ["google_search"] = new JsonObject() });
+        var requete = new HttpRequestMessage(HttpMethod.Post,
+            $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(_modele)}:generateContent")
+        {
+            Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
+        };
+        requete.Headers.Add("x-goog-api-key", _cle);
+        return requete;
+    }
 }
 
 /// <summary>Mistral (La Plateforme) : recherche web par l'outil « web_search » des conversations.</summary>
@@ -145,9 +168,13 @@ public sealed class Mistral : IAssistantIA
     private readonly string _cle;
     private readonly string _modele;
 
-    public Mistral(HttpClient http, string cle, string? modele = null)
+    private readonly Action<string>? _patienter;
+
+    /// <param name="patienter">Prévenu quand l'IA attend la fin d'une limite par minute avant un nouvel essai.</param>
+    public Mistral(HttpClient http, string cle, string? modele = null, Action<string>? patienter = null)
     {
         _http = http;
+        _patienter = patienter;
         _cle = cle;
         _modele = string.IsNullOrWhiteSpace(modele) ? ModeleParDefaut : modele.Trim();
     }
@@ -155,40 +182,16 @@ public sealed class Mistral : IAssistantIA
     public SourceOffre Source => SourceOffre.Mistral;
     public string Nom => "Mistral";
 
-    public async Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default)
-    {
-        JsonObject corps;
-        string adresse;
-        if (avecRecherche)
-        {
-            adresse = "https://api.mistral.ai/v1/conversations";
-            corps = new JsonObject
-            {
-                ["model"] = _modele,
-                ["inputs"] = demande,
-                ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }),
-                ["store"] = false,
-            };
-        }
-        else
-        {
-            adresse = "https://api.mistral.ai/v1/chat/completions";
-            corps = new JsonObject
-            {
-                ["model"] = _modele,
-                ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
-            };
-        }
+    public bool SansRecherche { get; private set; }
 
-        var (statut, texte) = await ErreursIA.EnvoyerAsync(_http, () =>
-        {
-            var requete = new HttpRequestMessage(HttpMethod.Post, adresse)
-            {
-                Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
-            };
-            requete.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _cle);
-            return requete;
-        }, annulation);
+    public Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default) =>
+        DemanderAsync(demande, avecRecherche, repliSansRecherche: true, annulation);
+
+    public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
+    {
+        var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
+            (recherche, essais) => ErreursIA.EnvoyerAsync(_http, () => Requete(demande, recherche), annulation, _patienter, Nom, essais),
+            sans => SansRecherche = sans);
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
@@ -207,6 +210,30 @@ public sealed class Mistral : IAssistantIA
         return resultat.ToString();
     }
 
+    private HttpRequestMessage Requete(string demande, bool avecRecherche)
+    {
+        var corps = avecRecherche
+            ? new JsonObject
+            {
+                ["model"] = _modele,
+                ["inputs"] = demande,
+                ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }),
+                ["store"] = false,
+            }
+            : new JsonObject
+            {
+                ["model"] = _modele,
+                ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
+            };
+        var requete = new HttpRequestMessage(HttpMethod.Post,
+            avecRecherche ? "https://api.mistral.ai/v1/conversations" : "https://api.mistral.ai/v1/chat/completions")
+        {
+            Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
+        };
+        requete.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _cle);
+        return requete;
+    }
+
     /// <summary>Le contenu est un texte, ou une liste de morceaux (texte et références des pages consultées).</summary>
     private static void AjouterContenu(JsonElement contenu, StringBuilder resultat)
     {
@@ -221,19 +248,24 @@ public sealed class Mistral : IAssistantIA
 
 public static class ErreursIA
 {
-    /// <summary>Attente avant le nouvel essai quand l'IA ne donne pas de délai (Mistral gratuit : 1 demande par seconde).</summary>
+    /// <summary>Attente avant le premier nouvel essai quand l'IA ne donne pas de délai (Mistral gratuit : 1 demande par seconde).</summary>
     public static TimeSpan AttenteParDefaut { get; set; } = TimeSpan.FromSeconds(2);
 
-    /// <summary>Au-delà, on n'attend pas : la limite est à la minute ou au jour.</summary>
-    private static readonly TimeSpan AttenteMaximale = TimeSpan.FromSeconds(12);
+    /// <summary>Attente avant le second nouvel essai : la fin de la minute (limite de tokens par minute).</summary>
+    public static TimeSpan AttenteLongue { get; set; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>Au-delà, on n'attend pas : la limite est au jour.</summary>
+    private static readonly TimeSpan AttenteMaximale = TimeSpan.FromSeconds(65);
 
     /// <summary>
-    /// Envoie la demande ; si l'IA répond « trop de demandes » avec une attente courte, patiente puis réessaie une fois.
+    /// Envoie la demande ; si l'IA répond « trop de demandes », patiente puis réessaie (au plus deux fois : après
+    /// quelques secondes, puis après la minute, en prévenant par <paramref name="patienter"/>).
     /// Renvoie le statut (OK en cas de succès) et le texte de la réponse.
     /// </summary>
     public static async Task<(HttpStatusCode Statut, string Texte)> EnvoyerAsync(HttpClient http, Func<HttpRequestMessage> creer,
-        CancellationToken annulation)
+        CancellationToken annulation, Action<string>? patienter = null, string nom = "", bool nouveauxEssais = true)
     {
+        var attenteAnnoncee = false;
         for (var essai = 1; ; essai++)
         {
             using var requete = creer();
@@ -241,14 +273,51 @@ public static class ErreursIA
             var texte = await reponse.Content.ReadAsStringAsync(annulation);
             if (reponse.IsSuccessStatusCode)
                 return (HttpStatusCode.OK, texte);
-            if (reponse.StatusCode != HttpStatusCode.TooManyRequests || essai > 1 || LimiteDuJour(texte))
+            if (reponse.StatusCode != HttpStatusCode.TooManyRequests || !nouveauxEssais || essai >= 3 || LimiteDuJour(texte))
                 return (reponse.StatusCode, texte);
-            var attente = reponse.Headers.RetryAfter?.Delta ?? DelaiDemande(texte) ?? AttenteParDefaut;
+            var attente = reponse.Headers.RetryAfter?.Delta ?? DelaiDemande(texte) ?? (essai == 1 ? AttenteParDefaut : AttenteLongue);
             if (attente > AttenteMaximale)
                 return (reponse.StatusCode, texte);
+            if (essai == 2 || attente >= TimeSpan.FromSeconds(3))
+            {
+                if (attenteAnnoncee)
+                    return (reponse.StatusCode, texte);
+                attenteAnnoncee = true;
+                patienter?.Invoke($"{nom} : limite gratuite par minute atteinte, nouvel essai dans {Math.Ceiling(attente.TotalSeconds)} s…");
+            }
             await Task.Delay(attente, annulation);
         }
     }
+
+    /// <summary>
+    /// Demande avec recherche internet si voulu ; si la clé la refuse et que le repli est permis, redemande sans recherche
+    /// (<paramref name="marquerSansRecherche"/> reçoit alors vrai).
+    /// </summary>
+    public static async Task<(HttpStatusCode Statut, string Texte)> DemanderAvecRepliAsync(string nom, bool avecRecherche, bool repliSansRecherche,
+        Func<bool, bool, Task<(HttpStatusCode Statut, string Texte)>> envoyer, Action<bool> marquerSansRecherche)
+    {
+        marquerSansRecherche(false);
+        if (!avecRecherche)
+            return await envoyer(false, true);
+        // Avec repli, pas d'attente sur la recherche : on passe tout de suite à la demande sans recherche.
+        var avec = await envoyer(true, !repliSansRecherche);
+        if (avec.Statut == HttpStatusCode.OK || !repliSansRecherche || !RechercheRefusee(avec.Statut, avec.Texte))
+            return avec;
+        var sans = await envoyer(false, true);
+        if (sans.Statut == HttpStatusCode.OK)
+            marquerSansRecherche(true);
+        return sans;
+    }
+
+    /// <summary>Refus qui peut venir de la recherche internet elle-même (quota de recherche, outil non inclus) et non de la clé.</summary>
+    private static bool RechercheRefusee(HttpStatusCode statut, string texte) =>
+        statut switch
+        {
+            // Même un quota du jour peut ne concerner que la recherche : la demande sans recherche le dira sinon.
+            HttpStatusCode.TooManyRequests => true,
+            HttpStatusCode.BadRequest or HttpStatusCode.Forbidden => !texte.Contains("API key", StringComparison.OrdinalIgnoreCase),
+            _ => false,
+        };
 
     /// <summary>Quota du jour atteint (Gemini indique « PerDay » dans le détail de l'erreur).</summary>
     public static bool LimiteDuJour(string texte) =>
@@ -306,15 +375,16 @@ public static class ErreursIA
 
         if (detail.Contains("API key", StringComparison.OrdinalIgnoreCase))
             statut = HttpStatusCode.Unauthorized;
+        var raison = $" Réponse de {ia} : « {detail} »";
         return statut switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
                 $"{ia} refuse la clé API (vérifiez-la dans Configuration › Intelligence artificielle). {detail}",
             HttpStatusCode.TooManyRequests when LimiteDuJour(texte) =>
-                $"{ia} : quota gratuit du jour atteint, de nouveau disponible {RemiseAZeroGemini(maintenantUtc ?? DateTime.UtcNow)}.",
+                $"{ia} : quota gratuit du jour atteint, de nouveau disponible {RemiseAZeroGemini(maintenantUtc ?? DateTime.UtcNow)}.{raison}",
             HttpStatusCode.TooManyRequests when ia == "Mistral" =>
-                "Mistral : trop de demandes (1 par seconde en gratuit) ou quota du mois atteint ; réessayez dans un instant.",
-            HttpStatusCode.TooManyRequests => $"{ia} : limite gratuite par minute atteinte, réessayez dans une minute.",
+                $"Mistral : limite gratuite atteinte (1 demande par seconde et un nombre de tokens par minute, voir « Limites » dans la console Mistral) ; réessayez dans une minute.{raison}",
+            HttpStatusCode.TooManyRequests => $"{ia} : limite gratuite par minute atteinte, réessayez dans une minute.{raison}",
             HttpStatusCode.NotFound => $"{ia} : modèle introuvable ({detail}).",
             _ => $"{ia} a refusé la demande ({(int)statut}) : {detail}",
         };

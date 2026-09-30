@@ -28,6 +28,9 @@ public sealed class TauxMarche
 
     public List<SourceTaux> Liens { get; } = new();
 
+    /// <summary>Réponse faite sans recherche internet (refusée par la clé gratuite) : taux indicatifs.</summary>
+    public bool SansRecherche { get; set; }
+
     public bool Vide => Moyen is null && Bas is null && Haut is null && Usure is null;
 }
 

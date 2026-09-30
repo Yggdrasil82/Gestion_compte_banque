@@ -27,6 +27,8 @@ public sealed partial class CreditsViewModel : ObservableObject
         Action donneesModifiees, Action previsionnelModifie, ServicesIA? ia = null, Func<DateTime>? aujourdhui = null)
     {
         _ia = ia;
+        if (_ia is not null)
+            _ia.Patiente += (_, message) => { if (RechercheEnCours) StatutTaux = message; };
         _aujourdhui = aujourdhui ?? (() => DateTime.Today);
         if (ia is not null)
             ia.PropertyChanged += (_, _) => OnPropertyChanged(nameof(IADisponibles));
@@ -243,6 +245,12 @@ public sealed partial class CreditsViewModel : ObservableObject
                 try
                 {
                     var taux = RechercheTaux.Extraire(await ia.DemanderAsync(demande, avecRecherche: true), ia.Nom);
+                    if (taux is not null && ia.SansRecherche)
+                    {
+                        // Sans recherche, les adresses citées seraient inventées.
+                        taux.SansRecherche = true;
+                        taux.Liens.Clear();
+                    }
                     return (ia.Nom, Taux: taux, Erreur: taux is null ? $"{ia.Nom} n'a pas trouvé de taux." : null);
                 }
                 catch (Exception e) when (e is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException or InvalidOperationException)
@@ -482,6 +490,10 @@ public sealed class TauxMarcheViewModel
     public string Periode => Taux.Periode;
     public bool Reprenable => Taux.Moyen is not null;
     public IReadOnlyList<SourceTaux> Liens => Taux.Liens;
+    public bool SansRecherche => Taux.SansRecherche;
+    public string Avertissement => Taux.SansRecherche
+        ? $"Taux indicatifs, non vérifiés sur internet : {Nom} a répondu de mémoire car votre clé gratuite n'inclut pas la recherche internet."
+        : "";
 
     private static string Texte(decimal? taux) => taux is { } t ? t.ToString("0.00", Francais) + " %" : "—";
 }

@@ -61,6 +61,12 @@ public sealed partial class ServicesIA : ObservableObject
     /// <summary>Au moins une IA est réglée et l'envoi est autorisé.</summary>
     public bool Disponibles => Actives && Assistants().Count > 0;
 
+    /// <summary>Une IA attend la fin d'une limite par minute avant de réessayer (texte à afficher).</summary>
+    public event EventHandler<string>? Patiente;
+
+    /// <summary>Signale une attente (utilisé aussi par les tests).</summary>
+    public void Patienter(string message) => Patiente?.Invoke(this, message);
+
     /// <summary>IA utilisables maintenant (clé saisie, envoi autorisé).</summary>
     public IReadOnlyList<IAssistantIA> Assistants()
     {
@@ -70,9 +76,9 @@ public sealed partial class ServicesIA : ObservableObject
             return _assistantsTest();
         var assistants = new List<IAssistantIA>();
         if (_secrets.Lire(SecretGemini) is { Length: > 0 } gemini)
-            assistants.Add(new Gemini(Http, gemini, _secrets.Lire(SecretModeleGemini)));
+            assistants.Add(new Gemini(Http, gemini, _secrets.Lire(SecretModeleGemini), Patienter));
         if (_secrets.Lire(SecretMistral) is { Length: > 0 } mistral)
-            assistants.Add(new Mistral(Http, mistral, _secrets.Lire(SecretModeleMistral)));
+            assistants.Add(new Mistral(Http, mistral, _secrets.Lire(SecretModeleMistral), Patienter));
         return assistants;
     }
 

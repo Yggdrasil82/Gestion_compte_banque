@@ -282,9 +282,8 @@ internal static class Captures
         gemini.Liens.Add(new Core.Calculs.SourceTaux("Courtier exemple", "https://www.courtier-exemple.fr/barometre"));
         gemini.Liens.Add(new Core.Calculs.SourceTaux("Taux d'usure (exemple)", "https://www.exemple.fr/taux-usure"));
         yield return gemini;
-        var mistral = new Core.Calculs.TauxMarche { Source = "Mistral", Bas = 3.15m, Moyen = 3.50m, Haut = 4.00m, Usure = 5.87m, Assurance = 0.30m, Periode = "novembre 2026" };
-        mistral.Liens.Add(new Core.Calculs.SourceTaux("Comparateur exemple", "https://www.comparateur-exemple.fr/taux-immobilier"));
-        yield return mistral;
+        // Mistral a répondu sans recherche internet (refusée par la clé gratuite) : pas de sources, taux indicatifs.
+        yield return new Core.Calculs.TauxMarche { Source = "Mistral", Bas = 3.15m, Moyen = 3.50m, Haut = 4.00m, Usure = 5.87m, Assurance = 0.30m, Periode = "novembre 2026", SansRecherche = true };
     }
 
     private static void CreerAchatsDemo(string dossier)

@@ -332,6 +332,8 @@
                                                     Visibility="{Binding Reprenable, Converter={StaticResource Visible}}"
                                                     ToolTip="Met ce taux (et l'assurance, si elle est en % par an) dans la simulation sélectionnée"
                                                     Command="{Binding DataContext.ReprendreTauxCommand, ElementName=Racine}" CommandParameter="{Binding}" />
+                                            <TextBlock DockPanel.Dock="Bottom" Text="{Binding Avertissement}" TextWrapping="Wrap" FontSize="12" FontStyle="Italic"
+                                                       Visibility="{Binding SansRecherche, Converter={StaticResource Visible}}" />
                                             <ItemsControl ItemsSource="{Binding Liens}">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
