@@ -85,29 +85,23 @@ public sealed class ConnexionGoogle
 
             using var delai = CancellationTokenSource.CreateLinkedTokenSource(annulation);
             delai.CancelAfter(TimeSpan.FromMinutes(5));
-            Dictionary<string, string> requete;
-            while (true)
+            var retour = new TaskCompletionSource<Dictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var fin = delai.Token.Register(() => retour.TrySetCanceled(delai.Token));
+            // Chaque connexion est traitée à part : le navigateur en ouvre parfois à l'avance sans rien envoyer,
+            // et une connexion muette ne doit pas bloquer le retour de Google qui arrive par une autre.
+            _ = Task.Run(async () =>
             {
-                using var client = await ecoute.AcceptTcpClientAsync(delai.Token);
-                await using var flux = client.GetStream();
-                var ligne = await LirePremiereLigneAsync(flux, delai.Token);
-                // Ex. « GET /?state=…&code=… HTTP/1.1 » ; les autres demandes du navigateur (favicon…) sont ignorées.
-                var chemin = ligne.Split(' ').ElementAtOrDefault(1) ?? "";
-                requete = Parametres(chemin);
-                var reponduAuRetour = requete.ContainsKey("code") || requete.ContainsKey("error");
-                var reussi = requete.GetValueOrDefault("code") is not null && requete.GetValueOrDefault("state") == etat;
-                var page = !reponduAuRetour ? ""
-                    : reussi
-                        ? "<html><body style='font-family:Segoe UI;padding:40px'><h2>Connexion réussie</h2><p>Vous pouvez fermer cette page et revenir dans Gestion compte.</p></body></html>"
-                        : "<html><body style='font-family:Segoe UI;padding:40px'><h2>Connexion annulée</h2><p>Revenez dans Gestion compte pour réessayer.</p></body></html>";
-                var corps = Encoding.UTF8.GetBytes(page);
-                var entete = Encoding.ASCII.GetBytes(
-                    $"HTTP/1.1 {(reponduAuRetour ? "200 OK" : "404 Not Found")}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {corps.Length}\r\nConnection: close\r\n\r\n");
-                await flux.WriteAsync(entete, delai.Token);
-                await flux.WriteAsync(corps, delai.Token);
-                if (reponduAuRetour)
-                    break;
-            }
+                try
+                {
+                    while (!retour.Task.IsCompleted)
+                        _ = TraiterConnexionAsync(await ecoute.AcceptTcpClientAsync(delai.Token), etat, retour, delai.Token);
+                }
+                catch (Exception e) when (e is OperationCanceledException or ObjectDisposedException or SocketException)
+                {
+                    // Écoute arrêtée : connexion terminée, annulée ou délai dépassé.
+                }
+            });
+            var requete = await retour.Task;
 
             if (requete.GetValueOrDefault("code") is not { } code || requete.GetValueOrDefault("state") != etat)
                 throw new InvalidOperationException($"Connexion refusée par Google ({requete.GetValueOrDefault("error") ?? "réponse inattendue"}).");
@@ -127,6 +121,43 @@ public sealed class ConnexionGoogle
         finally
         {
             ecoute.Stop();
+        }
+    }
+
+    /// <summary>Durée laissée à une connexion du navigateur pour envoyer sa demande avant d'être ignorée.</summary>
+    private static readonly TimeSpan AttenteDemande = TimeSpan.FromSeconds(10);
+
+    /// <summary>Lit la demande d'une connexion ; le retour de Google (code ou erreur) termine l'attente.</summary>
+    private static async Task TraiterConnexionAsync(TcpClient client, string etat,
+        TaskCompletionSource<Dictionary<string, string>> retour, CancellationToken annulation)
+    {
+        using var _ = client;
+        using var delai = CancellationTokenSource.CreateLinkedTokenSource(annulation);
+        delai.CancelAfter(AttenteDemande);
+        try
+        {
+            await using var flux = client.GetStream();
+            var ligne = await LirePremiereLigneAsync(flux, delai.Token);
+            // Ex. « GET /?state=…&code=… HTTP/1.1 » ; les autres demandes du navigateur (favicon…) reçoivent une page vide.
+            var chemin = ligne.Split(' ').ElementAtOrDefault(1) ?? "";
+            var requete = Parametres(chemin);
+            var reponduAuRetour = requete.ContainsKey("code") || requete.ContainsKey("error");
+            var reussi = requete.GetValueOrDefault("code") is not null && requete.GetValueOrDefault("state") == etat;
+            var page = !reponduAuRetour ? ""
+                : reussi
+                    ? "<html><body style='font-family:Segoe UI;padding:40px'><h2>Connexion réussie</h2><p>Vous pouvez fermer cette page et revenir dans Gestion compte.</p></body></html>"
+                    : "<html><body style='font-family:Segoe UI;padding:40px'><h2>Connexion annulée</h2><p>Revenez dans Gestion compte pour réessayer.</p></body></html>";
+            var corps = Encoding.UTF8.GetBytes(page);
+            var entete = Encoding.ASCII.GetBytes(
+                $"HTTP/1.1 {(reponduAuRetour ? "200 OK" : "404 Not Found")}\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {corps.Length}\r\nConnection: close\r\n\r\n");
+            await flux.WriteAsync(entete, delai.Token);
+            await flux.WriteAsync(corps, delai.Token);
+            if (reponduAuRetour)
+                retour.TrySetResult(requete);
+        }
+        catch (Exception e) when (e is OperationCanceledException or IOException or ObjectDisposedException or SocketException)
+        {
+            // Connexion muette ou coupée : ignorée.
         }
     }
 
