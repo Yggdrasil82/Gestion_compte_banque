@@ -1,0 +1,32 @@
+<UserControl x:Class="GestionCompte.App.LogoAnime"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="420" Height="420">
+    <!-- Écran d'accueil : le canard grippe-sou apparaît, rebondit, et des pièces tombent dans son coffre. -->
+    <Border CornerRadius="28">
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#0D2F57" Offset="0" />
+                <GradientStop Color="#0B4F5E" Offset="1" />
+            </LinearGradientBrush>
+        </Border.Background>
+        <Grid>
+            <Canvas Width="220" Height="220" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,60,0,0">
+                <Image x:Name="Logo" Source="pack://application:,,,/Ressources/icone.png" Width="220" Height="220"
+                       RenderTransformOrigin="0.5,0.5" Opacity="0">
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="Echelle" ScaleX="0.6" ScaleY="0.6" />
+                    </Image.RenderTransform>
+                </Image>
+            </Canvas>
+            <!-- Pièces (créées par le code) : au-dessus du logo, pour tomber dans le coffre. -->
+            <Canvas x:Name="Pieces" Width="220" Height="220" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,60,0,0" />
+            <StackPanel x:Name="Titre" VerticalAlignment="Bottom" Margin="0,0,0,34" Opacity="0">
+                <TextBlock Text="Gestion compte" Foreground="White" FontFamily="Segoe UI" FontSize="26" FontWeight="SemiBold"
+                           HorizontalAlignment="Center" />
+                <TextBlock x:Name="TexteVersion" Foreground="#BFD9F2" FontFamily="Segoe UI" FontSize="13" HorizontalAlignment="Center"
+                           Margin="0,2,0,0" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

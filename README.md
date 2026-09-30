@@ -51,7 +51,7 @@ du classeur Excel d'origine.
 - **1.4.2** : correction du plantage au choix d'un mois dans la liste déroulante.
 - **1.4.3** : nouvelle icône (canard grippe-sou sur son coffre-fort).
 - **1.5.0** : la simulation de crédit devient le module « Crédits », un onglet à part qu'on peut masquer dans la configuration (réglage propre au PC).
-- **2.0.0** (en cours) : modules masquables dans Configuration › Modules :
+- **2.0.0** : animation du canard à l'ouverture (désactivable) et nouveaux modules masquables dans Configuration › Modules :
   - « Bilan » : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF ;
   - « Documents » : documents importants communs à tous les comptes (catégories, échéances avec rappels, charge liée, notes), rangés sur le PC, dans un dossier synchronisé ou directement dans Google Drive ; protection facultative par mot de passe avec clé de secours ;
   - « Mail » : envoi par Gmail (compte Google) ou par une autre messagerie (SMTP : Orange, Free…), pièces jointes tirées du coffre, du bilan (PDF) ou d'un fichier, carnet d'adresses (manuel et contacts Google) et historique des envois ;

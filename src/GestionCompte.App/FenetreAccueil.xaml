@@ -1,0 +1,10 @@
+<Window x:Class="GestionCompte.App.FenetreAccueil"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:GestionCompte.App"
+        Title="Gestion compte" SizeToContent="WidthAndHeight" WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Topmost="True"
+        Icon="pack://application:,,,/Ressources/icone.ico" Cursor="Hand"
+        ToolTip="Cliquer pour passer">
+    <local:LogoAnime x:Name="Animation" />
+</Window>

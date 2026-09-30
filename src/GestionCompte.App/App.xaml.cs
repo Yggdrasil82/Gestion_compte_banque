@@ -39,6 +39,19 @@ public partial class App : Application
         Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
         apparence.Changee += (_, _) => Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
 
+        // Animation du canard (réglable dans Configuration › Modules), puis ouverture de l'application.
+        if (apparence.AnimationDemarrage)
+        {
+            var accueil = new FenetreAccueil();
+            accueil.Terminee += (_, _) => Ouvrir(apparence);
+            accueil.Show();
+        }
+        else
+            Ouvrir(apparence);
+    }
+
+    private void Ouvrir(ApparenceViewModel apparence)
+    {
         // Un fichier de données par compte, listés dans Documents\GestionCompte\comptes.json.
         var registre = RegistreComptes.Charger(Path.GetDirectoryName(DepotSqlite.CheminParDefaut)!);
         MainViewModel vm;

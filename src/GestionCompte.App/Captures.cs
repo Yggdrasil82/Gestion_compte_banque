@@ -150,6 +150,21 @@ internal static class Captures
 
         app.Dispatcher.InvokeAsync(async () =>
         {
+            // Écran d'accueil (état final de l'animation du canard).
+            var accueil = new LogoAnime();
+            accueil.AfficherFin();
+            accueil.Measure(new Size(accueil.Width, accueil.Height));
+            accueil.Arrange(new Rect(0, 0, accueil.Width, accueil.Height));
+            accueil.UpdateLayout();
+            await Task.Delay(250);
+            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+            var imageAccueil = new RenderTargetBitmap((int)accueil.Width, (int)accueil.Height, 96, 96, PixelFormats.Pbgra32);
+            imageAccueil.Render(accueil);
+            var encodeurAccueil = new PngBitmapEncoder();
+            encodeurAccueil.Frames.Add(BitmapFrame.Create(imageAccueil));
+            using (var flux = File.Create(Path.Combine(dossier, "00-accueil.png")))
+                encodeurAccueil.Save(flux);
+
             foreach (var etape in etapes)
                 await Capturer(etape);
 

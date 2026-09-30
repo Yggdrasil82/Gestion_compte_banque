@@ -196,7 +196,9 @@
                         <CheckBox Content="Lettres : lettres types rédigées par Gemini et Mistral, PDF, Word ou mail"
                                   IsChecked="{Binding Apparence.ModuleLettres}" Margin="0,0,0,6" />
                         <CheckBox Content="Assistant : questions sur votre budget à Gemini et Mistral (ne modifie rien)"
-                                  IsChecked="{Binding Apparence.ModuleAssistant}" />
+                                  IsChecked="{Binding Apparence.ModuleAssistant}" Margin="0,0,0,6" />
+                        <CheckBox Content="Animation du canard à l'ouverture de l'application"
+                                  IsChecked="{Binding Apparence.AnimationDemarrage}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
                     </StackPanel>

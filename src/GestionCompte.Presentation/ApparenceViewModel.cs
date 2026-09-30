@@ -66,6 +66,9 @@ public sealed class PreferencesAffichage
     /// <summary>Onglet « Lettres » affiché dans la barre de gauche.</summary>
     public bool ModuleLettres { get; set; } = true;
 
+    /// <summary>Animation du logo à l'ouverture de l'application.</summary>
+    public bool AnimationDemarrage { get; set; } = true;
+
     /// <summary>Onglet « Assistant » affiché dans la barre de gauche.</summary>
     public bool ModuleAssistant { get; set; } = true;
 
@@ -235,6 +238,17 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Animation du canard à l'ouverture de l'application (réglage propre au PC).</summary>
+    public bool AnimationDemarrage
+    {
+        get => _preferences.AnimationDemarrage;
+        set
+        {
+            if (SetProperty(_preferences.AnimationDemarrage, value, _preferences, (p, v) => p.AnimationDemarrage = v))
+                Enregistrer();
+        }
+    }
+
     /// <summary>Compte d'envoi des mails (réglage propre au PC).</summary>
     public ModeEnvoiMail ModeEnvoiMail
     {
@@ -273,6 +287,7 @@ public sealed class ApparenceViewModel : ObservableObject
         ModuleAchats = true;
         ModuleLettres = true;
         ModuleAssistant = true;
+        AnimationDemarrage = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }
