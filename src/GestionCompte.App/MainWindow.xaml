@@ -60,6 +60,10 @@
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Aide au budget"
                                  Tag="&#xEA80;" Background="{DynamicResource Accent2}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=2}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Bilan"
+                                 Tag="&#xE9D2;" Background="{DynamicResource Accent1}"
+                                 Visibility="{Binding Apparence.ModuleBilan, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=7}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Crédits"
                                  Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
                                  Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
@@ -209,6 +213,10 @@
                 <!-- Écran Aide au budget -->
                 <ContentControl Content="{Binding AideBudget}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=2}" />
+
+                <!-- Module Bilan -->
+                <ContentControl Content="{Binding Bilan}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=7}" />
 
                 <!-- Module Crédits -->
                 <ContentControl Content="{Binding Credits}"

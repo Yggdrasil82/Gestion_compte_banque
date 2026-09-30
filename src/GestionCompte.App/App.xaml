@@ -15,6 +15,7 @@
         <local:EgalConvertisseur x:Key="Egal" />
         <local:VisibleSiEgalConvertisseur x:Key="VisibleSiEgal" />
         <BooleanToVisibilityConverter x:Key="Visible" />
+        <local:ProportionConvertisseur x:Key="Proportion" />
 
         <FontFamily x:Key="Icones">Segoe MDL2 Assets</FontFamily>
 
@@ -505,6 +506,10 @@
 
         <DataTemplate DataType="{x:Type vm:AideBudgetViewModel}">
             <vues:VueAideBudget />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:BilanViewModel}">
+            <vues:VueBilan />
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:CreditsViewModel}">

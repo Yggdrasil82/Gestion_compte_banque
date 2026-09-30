@@ -121,6 +121,48 @@ public static class ConfigurationParDefaut
         return compte;
     }
 
+    /// <summary>
+    /// Compte d'exemple sur deux ans (janvier 2025 à octobre 2026), pour les captures du bilan annuel :
+    /// hausse de l'électricité et des restaurants en 2026, carburant souvent dépassé, courses sous le budget.
+    /// </summary>
+    public static CompteBancaire CreerDemoHistorique()
+    {
+        var configuration = CreerExemple(new PeriodeMois(2025, 1));
+        configuration.SoldeInitial = 1200m;
+        var compte = new CompteBancaire(configuration);
+        var fin = new PeriodeMois(2026, 10);
+        for (var i = 0; compte.ProchainMois <= fin; i++)
+        {
+            var mois = compte.CreerMoisSuivant();
+            var p = mois.Periode;
+            var annee2026 = p.Annee == 2026;
+            mois.Revenus.ForEach(r => r.Recu = true);
+            mois.Operations.ForEach(o => o.Pointee = true);
+            mois.Operations.Single(o => o.CompteCumul == Epargne).Debit = annee2026 ? 150m : 100m;
+            if (annee2026)
+                mois.Operations.Single(o => o.Libelle == "Électricité").Debit = 172m;
+
+            // Montants inventés, variés d'un mois à l'autre mais toujours les mêmes d'une compilation à l'autre.
+            var variation = (i * 37 % 11) - 5;
+            mois.Operations.AddRange(new[]
+            {
+                new Operation("Leclerc", debit: 180m + variation * 6) { Enveloppe = "Courses", Pointee = true },
+                new Operation("Lidl", debit: 95m + variation * 4) { Enveloppe = "Courses", Pointee = true },
+                new Operation("Plein Total", debit: 62m + variation * 3) { Enveloppe = "Carburant", Pointee = true },
+                new Operation("Plein Esso", debit: 48m + (i % 3) * 9) { Enveloppe = "Carburant", Pointee = true },
+                new Operation("Restaurant", debit: (annee2026 ? 85m : 40m) + (i % 4) * 5) { Pointee = true },
+            });
+            if (p.Mois == 12)
+                mois.Operations.Add(new Operation("Cadeaux de Noël", debit: 420m) { Pointee = true });
+            if (p.Mois == 7)
+                mois.Operations.Add(new Operation("Vacances", debit: annee2026 ? 1350m : 1100m) { Pointee = true });
+            if (p.Mois == 3)
+                mois.Operations.Add(new Operation("Remboursement mutuelle", credit: 64.20m) { Pointee = true });
+        }
+
+        return compte;
+    }
+
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>
     public static CompteBancaire CreerDemo()
     {

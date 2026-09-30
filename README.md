@@ -51,6 +51,7 @@ du classeur Excel d'origine.
 - **1.4.2** : correction du plantage au choix d'un mois dans la liste déroulante.
 - **1.4.3** : nouvelle icône (canard grippe-sou sur son coffre-fort).
 - **1.5.0** : la simulation de crédit devient le module « Crédits », un onglet à part qu'on peut masquer dans la configuration (réglage propre au PC).
+- **1.6.0** : module « Bilan » (masquable) : bilan d'une année ou des 12 derniers mois, graphique mois par mois, postes comparés aux mêmes mois un an plus tôt, pistes d'économie chiffrées, exports Excel et PDF.
 
 ## Prochainement
 

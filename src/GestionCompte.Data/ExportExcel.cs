@@ -161,6 +161,96 @@ public static class ExportExcel
         classeur.SaveAs(chemin);
     }
 
+    /// <summary>Export du bilan : totaux, mois par mois, postes de dépenses et pistes d'économie.</summary>
+    public static void ExporterBilan(ResultatBilan bilan, string titre, string chemin)
+    {
+        ArgumentNullException.ThrowIfNull(bilan);
+
+        using var classeur = new XLWorkbook();
+        var feuille = classeur.Worksheets.Add("Bilan");
+        feuille.Cell(1, 1).Value = titre;
+        feuille.Cell(1, 1).Style.Font.SetBold().Font.SetFontSize(18).Font.SetFontColor(Bleu);
+        feuille.Cell(2, 1).Value = bilan.Etendue;
+        var ligne = 4;
+
+        ligne = Titre(feuille, ligne, "Résumé");
+        foreach (var (libelle, montant) in new (string, decimal)[]
+        {
+            ("Revenus", bilan.Revenus),
+            ("Dépenses", bilan.Depenses),
+            ("Épargne", bilan.Epargne),
+            ($"Solde au début ({bilan.Mois.FirstOrDefault()?.Periode.Libelle})", bilan.SoldeDebut),
+            ($"Solde à la fin ({bilan.Mois.LastOrDefault()?.Periode.Libelle})", bilan.SoldeFin),
+            ("Variation du solde", bilan.Variation),
+        })
+        {
+            feuille.Cell(ligne, 1).Value = libelle;
+            Montant(feuille.Cell(ligne, 2), montant);
+            ligne++;
+        }
+        feuille.Cell(ligne, 1).Value = "Taux d'épargne";
+        if (bilan.TauxEpargne is { } taux)
+        {
+            feuille.Cell(ligne, 2).Value = taux;
+            feuille.Cell(ligne, 2).Style.NumberFormat.Format = "0.0 %";
+        }
+        ligne += 2;
+
+        ligne = Titre(feuille, ligne, "Mois par mois");
+        ligne = Entete(feuille, ligne, "Mois", "Revenus", "Dépenses", "Épargne", "Solde de fin");
+        foreach (var mois in bilan.Mois)
+        {
+            feuille.Cell(ligne, 1).Value = mois.Periode.Libelle;
+            Montant(feuille.Cell(ligne, 2), mois.Revenus);
+            Montant(feuille.Cell(ligne, 3), mois.Depenses);
+            Montant(feuille.Cell(ligne, 4), mois.Epargne);
+            Montant(feuille.Cell(ligne, 5), mois.SoldeFin);
+            if (mois.SoldeFin < 0)
+                feuille.Cell(ligne, 5).Style.Font.SetFontColor(Rouge);
+            ligne++;
+        }
+        ligne++;
+
+        ligne = Titre(feuille, ligne, "Postes de dépenses");
+        ligne = Entete(feuille, ligne, "Poste", "Total", "Par mois", "Part des revenus", "Année d'avant (par mois)", "Évolution", "Type");
+        foreach (var poste in bilan.Postes)
+        {
+            feuille.Cell(ligne, 1).Value = poste.Nom;
+            Montant(feuille.Cell(ligne, 2), poste.Total);
+            Montant(feuille.Cell(ligne, 3), poste.MoyenneMensuelle);
+            feuille.Cell(ligne, 4).Value = poste.PartRevenus;
+            feuille.Cell(ligne, 4).Style.NumberFormat.Format = "0.0 %";
+            if (poste.MoyennePrecedente is { } avant)
+                Montant(feuille.Cell(ligne, 5), avant);
+            if (poste.Evolution is { } evolution)
+            {
+                feuille.Cell(ligne, 6).Value = evolution;
+                feuille.Cell(ligne, 6).Style.NumberFormat.Format = "+0 %;-0 %;0 %";
+                if (evolution >= Bilan.SeuilHausse && poste.Type != TypePoste.Epargne)
+                    feuille.Cell(ligne, 6).Style.Font.SetFontColor(Rouge);
+            }
+            feuille.Cell(ligne, 7).Value = Bilan.NomType(poste.Type);
+            ligne++;
+        }
+        ligne++;
+
+        ligne = Titre(feuille, ligne, "Pistes d'économie");
+        ligne = Entete(feuille, ligne, "Piste", "Gain possible par an", "Détail");
+        foreach (var piste in bilan.Pistes)
+        {
+            feuille.Cell(ligne, 1).Value = piste.Titre;
+            if (piste.GainAnnuel is { } gain)
+                Montant(feuille.Cell(ligne, 2), gain);
+            feuille.Cell(ligne, 3).Value = piste.Detail;
+            ligne++;
+        }
+
+        foreach (var (colonne, largeur) in new[] { (1, 44), (2, 16), (3, 16), (4, 16), (5, 22), (6, 12), (7, 16) })
+            feuille.Column(colonne).Width = largeur;
+
+        classeur.SaveAs(chemin);
+    }
+
     private static int Titre(IXLWorksheet feuille, int ligne, string titre)
     {
         feuille.Cell(ligne, 1).Value = titre;

@@ -25,6 +25,9 @@ internal static class Captures
     /// <summary>Le module Crédits : comparaison, tableau d'amortissement et calcul inverse.</summary>
     private const double HauteurCredits = 960;
 
+    /// <summary>Le bilan : chiffres clés, graphique, pistes et tous les postes.</summary>
+    private const double HauteurBilan = 1320;
+
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
     private const double HauteurConfiguration = 1700;
 
@@ -98,30 +101,41 @@ internal static class Captures
         File.WriteAllText(releve, ConfigurationParDefaut.ReleveDemo());
         vm.OuvrirImport(releve);
 
+        async Task Capturer((string Nom, Ambiance Ambiance, bool Sombre, int Onglet, bool MoisPrecedent) etape)
+        {
+            vm.Apparence.Ambiance = etape.Ambiance;
+            vm.Apparence.ModeSombre = etape.Sombre;
+            vm.OngletSelectionne = etape.Onglet;
+            if (etape.MoisPrecedent)
+                vm.MoisPrecedentCommand.Execute(null);
+
+            var hauteur = etape.Onglet switch
+            {
+                MainViewModel.OngletAide => HauteurAide,
+                MainViewModel.OngletCredits => HauteurCredits,
+                MainViewModel.OngletBilan => HauteurBilan,
+                MainViewModel.OngletConfiguration => HauteurConfiguration,
+                _ => Hauteur,
+            };
+            hote.Height = hauteur;
+            await MettreEnPage(hote, hauteur);
+            Enregistrer(hote, Path.Combine(dossier, etape.Nom + ".png"), hauteur);
+
+            if (etape.MoisPrecedent)
+                vm.MoisSuivantCommand.Execute(null);
+        }
+
         app.Dispatcher.InvokeAsync(async () =>
         {
             foreach (var etape in etapes)
-            {
-                vm.Apparence.Ambiance = etape.Ambiance;
-                vm.Apparence.ModeSombre = etape.Sombre;
-                vm.OngletSelectionne = etape.Onglet;
-                if (etape.MoisPrecedent)
-                    vm.MoisPrecedentCommand.Execute(null);
+                await Capturer(etape);
 
-                var hauteur = etape.Onglet switch
-                {
-                    MainViewModel.OngletAide => HauteurAide,
-                    MainViewModel.OngletCredits => HauteurCredits,
-                    MainViewModel.OngletConfiguration => HauteurConfiguration,
-                    _ => Hauteur,
-                };
-                hote.Height = hauteur;
-                await MettreEnPage(hote, hauteur);
-                Enregistrer(hote, Path.Combine(dossier, etape.Nom + ".png"), hauteur);
-
-                if (etape.MoisPrecedent)
-                    vm.MoisSuivantCommand.Execute(null);
-            }
+            // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
+            new DepotSqlite(registre.Chemin(registre.Ajouter("Compte joint"))).Enregistrer(ConfigurationParDefaut.CreerDemoHistorique());
+            vm.CompteActif = "Compte joint";
+            await Capturer(("17-bilan-ocean", Ambiance.Ocean, false, MainViewModel.OngletBilan, false));
+            vm.Bilan.Selection = vm.Bilan.Choix[0];
+            await Capturer(("18-bilan-12-mois-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletBilan, false));
 
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);

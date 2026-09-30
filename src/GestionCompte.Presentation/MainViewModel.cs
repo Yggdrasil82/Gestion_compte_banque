@@ -25,6 +25,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Crédits » (masquable dans la configuration).</summary>
     public const int OngletCredits = 6;
 
+    /// <summary>Module « Bilan » (masquable dans la configuration).</summary>
+    public const int OngletBilan = 7;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -58,7 +61,8 @@ public sealed partial class MainViewModel : ObservableObject
         Apparence = apparence ?? new ApparenceViewModel(null);
         Apparence.ModulesChanges += (_, _) =>
         {
-            if (OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)
+            if ((OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)
+                || (OngletSelectionne == OngletBilan && !Apparence.ModuleBilan))
                 OngletSelectionne = OngletConfiguration;
         };
 
@@ -275,6 +279,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private AideBudgetViewModel _aideBudget = null!;
     [ObservableProperty] private CreditsViewModel _credits = null!;
+    [ObservableProperty] private BilanViewModel _bilan = null!;
 
     /// <summary>Import de relevé en cours d'aperçu, ou null.</summary>
     [ObservableProperty] private ImportViewModel? _import;
@@ -730,6 +735,7 @@ public sealed partial class MainViewModel : ObservableObject
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
         AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
         Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire);
+        Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues);
     }
 
     /// <summary>Échéances d'un crédit ajoutées ou retirées depuis le module Crédits.</summary>
@@ -738,6 +744,7 @@ public sealed partial class MainViewModel : ObservableObject
         Enregistrer();
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = Previsionnel.Horizon };
         AideBudget.Recalculer();
+        Bilan.Recalculer();
         AfficherMoisCourant();
         Statut = "Prévisionnel mis à jour avec la simulation de crédit.";
     }
@@ -778,6 +785,7 @@ public sealed partial class MainViewModel : ObservableObject
         Previsionnel.Recalculer();
         AideBudget.Recalculer();
         Credits.RafraichirTout();
+        Bilan.Recalculer();
     }
 
     private void ConfigurationModifiee()

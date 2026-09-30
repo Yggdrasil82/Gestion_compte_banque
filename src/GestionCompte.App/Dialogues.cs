@@ -36,11 +36,24 @@ public sealed class Dialogues : IDialogues
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
     }
 
+    public string? ChoisirFichierPdf(string nomParDefaut)
+    {
+        var dialogue = new SaveFileDialog
+        {
+            Title = "Exporter en PDF",
+            FileName = nomParDefaut,
+            Filter = "Document PDF (*.pdf)|*.pdf",
+            DefaultExt = ".pdf",
+            OverwritePrompt = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
     public string? ChoisirFichierExport(string nomParDefaut)
     {
         var dialogue = new SaveFileDialog
         {
-            Title = "Exporter le mois vers Excel",
+            Title = "Exporter vers Excel",
             FileName = nomParDefaut,
             Filter = "Classeur Excel (*.xlsx)|*.xlsx",
             DefaultExt = ".xlsx",

@@ -22,6 +22,9 @@ public sealed class PreferencesAffichage
     /// <summary>Onglet « Crédits » affiché dans la barre de gauche.</summary>
     public bool ModuleCredits { get; set; } = true;
 
+    /// <summary>Onglet « Bilan » affiché dans la barre de gauche.</summary>
+    public bool ModuleBilan { get; set; } = true;
+
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
     {
@@ -107,6 +110,19 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Bilan » affiché.</summary>
+    public bool ModuleBilan
+    {
+        get => _preferences.ModuleBilan;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleBilan, value, _preferences, (p, v) => p.ModuleBilan = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     /// <summary>Levé quand un module est affiché ou masqué.</summary>
     public event EventHandler? ModulesChanges;
 
@@ -114,6 +130,7 @@ public sealed class ApparenceViewModel : ObservableObject
     public void Reinitialiser()
     {
         ModuleCredits = true;
+        ModuleBilan = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
     }

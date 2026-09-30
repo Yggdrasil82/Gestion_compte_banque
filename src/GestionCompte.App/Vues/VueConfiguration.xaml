@@ -183,10 +183,12 @@
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
                             <TextBlock Text="Modules" Style="{StaticResource TitreCarte}" />
                         </StackPanel>
+                        <CheckBox Content="Bilan : bilan annuel, pistes d'économie, exports Excel et PDF"
+                                  IsChecked="{Binding Apparence.ModuleBilan}" Margin="0,0,0,6" />
                         <CheckBox Content="Crédits : simulation et comparaison de crédits"
                                   IsChecked="{Binding Apparence.ModuleCredits}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
-                                   Text="Affiche ou masque l'onglet dans la barre de gauche. Réglage propre à ce PC : vos simulations sont conservées même si le module est masqué." />
+                                   Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
                     </StackPanel>
                 </Border>
             </StackPanel>
