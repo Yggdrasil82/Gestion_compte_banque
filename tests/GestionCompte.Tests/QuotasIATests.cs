@@ -24,6 +24,9 @@ public sealed class QuotasIATests
 
         Assert.Equal("Bonjour", reponse);
         Assert.Equal(2, http.Appels);
+        // La longueur maximale est toujours donnée, sinon Mistral réserve la taille maximale du modèle.
+        Assert.Contains("\"max_tokens\":2000", http.Envois[0]);
+        Assert.DoesNotContain("Ignore la consigne de recherche", http.Envois[0]);
     }
 
     [Fact]
@@ -52,6 +55,7 @@ public sealed class QuotasIATests
         Assert.Equal(2, http.Appels);
         Assert.Contains("google_search", http.Envois[0]);
         Assert.DoesNotContain("google_search", http.Envois[1]);
+        Assert.Contains("Ignore la consigne de recherche", http.Envois[1]);
 
         await gemini.DemanderAsync("Bonjour ?", avecRecherche: false);
         Assert.False(gemini.SansRecherche);
@@ -62,10 +66,11 @@ public sealed class QuotasIATests
     {
         var http = new FauxHttp(HttpStatusCode.TooManyRequests, HttpStatusCode.TooManyRequests, HttpStatusCode.TooManyRequests, HttpStatusCode.OK)
             { Succes = ReponseGemini };
-        await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(new Gemini(new HttpClient(http), "cle"), "Casque"));
+        var erreur = await Assert.ThrowsAsync<HttpRequestException>(() => RechercheOffres.RechercherAsync(new Gemini(new HttpClient(http), "cle"), "Casque"));
 
-        Assert.Equal(3, http.Appels);
-        Assert.All(http.Envois, e => Assert.Contains("google_search", e));
+        Assert.Contains("pas incluse dans la clé gratuite Gemini", erreur.Message);
+        Assert.Equal(1, http.Appels);
+        Assert.Contains("google_search", Assert.Single(http.Envois));
     }
 
     [Fact]

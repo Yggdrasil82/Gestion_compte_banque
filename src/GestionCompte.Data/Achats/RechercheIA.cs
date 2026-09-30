@@ -119,9 +119,14 @@ public sealed class Gemini : IAssistantIA
 
     public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
     {
+        // La recherche Google n'est pas incluse dans les clés gratuites : pas d'attente ni de nouvel essai pour elle.
         var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
-            (recherche, essais) => ErreursIA.EnvoyerAsync(_http, () => Requete(demande, recherche), annulation, _patienter, Nom, essais),
+            (recherche, essais) => ErreursIA.EnvoyerAsync(_http, () => Requete(recherche || !avecRecherche ? demande : demande + ErreursIA.NoteSansRecherche, recherche),
+                annulation, _patienter, Nom, essais && !recherche),
             sans => SansRecherche = sans);
+        if (statut != HttpStatusCode.OK && avecRecherche && !repliSansRecherche && ErreursIA.RechercheRefusee(statut, texte))
+            throw new HttpRequestException(
+                "Gemini : la recherche internet n'est pas incluse dans la clé gratuite Gemini (Google la réserve aux clés payantes) ; seul Mistral peut chercher sur internet.");
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
 
@@ -164,6 +169,12 @@ public sealed class Mistral : IAssistantIA
 {
     public const string ModeleParDefaut = "mistral-medium-latest";
 
+    /// <summary>
+    /// Longueur maximale des réponses (en tokens) : sans elle, Mistral compte la taille maximale du modèle
+    /// dans la limite gratuite de tokens par minute et refuse la demande.
+    /// </summary>
+    public const int LongueurMaximale = 2000;
+
     private readonly HttpClient _http;
     private readonly string _cle;
     private readonly string _modele;
@@ -190,7 +201,8 @@ public sealed class Mistral : IAssistantIA
     public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
     {
         var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
-            (recherche, essais) => ErreursIA.EnvoyerAsync(_http, () => Requete(demande, recherche), annulation, _patienter, Nom, essais),
+            (recherche, essais) => ErreursIA.EnvoyerAsync(_http,
+                () => Requete(recherche || !avecRecherche ? demande : demande + ErreursIA.NoteSansRecherche, recherche), annulation, _patienter, Nom, essais),
             sans => SansRecherche = sans);
         if (statut != HttpStatusCode.OK)
             throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
@@ -218,12 +230,14 @@ public sealed class Mistral : IAssistantIA
                 ["model"] = _modele,
                 ["inputs"] = demande,
                 ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }),
+                ["completion_args"] = new JsonObject { ["max_tokens"] = LongueurMaximale },
                 ["store"] = false,
             }
             : new JsonObject
             {
                 ["model"] = _modele,
                 ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
+                ["max_tokens"] = LongueurMaximale,
             };
         var requete = new HttpRequestMessage(HttpMethod.Post,
             avecRecherche ? "https://api.mistral.ai/v1/conversations" : "https://api.mistral.ai/v1/chat/completions")
@@ -309,8 +323,13 @@ public static class ErreursIA
         return sans;
     }
 
+    /// <summary>Ajoutée à une demande prévue avec recherche quand elle est refaite sans recherche internet.</summary>
+    public const string NoteSansRecherche =
+        "\n\nImportant : tu n'as pas accès à internet pour cette demande. Ignore la consigne de recherche et réponds avec tes connaissances " +
+        "les plus récentes, en donnant des valeurs approximatives plutôt que null (elles seront présentées comme indicatives). Ne cite aucune adresse de page.";
+
     /// <summary>Refus qui peut venir de la recherche internet elle-même (quota de recherche, outil non inclus) et non de la clé.</summary>
-    private static bool RechercheRefusee(HttpStatusCode statut, string texte) =>
+    public static bool RechercheRefusee(HttpStatusCode statut, string texte) =>
         statut switch
         {
             // Même un quota du jour peut ne concerner que la recherche : la demande sans recherche le dira sinon.
