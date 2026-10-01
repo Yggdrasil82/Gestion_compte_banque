@@ -156,7 +156,8 @@
         <Border DockPanel.Dock="Top" Style="{StaticResource Carte}" BorderBrush="{DynamicResource Avertissement}" Padding="14,8"
                 Visibility="{Binding ADatesAnterieures, Converter={StaticResource Visible}}">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Command="{Binding RangerDatesAnterieuresCommand}" Margin="12,0,0,0" VerticalAlignment="Center">
+                <Button DockPanel.Dock="Right" Command="{Binding RangerDatesAnterieuresCommand}" Margin="12,0,0,0" VerticalAlignment="Center"
+                        Visibility="{Binding RangementPossible, Converter={StaticResource Visible}}">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{StaticResource Icone}" Text="&#xE787;" Margin="0,0,8,0" />
                         <TextBlock Text="{Binding TexteRangement}" />

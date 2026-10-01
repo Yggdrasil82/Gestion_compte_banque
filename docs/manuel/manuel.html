@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Mon Budget 2.4.1 – Manuel d'utilisation</title>
+<title>Mon Budget 2.4.2 – Manuel d'utilisation</title>
 <style>
 @page { size: A4; margin: 16mm 15mm 18mm; }
 :root { --encre:#17303c; --doux:#51646e; --accent:#12799a; --fond:#eef5f8; --ligne:#cfdde4; --alerte:#b5541c; }
@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.4.1</p>
+  <p class="sous">Manuel d'utilisation · version 2.4.2</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -124,7 +124,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li><b>Rapprochée</b> : l'opération prévue est pointée. <b>Montant ajusté</b> : pointée avec le montant de la banque. <b>Revenu reçu</b> : le revenu est coché. <b>Nouvelle</b> : ajoutée au mois.</li>
     <li>Les règles de classement (Configuration) rangent les nouvelles dépenses dans une enveloppe d'après le libellé (LECLERC → Courses…).</li>
     <li>Décochez une ligne pour l'ignorer. Les opérations déjà importées sont ignorées automatiquement, et le numéro de compte du relevé est contrôlé.</li>
-    <li><b>Date antérieure au mois</b> (alerte orange) : un relevé qui chevauche deux mois contient des opérations datées du mois précédent. Elles vont par défaut dans le mois en cours ; la colonne « Mois » permet de choisir le mois de leur date, et le bouton « Ranger les dates antérieures dans leur mois » le fait pour toutes.</li>
+    <li><b>Date antérieure au mois</b> (alerte orange) : un relevé qui chevauche deux mois contient des opérations datées du mois précédent. Elles vont par défaut dans le mois en cours, même celles du mois juste avant le premier mois géré (les mois plus anciens sont ignorés) ; la colonne « Mois » permet de choisir le mois de leur date, et le bouton « Ranger les dates antérieures dans leur mois » le fait pour toutes.</li>
     <li><b>À vérifier</b> : pour ces opérations, l'application cherche le même montant dans le mois de leur date puis dans le mois en cours, même avec un autre libellé (WERO pour un abonnement saisi à la main). La ligne y est rattachée et la question s'affiche dessous ; si le montant est déjà pointé à la main dans le mois de sa date, la ligne est décochée pour éviter un doublon. « Valider l'import » récapitule ces lignes avant d'importer.</li>
     <li>Le cadre de droite compare le solde de la banque et le solde pointé : « Les soldes concordent » quand tout est juste.</li>
     <li>Rien n'est modifié avant « Valider l'import ». Les mois manquants sont créés après confirmation.</li>

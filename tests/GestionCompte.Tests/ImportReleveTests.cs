@@ -400,6 +400,28 @@ public class ImportReleveTests
     }
 
     [Fact]
+    public void PremierRelevé_MoisJusteAvantLePremierMois_ImporteDansLeMoisEnCours()
+    {
+        var compte = CompteOctobre();
+        compte.Mois[0].Operations.Add(new Operation("Crunchyroll", debit: 17.77m));
+        var octobre = new PeriodeMois(2026, 10);
+        var releve = Releve(
+            Ligne("DEBIT", "20260830", "-10.00", "A1", "CB AOUT"),
+            Ligne("XFER", "20260929", "-17.77", "W1", "VIR INST Wero MATTHIEU B"));
+
+        var plan = ImportReleve.Preparer(compte, releve, octobre, new Dictionary<string, bool> { ["W1"] = true });
+
+        Assert.Equal(StatutImport.AvantDebut, plan.Lignes.Single(l => l.Source.Identifiant == "A1").Statut);
+        var wero = plan.Lignes.Single(l => l.Source.Identifiant == "W1");
+        Assert.Equal(octobre, wero.Periode);
+        Assert.True(wero.DateAnterieure);
+        Assert.False(wero.PeutAllerDansSonMois);
+        Assert.True(wero.Importer);
+        Assert.Equal("Crunchyroll", wero.Choix?.Libelle);
+        Assert.True(wero.AVerifier);
+    }
+
+    [Fact]
     public void DateAnterieure_AvantLePremierMois_ResteIgnoree()
     {
         var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("DEBIT", "20260915", "-10.00", "V1", "CB AVANT")),

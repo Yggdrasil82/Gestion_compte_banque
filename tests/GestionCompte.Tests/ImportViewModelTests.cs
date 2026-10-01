@@ -132,6 +132,28 @@ public sealed class ImportViewModelTests : IDisposable
     }
 
     [Fact]
+    public void PremierRelevé_MoisJusteAvantLePremierMois_ImportableSansChoixDuMois()
+    {
+        var vm = OuvrirDemo();
+        File.WriteAllText(Chemin("septembre.ofx"), ImportReleveTests.Ofx(
+                ImportReleveTests.Ligne("DEBIT", "20260929", "-4.60", "S1", "CB PARK MEGARAMA"))
+            .Replace("20261027000000", "20260930000000"));
+        var octobre = new MainViewModel(new DepotSqlite(Chemin("compte.db")), _dialogues, new DateTime(2026, 10, 1));
+
+        octobre.OuvrirImport(Chemin("septembre.ofx"));
+
+        var import = octobre.Import!;
+        Assert.False(import.RienAImporter);
+        Assert.Equal("Solde pointé après import", import.LibelleSoldePointe);
+        var ligne = import.Lignes.Single();
+        Assert.True(ligne.Importer);
+        Assert.Equal("Octobre 2026", ligne.MoisChoisi);
+        Assert.False(ligne.MoisModifiable);
+        Assert.False(import.RangerDatesAnterieuresCommand.CanExecute(null));
+        Assert.NotNull(vm);
+    }
+
+    [Fact]
     public void ToutesLesLignesDecochees_ValiderImpossible()
     {
         var vm = OuvrirDemo();

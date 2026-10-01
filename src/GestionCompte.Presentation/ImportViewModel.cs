@@ -41,9 +41,11 @@ public sealed partial class ImportViewModel : ObservableObject
 
         var premierMois = compte.Configuration.PremierMois;
         SoldeAvantPremierMois = plan.DateSolde is { } date && new PeriodeMois(date.Year, date.Month) < premierMois;
-        LibelleSoldePointe = SoldeAvantPremierMois ? "Solde de départ (configuration)" : "Solde pointé après import";
-
         Afficher(plan, null);
+
+        // Relevé daté d'avant le premier mois : comparé au solde de départ, sauf si des lignes (mois juste avant) sont importées.
+        LibelleSoldePointe = SoldeAvantPremierMois && Lignes.All(l => !l.Modifiable)
+            ? "Solde de départ (configuration)" : "Solde pointé après import";
 
         var nonImportables = Lignes.Where(l => !l.Modifiable).Select(l => l.Statut).ToList();
         RienAImporter = nonImportables.Count == Lignes.Count;
@@ -83,6 +85,7 @@ public sealed partial class ImportViewModel : ObservableObject
         OnPropertyChanged(nameof(ADatesAnterieures));
         OnPropertyChanged(nameof(TexteDatesAnterieures));
         OnPropertyChanged(nameof(TexteRangement));
+        OnPropertyChanged(nameof(RangementPossible));
         RangerDatesAnterieuresCommand.NotifyCanExecuteChanged();
         Recalculer();
     }
@@ -92,7 +95,7 @@ public sealed partial class ImportViewModel : ObservableObject
         if (_preparer is null)
             return;
         var modifie = false;
-        foreach (var ligne in lignes.Where(l => l.Ligne.DateAnterieure && l.DansSonMois != dansSonMois))
+        foreach (var ligne in lignes.Where(l => l.Ligne.PeutAllerDansSonMois && l.DansSonMois != dansSonMois))
         {
             _dansLeurMois[ligne.Ligne.Source.Identifiant] = dansSonMois;
             modifie = true;
@@ -147,11 +150,14 @@ public sealed partial class ImportViewModel : ObservableObject
     }
 
     /// <summary>Le bouton range toutes les dates antérieures dans leur mois, ou les remet toutes dans le mois en cours.</summary>
-    private bool ToutesDansLeurMois => DatesAnterieures.All(l => l.DansSonMois);
+    private bool ToutesDansLeurMois => DatesAnterieures.Where(l => l.Ligne.PeutAllerDansSonMois).All(l => l.DansSonMois);
 
     public string TexteRangement => ToutesDansLeurMois ? "Tout remettre dans le mois en cours" : "Ranger les dates antérieures dans leur mois";
 
-    private bool PeutRanger() => _preparer is not null && DatesAnterieures.Count > 0;
+    /// <summary>Le bouton de rangement n'est affiché que si une date antérieure peut aller dans son mois.</summary>
+    public bool RangementPossible => PeutRanger();
+
+    private bool PeutRanger() => _preparer is not null && DatesAnterieures.Any(l => l.Ligne.PeutAllerDansSonMois);
 
     [RelayCommand(CanExecute = nameof(PeutRanger))]
     private void RangerDatesAnterieures() => PlacerDansSonMois(DatesAnterieures, !ToutesDansLeurMois);
@@ -252,7 +258,7 @@ public sealed class LigneImportViewModel : ObservableObject
         Ligne = ligne;
         _modifie = modifie;
         _placer = placer;
-        ChoixMois = ligne.DateAnterieure && moisCourant is { } courant && placer is not null
+        ChoixMois = ligne.PeutAllerDansSonMois && moisCourant is { } courant && placer is not null
             ? new[] { courant.Libelle, ligne.PeriodeDate.Libelle }
             : new[] { ligne.Periode.Libelle };
         Options = CreerOptions(ligne);

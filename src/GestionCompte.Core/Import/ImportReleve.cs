@@ -56,6 +56,9 @@ public sealed class LigneImport
     /// <summary>Date antérieure au mois en cours : l'utilisateur choisit de la ranger dans le mois en cours ou dans le sien.</summary>
     public bool DateAnterieure { get; internal init; }
 
+    /// <summary>Le mois de la date est géré par l'application : la ligne peut y être rangée (sinon seulement dans le mois en cours).</summary>
+    public bool PeutAllerDansSonMois { get; internal set; }
+
     /// <summary>
     /// Question posée pour une date antérieure quand le même montant existe dans l'application :
     /// rattachement sur le seul montant (libellé différent) ou opération déjà pointée à la main dans le mois de la date.
@@ -121,7 +124,7 @@ public static class ImportReleve
     /// <summary>Prépare l'import sans rien modifier : statut de chaque ligne et mois à créer.</summary>
     /// <param name="moisCourant">Mois en cours : une opération datée d'un mois antérieur (chevauchement de relevé) y est rangée,
     /// sauf si elle est dans <paramref name="dansLeurMois"/> ; null = chaque opération dans le mois de sa date.
-    /// Une opération d'avant le premier mois suivi reste ignorée.</param>
+    /// Une opération d'avant le premier mois suivi reste ignorée, sauf celles du mois juste avant le mois en cours.</param>
     /// <param name="dansLeurMois">Choix de l'utilisateur par identifiant bancaire : true = dans le mois de la date,
     /// false = dans le mois en cours. Sans choix, une opération va dans le mois de sa date si le même montant y attend
     /// d'être pointé, sinon dans le mois en cours.</param>
@@ -147,7 +150,8 @@ public static class ImportReleve
             var periode = new PeriodeMois(operation.Date.Year, operation.Date.Month);
             if (dejaImportes.Contains(operation.Identifiant))
                 lignes.Add(new LigneImport(operation, periode, StatutImport.DejaImportee, Array.Empty<Candidat>()));
-            else if (periode < premier)
+            // Avant le premier mois géré : ignorée, sauf le mois juste avant le mois en cours (chevauchement du premier relevé).
+            else if (periode < premier && (courant is not { } c0 || periode != c0.Precedent()))
                 lignes.Add(new LigneImport(operation, periode, StatutImport.AvantDebut, Array.Empty<Candidat>()));
             else if (courant is { } mois && periode < mois)
             {
@@ -157,7 +161,8 @@ public static class ImportReleve
                 if (!enAttente && moisDate is not null && MontantsDuMois(moisDate, operation.Montant).FirstOrDefault(x => x.Pointe) is { Nom: not null } dejaPointee)
                     dejaComptees[operation] = $"Déjà comptée en {periode.Libelle} ? « {dejaPointee.Nom} » ({Montants.Formater(Math.Abs(operation.Montant))} €) " +
                                               "y est déjà pointée. Ligne décochée : cochez-la pour l'importer quand même.";
-                var dansSonMois = dansLeurMois is not null && dansLeurMois.TryGetValue(operation.Identifiant, out var choisi) ? choisi : enAttente;
+                var dansSonMois = periode >= premier
+                                  && (dansLeurMois is not null && dansLeurMois.TryGetValue(operation.Identifiant, out var choisi) ? choisi : enAttente);
                 aRapprocher.Add((operation, dansSonMois ? periode : mois));
             }
             else
@@ -178,6 +183,9 @@ public static class ImportReleve
             var mois = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
             lignes.AddRange(Rapprocher(compte.Configuration, mois, groupe.Select(o => o.Operation).ToList(), courant, dejaComptees));
         }
+
+        foreach (var ligne in lignes.Where(l => l.DateAnterieure))
+            ligne.PeutAllerDansSonMois = ligne.PeriodeDate >= premier;
 
         return new PlanImport(
             lignes.OrderBy(l => l.Source.Date).ThenBy(l => l.Source.Identifiant, StringComparer.Ordinal).ToList(),
