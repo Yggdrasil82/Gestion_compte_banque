@@ -142,8 +142,7 @@ public sealed partial class MainViewModel : ObservableObject
         else
         {
             _compte = compte;
-            var index = _compte.Mois.ToList().FindIndex(m => m.Periode == _moisDuJour);
-            _indexMois = index >= 0 ? index : _compte.Mois.Count - 1;
+            _indexMois = IndexMoisParDefaut();
             if (OngletSelectionne == OngletImport)
                 OngletSelectionne = OngletMois;
             Statut = $"Données chargées depuis {depot.CheminFichier}";
@@ -444,6 +443,15 @@ public sealed partial class MainViewModel : ObservableObject
 
     private int IndexMoisEnCours => _compte.Mois.ToList().FindIndex(m => m.Periode == _moisDuJour);
 
+    /// <summary>Mois affiché à l'ouverture : le mois en cours, sinon le dernier mois créé qui le précède (sinon le premier).</summary>
+    private int IndexMoisParDefaut()
+    {
+        if (_compte.Mois.Count == 0)
+            return -1;
+        var avant = _compte.Mois.ToList().FindLastIndex(m => m.Periode <= _moisDuJour);
+        return avant >= 0 ? avant : 0;
+    }
+
     [RelayCommand]
     private void CreerMois()
     {
@@ -714,10 +722,12 @@ public sealed partial class MainViewModel : ObservableObject
             return;
 
         _compteReleve = releve.Compte;
-        var plan = ImportReleve.Preparer(_compte, releve);
+        // Chevauchement de relevé : les opérations datées d'un mois antérieur vont par défaut dans le mois en cours.
+        var plan = ImportReleve.Preparer(_compte, releve, _moisDuJour);
         if (OngletSelectionne != OngletImport)
             _ongletAvantImport = OngletSelectionne;
-        Import = new ImportViewModel(_compte, plan, Path.GetFileName(chemin), _dialogues, ImportTermine, ImportAnnule);
+        Import = new ImportViewModel(_compte, plan, Path.GetFileName(chemin), _dialogues, ImportTermine, ImportAnnule,
+            dansLeurMois => ImportReleve.Preparer(_compte, releve, _moisDuJour, dansLeurMois));
         OngletSelectionne = OngletImport;
     }
 
@@ -776,11 +786,15 @@ public sealed partial class MainViewModel : ObservableObject
 
         var soldeBanque = Import?.SoldeBanque;
         var soldePointe = Import?.SoldePointeApres ?? 0m;
+        var concernes = Import?.Lignes.Where(l => l.Importer && l.Modifiable).Select(l => l.Ligne.Periode).ToList() ?? new List<PeriodeMois>();
         Import = null;
 
-        // Affiche le dernier mois concerné par l'import.
-        var derniere = resultat.MoisCrees.Count > 0 ? resultat.MoisCrees[^1] : (PeriodeMois?)null;
-        _indexMois = derniere is { } p ? _compte.Mois.ToList().FindIndex(m => m.Periode == p) : Math.Max(_indexMois, _compte.Mois.Count - 1);
+        // Affiche le mois en cours s'il a reçu des opérations, sinon le dernier mois concerné par l'import.
+        var cible = concernes.Contains(_moisDuJour) ? _moisDuJour
+            : concernes.Count > 0 ? concernes.Max()
+            : resultat.MoisCrees.Count > 0 ? resultat.MoisCrees[^1] : (PeriodeMois?)null;
+        var index = cible is { } p ? _compte.Mois.ToList().FindIndex(m => m.Periode == p) : -1;
+        _indexMois = index >= 0 ? index : IndexMoisParDefaut();
 
         Enregistrer();
         Reconstruire();

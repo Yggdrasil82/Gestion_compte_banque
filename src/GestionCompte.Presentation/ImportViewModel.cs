@@ -14,32 +14,36 @@ namespace GestionCompte.Presentation;
 public sealed partial class ImportViewModel : ObservableObject
 {
     private readonly CompteBancaire _compte;
-    private readonly PlanImport _plan;
     private readonly IDialogues _dialogues;
     private readonly Action<ResultatImport> _termine;
     private readonly Action _annule;
-    private readonly decimal _soldePointeAvant;
+    private readonly Func<IReadOnlySet<string>, PlanImport>? _preparer;
+    private readonly HashSet<string> _dansLeurMois = new(StringComparer.Ordinal);
+    private PlanImport _plan;
+    private decimal _soldePointeAvant;
 
+    /// <param name="preparer">Prépare de nouveau le plan quand l'utilisateur range des opérations antérieures dans le mois
+    /// de leur date (identifiants bancaires donnés) ; null = pas de choix du mois.</param>
     public ImportViewModel(CompteBancaire compte, PlanImport plan, string nomFichier, IDialogues dialogues,
-        Action<ResultatImport> termine, Action annule)
+        Action<ResultatImport> termine, Action annule, Func<IReadOnlySet<string>, PlanImport>? preparer = null)
     {
         _compte = compte;
         _plan = plan;
         _dialogues = dialogues;
         _termine = termine;
         _annule = annule;
-        _soldePointeAvant = ImportReleve.SoldePointe(compte, plan.DateSolde);
+        _preparer = preparer;
         NomFichier = nomFichier;
 
         NomsEnveloppes = new[] { "" }.Concat(compte.Configuration.Enveloppes.Select(e => e.Nom)).ToList();
-        Lignes = plan.Lignes.Select(l => new LigneImportViewModel(l, Recalculer)).ToList();
-        MoisACreer = string.Join(", ", plan.MoisACreer.Select(p => p.Libelle));
         SoldeBanque = plan.SoldeBanque;
         DateSolde = plan.DateSolde?.ToString("dd/MM/yyyy") ?? "";
 
         var premierMois = compte.Configuration.PremierMois;
         SoldeAvantPremierMois = plan.DateSolde is { } date && new PeriodeMois(date.Year, date.Month) < premierMois;
         LibelleSoldePointe = SoldeAvantPremierMois ? "Solde de départ (configuration)" : "Solde pointé après import";
+
+        Afficher(plan, null);
 
         var nonImportables = Lignes.Where(l => !l.Modifiable).Select(l => l.Statut).ToList();
         RienAImporter = nonImportables.Count == Lignes.Count;
@@ -50,19 +54,59 @@ public sealed partial class ImportViewModel : ObservableObject
             : nonImportables.All(s => s == StatutImport.DejaImportee)
                 ? "Toutes les opérations de ce relevé ont déjà été importées."
                 : $"Aucune opération à importer : elles sont déjà importées ou antérieures au premier mois géré ({premierMois.Libelle}).";
+    }
 
+    /// <summary>
+    /// Affiche un plan. Refait pour le même relevé, les lignes déjà affichées sont gardées (mêmes opérations, même ordre)
+    /// avec les choix de l'utilisateur : la liste n'est pas recréée pendant qu'il choisit un mois.
+    /// </summary>
+    private void Afficher(PlanImport plan, IReadOnlyList<LigneImportViewModel>? precedentes)
+    {
+        _plan = plan;
+        _soldePointeAvant = ImportReleve.SoldePointe(_compte, plan.DateSolde);
+        var parIdentifiant = plan.Lignes.ToDictionary(l => l.Source.Identifiant, StringComparer.Ordinal);
+        if (precedentes is not null && precedentes.Count == plan.Lignes.Count
+            && precedentes.All(l => parIdentifiant.ContainsKey(l.Ligne.Source.Identifiant)))
+        {
+            foreach (var ligne in precedentes)
+                ligne.Remplacer(parIdentifiant[ligne.Ligne.Source.Identifiant]);
+        }
+        else
+        {
+            Lignes = plan.Lignes.Select(l => new LigneImportViewModel(l, Recalculer, plan.MoisCourant, PlacerDansSonMois)).ToList();
+            OnPropertyChanged(nameof(Lignes));
+        }
+
+        MoisACreer = string.Join(", ", plan.MoisACreer.Select(p => p.Libelle));
+        OnPropertyChanged(nameof(MoisACreer));
+        OnPropertyChanged(nameof(AMoisACreer));
+        OnPropertyChanged(nameof(ADatesAnterieures));
+        OnPropertyChanged(nameof(TexteDatesAnterieures));
+        OnPropertyChanged(nameof(TexteRangement));
+        RangerDatesAnterieuresCommand.NotifyCanExecuteChanged();
         Recalculer();
+    }
+
+    private void PlacerDansSonMois(IEnumerable<LigneImportViewModel> lignes, bool dansSonMois)
+    {
+        if (_preparer is null)
+            return;
+        var modifie = false;
+        foreach (var ligne in lignes.Where(l => l.Ligne.DateAnterieure))
+            modifie |= dansSonMois ? _dansLeurMois.Add(ligne.Ligne.Source.Identifiant) : _dansLeurMois.Remove(ligne.Ligne.Source.Identifiant);
+        if (modifie)
+            Afficher(_preparer(_dansLeurMois), Lignes);
     }
 
     public string NomFichier { get; }
 
-    public IReadOnlyList<LigneImportViewModel> Lignes { get; }
+    public IReadOnlyList<LigneImportViewModel> Lignes { get; private set; } = Array.Empty<LigneImportViewModel>();
 
     /// <summary>Choix de la colonne « Enveloppe » (vide = aucune).</summary>
     public IReadOnlyList<string> NomsEnveloppes { get; }
 
     /// <summary>Mois qui seront créés (vide s'il n'y en a pas).</summary>
-    public string MoisACreer { get; }
+    public string MoisACreer { get; private set; } = "";
 
     public bool AMoisACreer => MoisACreer.Length > 0;
 
@@ -81,6 +125,33 @@ public sealed partial class ImportViewModel : ObservableObject
     public bool RienAImporter { get; }
 
     public string MessageRienAImporter { get; }
+
+    /// <summary>Opérations à importer datées d'un mois antérieur au mois en cours (chevauchement de relevé).</summary>
+    private List<LigneImportViewModel> DatesAnterieures => Lignes.Where(l => l.DateAnterieure && l.Modifiable).ToList();
+
+    public bool ADatesAnterieures => DatesAnterieures.Count > 0;
+
+    public string TexteDatesAnterieures
+    {
+        get
+        {
+            var nombre = DatesAnterieures.Count;
+            if (nombre == 0 || _plan.MoisCourant is not { } courant)
+                return "";
+            return (nombre == 1 ? "1 opération est datée" : $"{nombre} opérations sont datées") +
+                   $" d'avant {courant.Libelle} : elles vont par défaut dans le mois en cours. Choisissez le mois ligne par ligne (colonne « Mois »).";
+        }
+    }
+
+    /// <summary>Le bouton range toutes les dates antérieures dans leur mois, ou les remet toutes dans le mois en cours.</summary>
+    private bool ToutesDansLeurMois => DatesAnterieures.All(l => l.DansSonMois);
+
+    public string TexteRangement => ToutesDansLeurMois ? "Tout remettre dans le mois en cours" : "Ranger les dates antérieures dans leur mois";
+
+    private bool PeutRanger() => _preparer is not null && DatesAnterieures.Count > 0;
+
+    [RelayCommand(CanExecute = nameof(PeutRanger))]
+    private void RangerDatesAnterieures() => PlacerDansSonMois(DatesAnterieures, !ToutesDansLeurMois);
 
     [ObservableProperty] private int _nombreRapprochees;
     [ObservableProperty] private int _nombreAjustees;
@@ -157,20 +228,78 @@ public sealed record OptionRapprochement(Candidat? Candidat, string Libelle)
 public sealed class LigneImportViewModel : ObservableObject
 {
     private readonly Action _modifie;
+    private readonly Action<IEnumerable<LigneImportViewModel>, bool>? _placer;
 
-    public LigneImportViewModel(LigneImport ligne, Action modifie)
+    /// <param name="moisCourant">Mois en cours du plan (choix entre lui et le mois de la date).</param>
+    /// <param name="placer">Range la ligne dans le mois de sa date (true) ou dans le mois en cours (false).</param>
+    public LigneImportViewModel(LigneImport ligne, Action modifie, PeriodeMois? moisCourant = null,
+        Action<IEnumerable<LigneImportViewModel>, bool>? placer = null)
     {
         Ligne = ligne;
         _modifie = modifie;
-        Options = new[] { new OptionRapprochement(null, "➕ Nouvelle opération") }
-            .Concat(ligne.Candidats.Select(c => new OptionRapprochement(c, (c.EstRevenu ? "Revenu : " : "") + c)))
-            .ToList();
+        _placer = placer;
+        ChoixMois = ligne.DateAnterieure && moisCourant is { } courant && placer is not null
+            ? new[] { courant.Libelle, ligne.PeriodeDate.Libelle }
+            : new[] { ligne.Periode.Libelle };
+        Options = CreerOptions(ligne);
         MotCleSuggere = ImportReleve.MotCleSuggere(ligne.Source.Libelle);
     }
 
-    public LigneImport Ligne { get; }
+    private static IReadOnlyList<OptionRapprochement> CreerOptions(LigneImport ligne) =>
+        new[] { new OptionRapprochement(null, "➕ Nouvelle opération") }
+            .Concat(ligne.Candidats.Select(c => new OptionRapprochement(c, (c.EstRevenu ? "Revenu : " : "") + c)))
+            .ToList();
+
+    public LigneImport Ligne { get; private set; }
+
+    /// <summary>
+    /// Remplace la ligne par celle d'un plan refait (même opération, éventuellement rangée dans un autre mois).
+    /// La case « Importer » est gardée ; rattachement et enveloppe aussi si le mois ne change pas.
+    /// </summary>
+    internal void Remplacer(LigneImport nouvelle)
+    {
+        var ancienne = Ligne;
+        if (nouvelle.Modifiable)
+            nouvelle.Importer = ancienne.Importer;
+        if (ancienne.Periode == nouvelle.Periode)
+        {
+            if (ancienne.Choix is null || nouvelle.Candidats.Contains(ancienne.Choix))
+                nouvelle.Choix = ancienne.Choix;
+            nouvelle.Enveloppe = ancienne.Enveloppe;
+        }
+
+        Ligne = nouvelle;
+        Options = CreerOptions(nouvelle);
+        OnPropertyChanged(string.Empty);
+    }
 
     public string Date => Ligne.Source.Date.ToString("dd/MM/yyyy");
+
+    /// <summary>Opération datée d'un mois antérieur au mois en cours (chevauchement de relevé) : alerte orange.</summary>
+    public bool DateAnterieure => Ligne.DateAnterieure;
+
+    public string AlerteDate => DateAnterieure
+        ? $"Date antérieure au mois : opération de {Ligne.PeriodeDate.Libelle}, rangée dans {Ligne.Periode.Libelle}."
+        : "";
+
+    /// <summary>La ligne est rangée dans le mois de sa date plutôt que dans le mois en cours.</summary>
+    public bool DansSonMois => DateAnterieure && Ligne.Periode == Ligne.PeriodeDate;
+
+    /// <summary>Mois possibles : le mois en cours puis celui de la date (un seul choix sinon).</summary>
+    public IReadOnlyList<string> ChoixMois { get; }
+
+    public bool MoisModifiable => Modifiable && ChoixMois.Count > 1;
+
+    public string MoisChoisi
+    {
+        get => Ligne.Periode.Libelle;
+        set
+        {
+            if (value is null || value == MoisChoisi || !MoisModifiable)
+                return;
+            _placer?.Invoke(new[] { this }, value == Ligne.PeriodeDate.Libelle);
+        }
+    }
 
     public string Libelle => Ligne.Source.Libelle;
 
@@ -195,7 +324,7 @@ public sealed class LigneImportViewModel : ObservableObject
         }
     }
 
-    public IReadOnlyList<OptionRapprochement> Options { get; }
+    public IReadOnlyList<OptionRapprochement> Options { get; private set; }
 
     public OptionRapprochement OptionChoisie
     {

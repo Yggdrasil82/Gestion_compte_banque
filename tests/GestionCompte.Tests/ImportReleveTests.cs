@@ -305,6 +305,53 @@ public class ImportReleveTests
     }
 
     [Fact]
+    public void DateAnterieureAuMoisEnCours_RangeeDansLeMoisEnCoursAvecAlerte()
+    {
+        var compte = CompteOctobre();
+        var novembre = new PeriodeMois(2026, 11);
+        var releve = Releve(
+            Ligne("DEBIT", "20261030", "-14.90", "P1", "CB PHARMACIE"),
+            Ligne("DEBIT", "20261103", "-20.00", "B1", "CB BOULANGERIE"));
+
+        var plan = ImportReleve.Preparer(compte, releve, novembre);
+
+        var pharmacie = plan.Lignes.Single(l => l.Source.Identifiant == "P1");
+        Assert.True(pharmacie.DateAnterieure);
+        Assert.Equal(novembre, pharmacie.Periode);
+        Assert.Equal(new PeriodeMois(2026, 10), pharmacie.PeriodeDate);
+        Assert.True(pharmacie.Importer);
+        Assert.False(plan.Lignes.Single(l => l.Source.Identifiant == "B1").DateAnterieure);
+        Assert.Equal(novembre, plan.MoisCourant);
+
+        ImportReleve.Appliquer(compte, plan);
+        Assert.Contains(compte.Mois[1].Operations, o => o.Libelle == "CB PHARMACIE");
+        Assert.DoesNotContain(compte.Mois[0].Operations, o => o.Libelle == "CB PHARMACIE");
+    }
+
+    [Fact]
+    public void DateAnterieure_PeutAllerDansSonMois()
+    {
+        var compte = CompteOctobre();
+        var releve = Releve(Ligne("DEBIT", "20261030", "-14.90", "P1", "CB PHARMACIE"));
+
+        var plan = ImportReleve.Preparer(compte, releve, new PeriodeMois(2026, 11), new HashSet<string> { "P1" });
+
+        Assert.True(plan.Lignes[0].DateAnterieure);
+        Assert.Equal(new PeriodeMois(2026, 10), plan.Lignes[0].Periode);
+        Assert.Empty(plan.MoisACreer);
+    }
+
+    [Fact]
+    public void DateAnterieure_AvantLePremierMois_ResteIgnoree()
+    {
+        var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("DEBIT", "20260915", "-10.00", "V1", "CB AVANT")),
+            new PeriodeMois(2026, 11));
+
+        Assert.Equal(StatutImport.AvantDebut, plan.Lignes[0].Statut);
+        Assert.False(plan.Lignes[0].Importer);
+    }
+
+    [Fact]
     public void OperationAvantLePremierMois_Ignoree()
     {
         var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("DEBIT", "20260915", "-10.00", "V1", "CB AVANT")));

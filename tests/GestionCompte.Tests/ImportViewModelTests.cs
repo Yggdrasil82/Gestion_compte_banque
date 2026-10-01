@@ -35,7 +35,7 @@ public sealed class ImportViewModelTests : IDisposable
         var import = vm.Import!;
         Assert.Equal(MainViewModel.OngletImport, vm.OngletSelectionne);
         Assert.Equal("releve.ofx", import.NomFichier);
-        Assert.Equal(10, import.Lignes.Count);
+        Assert.Equal(11, import.Lignes.Count);
         Assert.Equal("Décembre 2026", import.MoisACreer);
         Assert.True(import.ASoldeBanque);
         Assert.Equal(2, new DepotSqlite(Chemin("compte.db")).Charger()!.Mois.Count);
@@ -68,6 +68,45 @@ public sealed class ImportViewModelTests : IDisposable
         Assert.True(import.SoldeAvantPremierMois);
         Assert.Equal(ConfigurationParDefaut.CreerDemo().Configuration.SoldeInitial, import.SoldePointeApres);
         Assert.Equal(-483.45m - import.SoldePointeApres, import.Ecart);
+    }
+
+    [Fact]
+    public void DateAnterieure_AlerteEtChoixDuMois()
+    {
+        var vm = OuvrirDemo();
+        vm.ImporterReleveCommand.Execute(null);
+        var import = vm.Import!;
+        var lignes = import.Lignes;
+        var pharmacie = lignes.Single(l => l.Libelle == "CB PHARMACIE DU CENTRE");
+        var loyer = lignes.Single(l => l.Libelle == "PRLV SEPA LOYER SCI LES TILLEULS");
+        loyer.Importer = false;
+
+        Assert.True(pharmacie.DateAnterieure);
+        Assert.Contains("Date antérieure au mois", pharmacie.AlerteDate);
+        Assert.Equal("Novembre 2026", pharmacie.MoisChoisi);
+        Assert.Equal(new[] { "Novembre 2026", "Octobre 2026" }, pharmacie.ChoixMois);
+        Assert.True(import.ADatesAnterieures);
+        Assert.StartsWith("1 opération est datée d'avant Novembre 2026", import.TexteDatesAnterieures);
+        Assert.Equal("Ranger les dates antérieures dans leur mois", import.TexteRangement);
+
+        pharmacie.MoisChoisi = "Octobre 2026";
+
+        Assert.Same(lignes, import.Lignes);
+        Assert.True(pharmacie.DansSonMois);
+        Assert.Equal(new PeriodeMois(2026, 10), pharmacie.Ligne.Periode);
+        Assert.False(loyer.Importer);
+        Assert.Equal("Tout remettre dans le mois en cours", import.TexteRangement);
+
+        import.RangerDatesAnterieuresCommand.Execute(null);
+        Assert.Equal("Novembre 2026", pharmacie.MoisChoisi);
+        import.RangerDatesAnterieuresCommand.Execute(null);
+        Assert.Equal("Octobre 2026", pharmacie.MoisChoisi);
+
+        import.ValiderCommand.Execute(null);
+
+        var compte = new DepotSqlite(Chemin("compte.db")).Charger()!;
+        Assert.Contains(compte.Mois[0].Operations, o => o.Libelle == "CB PHARMACIE DU CENTRE");
+        Assert.Equal("Décembre 2026", vm.TitreMois);
     }
 
     [Fact]
@@ -108,7 +147,7 @@ public sealed class ImportViewModelTests : IDisposable
         vm.Import!.ValiderCommand.Execute(null);
 
         Assert.Null(vm.Import);
-        Assert.Equal("Décembre 2026", vm.TitreMois);
+        Assert.Equal("Novembre 2026", vm.TitreMois);
         Assert.Contains("Décembre 2026", _dialogues.DerniereConfirmation);
         var decembre = new DepotSqlite(Chemin("compte.db")).Charger()!.Mois[2];
         Assert.True(decembre.Operations.Single(o => o.Libelle == "Loyer").Pointee);
@@ -173,7 +212,7 @@ public sealed class ImportViewModelTests : IDisposable
         vm.ImporterReleveCommand.Execute(null);
 
         Assert.All(vm.Import!.Lignes, l => Assert.Equal(StatutImport.DejaImportee, l.Statut));
-        Assert.Equal(10, vm.Import.NombreIgnorees);
+        Assert.Equal(11, vm.Import.NombreIgnorees);
         Assert.Empty(vm.Import.MoisACreer);
     }
 

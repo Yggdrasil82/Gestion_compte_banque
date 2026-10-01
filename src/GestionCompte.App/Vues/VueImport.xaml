@@ -152,6 +152,22 @@
             </StackPanel>
         </Border>
 
+        <!-- Opérations datées d'un mois antérieur au mois en cours (chevauchement de relevé) -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource Carte}" BorderBrush="{DynamicResource Avertissement}" Padding="14,8"
+                Visibility="{Binding ADatesAnterieures, Converter={StaticResource Visible}}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Command="{Binding RangerDatesAnterieuresCommand}" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE787;" Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding TexteRangement}" />
+                    </StackPanel>
+                </Button>
+                <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" Foreground="{DynamicResource Avertissement}" Margin="0,0,10,0"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{Binding TexteDatesAnterieures}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
         <!-- Opérations du relevé -->
         <Border Style="{StaticResource Carte}">
             <DockPanel>
@@ -172,8 +188,53 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Date" Binding="{Binding Date}" Width="85" IsReadOnly="True"
-                                            ElementStyle="{StaticResource CelluleTexte}" />
+                        <!-- Date antérieure au mois en cours : alerte orange. -->
+                        <DataGridTemplateColumn Header="Date" Width="105">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" ToolTip="{Binding AlerteDate}">
+                                        <TextBlock Text="{Binding Date}" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleTexte}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DateAnterieure}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Avertissement}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE7BA;" Foreground="{DynamicResource Avertissement}"
+                                                   FontSize="13" Margin="2,0,0,0" VerticalAlignment="Center"
+                                                   Visibility="{Binding DateAnterieure, Converter={StaticResource Visible}}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Mois" Width="135">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <TextBlock Text="{Binding MoisChoisi, Mode=OneWay}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleTexte}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding MoisModifiable}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <ComboBox Style="{StaticResource ListeCellule}" ItemsSource="{Binding ChoixMois}"
+                                                  SelectedItem="{Binding MoisChoisi, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="{Binding AlerteDate}"
+                                                  Visibility="{Binding MoisModifiable, Converter={StaticResource Visible}}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="Libellé" Width="*" MinWidth="170">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

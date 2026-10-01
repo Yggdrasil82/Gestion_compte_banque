@@ -177,6 +177,22 @@ public sealed class MainViewModelTests : IDisposable
         Assert.Equal(0m, vm.MoisCourant.Revenus.Elements.Single(r => r.Nom == "NDF").Montant);
     }
 
+    [Theory]
+    [InlineData(2026, 11, "Novembre 2026")]
+    [InlineData(2027, 3, "Décembre 2026")]
+    [InlineData(2026, 9, "Octobre 2026")]
+    public void Ouverture_AfficheLeMoisEnCoursMemeSiDesMoisSuivantsSontCrees(int annee, int mois, string attendu)
+    {
+        var compte = new CompteBancaire(ConfigurationParDefaut.CreerExemple(new PeriodeMois(2026, 10)));
+        for (var i = 0; i < 3; i++)
+            compte.CreerMoisSuivant();
+        new DepotSqlite(Chemin()).Enregistrer(compte);
+
+        var vm = Ouvrir(new DateTime(annee, mois, 15));
+
+        Assert.Equal(attendu, vm.TitreMois);
+    }
+
     [Fact]
     public void Navigation_ListeDeroulanteEtMoisEnCours()
     {

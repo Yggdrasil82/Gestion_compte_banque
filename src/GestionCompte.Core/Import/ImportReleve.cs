@@ -46,7 +46,15 @@ public sealed class LigneImport
     }
 
     public OperationBancaire Source { get; }
+
+    /// <summary>Mois où la ligne sera rangée.</summary>
     public PeriodeMois Periode { get; }
+
+    /// <summary>Mois de la date de l'opération.</summary>
+    public PeriodeMois PeriodeDate => new(Source.Date.Year, Source.Date.Month);
+
+    /// <summary>Date antérieure au mois en cours : l'utilisateur choisit de la ranger dans le mois en cours ou dans le sien.</summary>
+    public bool DateAnterieure { get; internal init; }
 
     /// <summary>Statut proposé par le rapprochement automatique.</summary>
     public StatutImport StatutInitial { get; }
@@ -74,7 +82,9 @@ public sealed class LigneImport
         : StatutImport.MontantAjuste;
 }
 
-public sealed record PlanImport(IReadOnlyList<LigneImport> Lignes, IReadOnlyList<PeriodeMois> MoisACreer, decimal? SoldeBanque, DateOnly? DateSolde);
+/// <param name="MoisCourant">Mois en cours qui reçoit les opérations datées d'un mois antérieur (null = chacune dans son mois).</param>
+public sealed record PlanImport(IReadOnlyList<LigneImport> Lignes, IReadOnlyList<PeriodeMois> MoisACreer, decimal? SoldeBanque, DateOnly? DateSolde,
+    PeriodeMois? MoisCourant = null);
 
 public sealed record ResultatImport(int Rapprochees, int Ajustees, int RevenusRecus, int Nouvelles, int Ignorees, IReadOnlyList<PeriodeMois> MoisCrees)
 {
@@ -94,7 +104,12 @@ public static class ImportReleve
     };
 
     /// <summary>Prépare l'import sans rien modifier : statut de chaque ligne et mois à créer.</summary>
-    public static PlanImport Preparer(CompteBancaire compte, ReleveBancaire releve)
+    /// <param name="moisCourant">Mois en cours : une opération datée d'un mois antérieur (chevauchement de relevé) y est rangée,
+    /// sauf si elle est dans <paramref name="dansLeurMois"/> ; null = chaque opération dans le mois de sa date.
+    /// Une opération d'avant le premier mois suivi reste ignorée.</param>
+    /// <param name="dansLeurMois">Identifiants bancaires des opérations antérieures à ranger dans le mois de leur date.</param>
+    public static PlanImport Preparer(CompteBancaire compte, ReleveBancaire releve, PeriodeMois? moisCourant = null,
+        IReadOnlySet<string>? dansLeurMois = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         ArgumentNullException.ThrowIfNull(releve);
@@ -106,7 +121,8 @@ public static class ImportReleve
 
         var premier = compte.Configuration.PremierMois;
         var lignes = new List<LigneImport>();
-        var aRapprocher = new List<OperationBancaire>();
+        var aRapprocher = new List<(OperationBancaire Operation, PeriodeMois Periode)>();
+        var courant = moisCourant is { } m && m >= premier ? m : (PeriodeMois?)null;
 
         foreach (var operation in releve.Operations.OrderBy(o => o.Date))
         {
@@ -115,11 +131,13 @@ public static class ImportReleve
                 lignes.Add(new LigneImport(operation, periode, StatutImport.DejaImportee, Array.Empty<Candidat>()));
             else if (periode < premier)
                 lignes.Add(new LigneImport(operation, periode, StatutImport.AvantDebut, Array.Empty<Candidat>()));
+            else if (courant is { } mois && periode < mois)
+                aRapprocher.Add((operation, dansLeurMois?.Contains(operation.Identifiant) == true ? periode : mois));
             else
-                aRapprocher.Add(operation);
+                aRapprocher.Add((operation, periode));
         }
 
-        var dernierPeriode = aRapprocher.Count == 0 ? (PeriodeMois?)null : aRapprocher.Max(o => new PeriodeMois(o.Date.Year, o.Date.Month));
+        var dernierPeriode = aRapprocher.Count == 0 ? (PeriodeMois?)null : aRapprocher.Max(o => o.Periode);
         var moisACreer = new List<PeriodeMois>();
         if (dernierPeriode is { } fin)
         {
@@ -127,19 +145,20 @@ public static class ImportReleve
                 moisACreer.Add(p);
         }
 
-        foreach (var groupe in aRapprocher.GroupBy(o => new PeriodeMois(o.Date.Year, o.Date.Month)))
+        foreach (var groupe in aRapprocher.GroupBy(o => o.Periode))
         {
             // Un mois pas encore créé est rapproché avec le mois tel qu'il sera créé.
             var mois = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
-            lignes.AddRange(Rapprocher(compte.Configuration, mois, groupe.ToList()));
+            lignes.AddRange(Rapprocher(compte.Configuration, mois, groupe.Select(o => o.Operation).ToList(), courant));
         }
 
         return new PlanImport(
             lignes.OrderBy(l => l.Source.Date).ThenBy(l => l.Source.Identifiant, StringComparer.Ordinal).ToList(),
-            moisACreer, releve.Solde, releve.DateSolde);
+            moisACreer, releve.Solde, releve.DateSolde, courant);
     }
 
-    private static IEnumerable<LigneImport> Rapprocher(ConfigurationBudget configuration, MoisBudget mois, List<OperationBancaire> operations)
+    private static IEnumerable<LigneImport> Rapprocher(ConfigurationBudget configuration, MoisBudget mois, List<OperationBancaire> operations,
+        PeriodeMois? courant = null)
     {
         var candidatsRevenus = mois.Revenus
             .Select((r, i) => (Ligne: r, Candidat: new Candidat(true, i, r.Nom, r.Montant)))
@@ -207,9 +226,11 @@ public static class ImportReleve
                 .ToList();
 
             var trouve = choix.GetValueOrDefault(operation);
+            var periodeDate = new PeriodeMois(operation.Date.Year, operation.Date.Month);
             var ligne = new LigneImport(operation, mois.Periode, trouve is null ? StatutImport.Nouvelle : StatutImport.Rapprochee, candidats)
             {
                 Choix = trouve,
+                DateAnterieure = courant is { } c && periodeDate < c,
             };
 
             if (operation.Montant < 0)
