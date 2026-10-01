@@ -125,6 +125,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li>Les règles de classement (Configuration) rangent les nouvelles dépenses dans une enveloppe d'après le libellé (LECLERC → Courses…).</li>
     <li>Décochez une ligne pour l'ignorer. Les opérations déjà importées sont ignorées automatiquement, et le numéro de compte du relevé est contrôlé.</li>
     <li><b>Date antérieure au mois</b> (alerte orange) : un relevé qui chevauche deux mois contient des opérations datées du mois précédent. Elles vont par défaut dans le mois en cours ; la colonne « Mois » permet de choisir le mois de leur date, et le bouton « Ranger les dates antérieures dans leur mois » le fait pour toutes.</li>
+    <li><b>À vérifier</b> : pour ces opérations, l'application cherche le même montant dans le mois de leur date puis dans le mois en cours, même avec un autre libellé (WERO pour un abonnement saisi à la main). La ligne y est rattachée et la question s'affiche dessous ; si le montant est déjà pointé à la main dans le mois de sa date, la ligne est décochée pour éviter un doublon. « Valider l'import » récapitule ces lignes avant d'importer.</li>
     <li>Le cadre de droite compare le solde de la banque et le solde pointé : « Les soldes concordent » quand tout est juste.</li>
     <li>Rien n'est modifié avant « Valider l'import ». Les mois manquants sont créés après confirmation.</li>
   </ul>

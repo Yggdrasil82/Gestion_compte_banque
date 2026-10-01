@@ -89,7 +89,7 @@ public static class ConfigurationParDefaut
 
     /// <summary>
     /// Relevé OFX d'exemple (décembre 2026, mois pas encore créé), pour les captures d'écran de l'import ;
-    /// sa première ligne date d'octobre (chevauchement de relevé).
+    /// sa première ligne date d'octobre (chevauchement de relevé) et a le montant de « Marché », pas encore pointé en novembre.
     /// </summary>
     public static string ReleveDemo()
     {
@@ -97,7 +97,7 @@ public static class ConfigurationParDefaut
             $"<STMTTRN>\n<TRNTYPE>{type}\n<DTPOSTED>{date}\n<TRNAMT>{montant}\n<FITID>{id}\n<NAME>{libelle}\n</STMTTRN>\n";
 
         return "OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:1252\n<OFX>\n<BANKMSGSRSV1>\n<STMTTRNRS>\n<STMTRS>\n<CURDEF>EUR\n<BANKTRANLIST>\n"
-            + Ligne("DEBIT", "20261030", "-14.90", "DEMO00", "CB PHARMACIE DU CENTRE 29/10/26")
+            + Ligne("DEBIT", "20261030", "-27.50", "DEMO00", "CB WERO 29/10/26")
             + Ligne("XFER", "20261202", "-801.00", "DEMO01", "PRLV SEPA LOYER SCI LES TILLEULS")
             + Ligne("XFER", "20261205", "-9.99", "DEMO02", "PRLV SEPA FREE MOBILE")
             + Ligne("DEBIT", "20261206", "-58.40", "DEMO03", "CB LECLERC DRIVE 05/12/26")
@@ -108,7 +108,7 @@ public static class ConfigurationParDefaut
             + Ligne("DEBIT", "20261218", "-23.80", "DEMO08", "CB BOULANGERIE DU MARCHE 17/12/26")
             + Ligne("CREDIT", "20261227", "+2812.35", "DEMO09", "VIR SALAIRE")
             + Ligne("CREDIT", "20261228", "+12.50", "DEMO10", "VIREMENT CPMS")
-            + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>4662.78\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
+            + "</BANKTRANLIST>\n<LEDGERBAL>\n<BALAMT>4650.18\n<DTASOF>20261228000000\n</LEDGERBAL>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n";
     }
 
     /// <summary>Livret d'épargne d'exemple (second compte des captures d'écran).</summary>

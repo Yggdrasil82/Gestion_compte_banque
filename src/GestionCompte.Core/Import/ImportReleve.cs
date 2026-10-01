@@ -56,6 +56,21 @@ public sealed class LigneImport
     /// <summary>Date antérieure au mois en cours : l'utilisateur choisit de la ranger dans le mois en cours ou dans le sien.</summary>
     public bool DateAnterieure { get; internal init; }
 
+    /// <summary>
+    /// Question posée pour une date antérieure quand le même montant existe dans l'application :
+    /// rattachement sur le seul montant (libellé différent) ou opération déjà pointée à la main dans le mois de la date.
+    /// </summary>
+    public string? Verification { get; internal set; }
+
+    /// <summary>Le même montant est déjà pointé à la main dans le mois de la date : la ligne est décochée par défaut.</summary>
+    public bool DejaComptee { get; internal set; }
+
+    /// <summary>Rattachement proposé par le rapprochement automatique.</summary>
+    public Candidat? ChoixPropose { get; internal set; }
+
+    /// <summary>La ligne sera importée telle que proposée alors qu'une question reste posée (statut « À vérifier »).</summary>
+    public bool AVerifier => Modifiable && Importer && Verification is not null && (DejaComptee || (Choix is not null && Choix == ChoixPropose));
+
     /// <summary>Statut proposé par le rapprochement automatique.</summary>
     public StatutImport StatutInitial { get; }
 
@@ -107,9 +122,11 @@ public static class ImportReleve
     /// <param name="moisCourant">Mois en cours : une opération datée d'un mois antérieur (chevauchement de relevé) y est rangée,
     /// sauf si elle est dans <paramref name="dansLeurMois"/> ; null = chaque opération dans le mois de sa date.
     /// Une opération d'avant le premier mois suivi reste ignorée.</param>
-    /// <param name="dansLeurMois">Identifiants bancaires des opérations antérieures à ranger dans le mois de leur date.</param>
+    /// <param name="dansLeurMois">Choix de l'utilisateur par identifiant bancaire : true = dans le mois de la date,
+    /// false = dans le mois en cours. Sans choix, une opération va dans le mois de sa date si le même montant y attend
+    /// d'être pointé, sinon dans le mois en cours.</param>
     public static PlanImport Preparer(CompteBancaire compte, ReleveBancaire releve, PeriodeMois? moisCourant = null,
-        IReadOnlySet<string>? dansLeurMois = null)
+        IReadOnlyDictionary<string, bool>? dansLeurMois = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         ArgumentNullException.ThrowIfNull(releve);
@@ -123,6 +140,7 @@ public static class ImportReleve
         var lignes = new List<LigneImport>();
         var aRapprocher = new List<(OperationBancaire Operation, PeriodeMois Periode)>();
         var courant = moisCourant is { } m && m >= premier ? m : (PeriodeMois?)null;
+        var dejaComptees = new Dictionary<OperationBancaire, string>();
 
         foreach (var operation in releve.Operations.OrderBy(o => o.Date))
         {
@@ -132,7 +150,16 @@ public static class ImportReleve
             else if (periode < premier)
                 lignes.Add(new LigneImport(operation, periode, StatutImport.AvantDebut, Array.Empty<Candidat>()));
             else if (courant is { } mois && periode < mois)
-                aRapprocher.Add((operation, dansLeurMois?.Contains(operation.Identifiant) == true ? periode : mois));
+            {
+                // Chevauchement de relevé : le même montant est-il déjà dans le mois de la date ?
+                var moisDate = compte.Trouver(periode);
+                var enAttente = moisDate is not null && MontantsDuMois(moisDate, operation.Montant).Any(x => !x.Pointe);
+                if (!enAttente && moisDate is not null && MontantsDuMois(moisDate, operation.Montant).FirstOrDefault(x => x.Pointe) is { Nom: not null } dejaPointee)
+                    dejaComptees[operation] = $"Déjà comptée en {periode.Libelle} ? « {dejaPointee.Nom} » ({Montants.Formater(Math.Abs(operation.Montant))} €) " +
+                                              "y est déjà pointée. Ligne décochée : cochez-la pour l'importer quand même.";
+                var dansSonMois = dansLeurMois is not null && dansLeurMois.TryGetValue(operation.Identifiant, out var choisi) ? choisi : enAttente;
+                aRapprocher.Add((operation, dansSonMois ? periode : mois));
+            }
             else
                 aRapprocher.Add((operation, periode));
         }
@@ -149,7 +176,7 @@ public static class ImportReleve
         {
             // Un mois pas encore créé est rapproché avec le mois tel qu'il sera créé.
             var mois = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
-            lignes.AddRange(Rapprocher(compte.Configuration, mois, groupe.Select(o => o.Operation).ToList(), courant));
+            lignes.AddRange(Rapprocher(compte.Configuration, mois, groupe.Select(o => o.Operation).ToList(), courant, dejaComptees));
         }
 
         return new PlanImport(
@@ -157,9 +184,16 @@ public static class ImportReleve
             moisACreer, releve.Solde, releve.DateSolde, courant);
     }
 
+    /// <summary>Opérations et revenus du mois au même montant que la ligne du relevé, pointés (ou reçus) à la main ou non.</summary>
+    private static IEnumerable<(string Nom, bool Pointe)> MontantsDuMois(MoisBudget mois, decimal montant) =>
+        mois.Operations.Where(o => o.IdentifiantBanque is null && MemeMontant(o, montant)).Select(o => (o.Libelle, o.Pointee))
+            .Concat(mois.Revenus.Where(r => montant > 0 && r.IdentifiantBanque is null && r.Montant == montant).Select(r => (r.Nom, r.Recu)));
+
     private static IEnumerable<LigneImport> Rapprocher(ConfigurationBudget configuration, MoisBudget mois, List<OperationBancaire> operations,
-        PeriodeMois? courant = null)
+        PeriodeMois? courant = null, IReadOnlyDictionary<OperationBancaire, string>? dejaComptees = null)
     {
+        bool Anterieure(OperationBancaire o) => courant is { } c && new PeriodeMois(o.Date.Year, o.Date.Month) < c;
+
         var candidatsRevenus = mois.Revenus
             .Select((r, i) => (Ligne: r, Candidat: new Candidat(true, i, r.Nom, r.Montant)))
             .Where(x => !x.Ligne.Recu && x.Ligne.IdentifiantBanque is null)
@@ -171,6 +205,8 @@ public static class ImportReleve
 
         var choix = new Dictionary<OperationBancaire, Candidat>();
         var pris = new HashSet<Candidat>();
+        // Dates antérieures rattachées sur le seul montant, libellé différent : à faire confirmer.
+        var surLeMontant = new HashSet<OperationBancaire>();
 
         bool Libre(Candidat c) => !pris.Contains(c);
         void Prendre(OperationBancaire o, Candidat c) { choix[o] = c; pris.Add(c); }
@@ -185,7 +221,11 @@ public static class ImportReleve
                 .OrderByDescending(x => x.Score)
                 .FirstOrDefault();
             if (meilleur.Candidat is not null)
+            {
                 Prendre(operation, meilleur.Candidat);
+                if (Anterieure(operation) && Ressemblance(operation.Libelle, meilleur.Candidat.Libelle) == 0)
+                    surLeMontant.Add(operation);
+            }
         }
 
         // 2. Même montant exact (et libellé proche, ou montant unique dans le mois).
@@ -198,8 +238,13 @@ public static class ImportReleve
                 .ToList();
             // Sans libellé proche, un montant unique suffit pour un prélèvement (« PRLV SEPA VEOLIA » pour « Eau »),
             // pas pour un paiement carte, qui correspond rarement à une charge prévue.
-            if (memeMontant.Count > 0 && (memeMontant[0].Score > 0 || (memeMontant.Count == 1 && !EstPaiementCarte(operation))))
+            // Une date antérieure est toujours proposée sur le même montant, puis à faire confirmer (opération déjà saisie dans l'application).
+            if (memeMontant.Count > 0 && (memeMontant[0].Score > 0 || (memeMontant.Count == 1 && !EstPaiementCarte(operation)) || Anterieure(operation)))
+            {
                 Prendre(operation, memeMontant[0].Candidat);
+                if (Anterieure(operation) && memeMontant[0].Score == 0)
+                    surLeMontant.Add(operation);
+            }
         }
 
         // 3. Libellé très proche et montant voisin (facture qui varie) : montant ajusté.
@@ -230,8 +275,21 @@ public static class ImportReleve
             var ligne = new LigneImport(operation, mois.Periode, trouve is null ? StatutImport.Nouvelle : StatutImport.Rapprochee, candidats)
             {
                 Choix = trouve,
+                ChoixPropose = trouve,
                 DateAnterieure = courant is { } c && periodeDate < c,
             };
+
+            if (dejaComptees?.GetValueOrDefault(operation) is { } dejaComptee)
+            {
+                ligne.Verification = dejaComptee;
+                ligne.DejaComptee = true;
+                ligne.Importer = false;
+            }
+            else if (trouve is not null && surLeMontant.Contains(operation))
+            {
+                ligne.Verification = $"Même montant que « {trouve.Libelle} » ({Montants.Formater(trouve.Montant)} €) en {mois.Periode.Libelle} : " +
+                                     "est-ce la même opération ? Sinon, choisissez « Nouvelle opération ».";
+            }
 
             if (operation.Montant < 0)
             {

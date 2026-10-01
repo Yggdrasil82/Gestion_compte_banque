@@ -77,36 +77,58 @@ public sealed class ImportViewModelTests : IDisposable
         vm.ImporterReleveCommand.Execute(null);
         var import = vm.Import!;
         var lignes = import.Lignes;
-        var pharmacie = lignes.Single(l => l.Libelle == "CB PHARMACIE DU CENTRE");
+        var wero = lignes.Single(l => l.Libelle == "CB WERO");
         var loyer = lignes.Single(l => l.Libelle == "PRLV SEPA LOYER SCI LES TILLEULS");
         loyer.Importer = false;
 
-        Assert.True(pharmacie.DateAnterieure);
-        Assert.Contains("Date antérieure au mois", pharmacie.AlerteDate);
-        Assert.Equal("Novembre 2026", pharmacie.MoisChoisi);
-        Assert.Equal(new[] { "Novembre 2026", "Octobre 2026" }, pharmacie.ChoixMois);
+        Assert.True(wero.DateAnterieure);
+        Assert.Contains("Date antérieure au mois", wero.AlerteDate);
+        Assert.Equal("Novembre 2026", wero.MoisChoisi);
+        Assert.Equal(new[] { "Novembre 2026", "Octobre 2026" }, wero.ChoixMois);
         Assert.True(import.ADatesAnterieures);
         Assert.StartsWith("1 opération est datée d'avant Novembre 2026", import.TexteDatesAnterieures);
         Assert.Equal("Ranger les dates antérieures dans leur mois", import.TexteRangement);
 
-        pharmacie.MoisChoisi = "Octobre 2026";
+        wero.MoisChoisi = "Octobre 2026";
 
         Assert.Same(lignes, import.Lignes);
-        Assert.True(pharmacie.DansSonMois);
-        Assert.Equal(new PeriodeMois(2026, 10), pharmacie.Ligne.Periode);
+        Assert.True(wero.DansSonMois);
+        Assert.Equal(new PeriodeMois(2026, 10), wero.Ligne.Periode);
         Assert.False(loyer.Importer);
         Assert.Equal("Tout remettre dans le mois en cours", import.TexteRangement);
 
         import.RangerDatesAnterieuresCommand.Execute(null);
-        Assert.Equal("Novembre 2026", pharmacie.MoisChoisi);
+        Assert.Equal("Novembre 2026", wero.MoisChoisi);
         import.RangerDatesAnterieuresCommand.Execute(null);
-        Assert.Equal("Octobre 2026", pharmacie.MoisChoisi);
+        Assert.Equal("Octobre 2026", wero.MoisChoisi);
 
         import.ValiderCommand.Execute(null);
 
         var compte = new DepotSqlite(Chemin("compte.db")).Charger()!;
-        Assert.Contains(compte.Mois[0].Operations, o => o.Libelle == "CB PHARMACIE DU CENTRE");
+        Assert.Contains(compte.Mois[0].Operations, o => o.Libelle == "CB WERO");
         Assert.Equal("Décembre 2026", vm.TitreMois);
+    }
+
+    [Fact]
+    public void MemeMontantDateAnterieure_AVerifierEtConfirmationALaValidation()
+    {
+        var vm = OuvrirDemo();
+        vm.ImporterReleveCommand.Execute(null);
+        var import = vm.Import!;
+        var wero = import.Lignes.Single(l => l.Libelle == "CB WERO");
+
+        Assert.Equal("À vérifier", wero.StatutTexte);
+        Assert.Contains("Même montant que « Marché »", wero.Verification);
+        Assert.Equal(1, import.NombreAVerifier);
+
+        _dialogues.Reponse = false;
+        import.ValiderCommand.Execute(null);
+        Assert.NotNull(vm.Import);
+        Assert.Contains("CB WERO", _dialogues.DerniereConfirmation);
+
+        wero.OptionChoisie = wero.Options[0];
+        Assert.Equal("Nouvelle", wero.StatutTexte);
+        Assert.Equal(0, import.NombreAVerifier);
     }
 
     [Fact]

@@ -334,11 +334,69 @@ public class ImportReleveTests
         var compte = CompteOctobre();
         var releve = Releve(Ligne("DEBIT", "20261030", "-14.90", "P1", "CB PHARMACIE"));
 
-        var plan = ImportReleve.Preparer(compte, releve, new PeriodeMois(2026, 11), new HashSet<string> { "P1" });
+        var plan = ImportReleve.Preparer(compte, releve, new PeriodeMois(2026, 11), new Dictionary<string, bool> { ["P1"] = true });
 
         Assert.True(plan.Lignes[0].DateAnterieure);
         Assert.Equal(new PeriodeMois(2026, 10), plan.Lignes[0].Periode);
         Assert.Empty(plan.MoisACreer);
+    }
+
+    [Fact]
+    public void DateAnterieure_MemeMontantDansLeMoisEnCours_RattacheeAVerifier()
+    {
+        var compte = CompteOctobre();
+        compte.CreerMoisSuivant().Operations.Add(new Operation("Crunchyroll", debit: 17.77m));
+
+        var plan = ImportReleve.Preparer(compte, Releve(Ligne("DEBIT", "20261030", "-17.77", "W1", "CB WERO 29/10")), new PeriodeMois(2026, 11));
+
+        var ligne = plan.Lignes.Single();
+        Assert.Equal(new PeriodeMois(2026, 11), ligne.Periode);
+        Assert.Equal("Crunchyroll", ligne.Choix?.Libelle);
+        Assert.Contains("Même montant que « Crunchyroll »", ligne.Verification);
+        Assert.True(ligne.AVerifier);
+
+        ligne.Choix = null;
+        Assert.False(ligne.AVerifier);
+    }
+
+    [Fact]
+    public void DateAnterieure_MemeMontantEnAttenteDansLeMoisDeLaDate_RangeeDansCeMois()
+    {
+        var compte = CompteOctobre();
+        compte.Mois[0].Operations.Add(new Operation("Crunchyroll", debit: 17.77m));
+        compte.CreerMoisSuivant();
+
+        var plan = ImportReleve.Preparer(compte, Releve(Ligne("DEBIT", "20261030", "-17.77", "W1", "CB WERO 29/10")), new PeriodeMois(2026, 11));
+
+        var ligne = plan.Lignes.Single();
+        Assert.Equal(new PeriodeMois(2026, 10), ligne.Periode);
+        Assert.Equal("Crunchyroll", ligne.Choix?.Libelle);
+        Assert.Contains("en Octobre 2026", ligne.Verification);
+
+        // Choix de l'utilisateur : dans le mois en cours.
+        var autre = ImportReleve.Preparer(compte, Releve(Ligne("DEBIT", "20261030", "-17.77", "W1", "CB WERO 29/10")),
+            new PeriodeMois(2026, 11), new Dictionary<string, bool> { ["W1"] = false });
+        Assert.Equal(new PeriodeMois(2026, 11), autre.Lignes.Single().Periode);
+    }
+
+    [Fact]
+    public void DateAnterieure_MemeMontantDejaPointeALaMain_DecocheeAVerifier()
+    {
+        var compte = CompteOctobre();
+        compte.Mois[0].Operations.Add(new Operation("Crunchyroll", debit: 17.77m) { Pointee = true });
+        compte.CreerMoisSuivant();
+
+        var plan = ImportReleve.Preparer(compte, Releve(Ligne("DEBIT", "20261030", "-17.77", "W1", "CB WERO 29/10")), new PeriodeMois(2026, 11));
+
+        var ligne = plan.Lignes.Single();
+        Assert.Equal(new PeriodeMois(2026, 11), ligne.Periode);
+        Assert.True(ligne.DejaComptee);
+        Assert.False(ligne.Importer);
+        Assert.StartsWith("Déjà comptée en Octobre 2026 ? « Crunchyroll »", ligne.Verification);
+        Assert.False(ligne.AVerifier);
+
+        ligne.Importer = true;
+        Assert.True(ligne.AVerifier);
     }
 
     [Fact]

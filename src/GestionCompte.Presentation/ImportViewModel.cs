@@ -17,15 +17,15 @@ public sealed partial class ImportViewModel : ObservableObject
     private readonly IDialogues _dialogues;
     private readonly Action<ResultatImport> _termine;
     private readonly Action _annule;
-    private readonly Func<IReadOnlySet<string>, PlanImport>? _preparer;
-    private readonly HashSet<string> _dansLeurMois = new(StringComparer.Ordinal);
+    private readonly Func<IReadOnlyDictionary<string, bool>, PlanImport>? _preparer;
+    private readonly Dictionary<string, bool> _dansLeurMois = new(StringComparer.Ordinal);
     private PlanImport _plan;
     private decimal _soldePointeAvant;
 
-    /// <param name="preparer">Prépare de nouveau le plan quand l'utilisateur range des opérations antérieures dans le mois
-    /// de leur date (identifiants bancaires donnés) ; null = pas de choix du mois.</param>
+    /// <param name="preparer">Prépare de nouveau le plan quand l'utilisateur choisit le mois d'opérations antérieures
+    /// (identifiant bancaire → true = mois de la date, false = mois en cours) ; null = pas de choix du mois.</param>
     public ImportViewModel(CompteBancaire compte, PlanImport plan, string nomFichier, IDialogues dialogues,
-        Action<ResultatImport> termine, Action annule, Func<IReadOnlySet<string>, PlanImport>? preparer = null)
+        Action<ResultatImport> termine, Action annule, Func<IReadOnlyDictionary<string, bool>, PlanImport>? preparer = null)
     {
         _compte = compte;
         _plan = plan;
@@ -92,8 +92,11 @@ public sealed partial class ImportViewModel : ObservableObject
         if (_preparer is null)
             return;
         var modifie = false;
-        foreach (var ligne in lignes.Where(l => l.Ligne.DateAnterieure))
-            modifie |= dansSonMois ? _dansLeurMois.Add(ligne.Ligne.Source.Identifiant) : _dansLeurMois.Remove(ligne.Ligne.Source.Identifiant);
+        foreach (var ligne in lignes.Where(l => l.Ligne.DateAnterieure && l.DansSonMois != dansSonMois))
+        {
+            _dansLeurMois[ligne.Ligne.Source.Identifiant] = dansSonMois;
+            modifie = true;
+        }
         if (modifie)
             Afficher(_preparer(_dansLeurMois), Lignes);
     }
@@ -139,7 +142,7 @@ public sealed partial class ImportViewModel : ObservableObject
             if (nombre == 0 || _plan.MoisCourant is not { } courant)
                 return "";
             return (nombre == 1 ? "1 opération est datée" : $"{nombre} opérations sont datées") +
-                   $" d'avant {courant.Libelle} : elles vont par défaut dans le mois en cours. Choisissez le mois ligne par ligne (colonne « Mois »).";
+                   $" d'avant {courant.Libelle} : vérifiez leur mois (colonne « Mois ») et les lignes « À vérifier ».";
         }
     }
 
@@ -152,6 +155,9 @@ public sealed partial class ImportViewModel : ObservableObject
 
     [RelayCommand(CanExecute = nameof(PeutRanger))]
     private void RangerDatesAnterieures() => PlacerDansSonMois(DatesAnterieures, !ToutesDansLeurMois);
+
+    /// <summary>Lignes importées telles que proposées alors qu'une question reste posée (même montant, date antérieure).</summary>
+    [ObservableProperty] private int _nombreAVerifier;
 
     [ObservableProperty] private int _nombreRapprochees;
     [ObservableProperty] private int _nombreAjustees;
@@ -183,6 +189,7 @@ public sealed partial class ImportViewModel : ObservableObject
         NombreRevenus = importees.Count(l => l.Ligne.Statut == StatutImport.RevenuRecu);
         NombreNouvelles = importees.Count(l => l.Ligne.Statut == StatutImport.Nouvelle);
         NombreIgnorees = Lignes.Count - importees.Count;
+        NombreAVerifier = Lignes.Count(l => l.AVerifier);
 
         // Chaque ligne importée devient pointée avec le montant de la banque (seules celles jusqu'à la date du solde comptent).
         SoldePointeApres = _soldePointeAvant + importees
@@ -197,6 +204,13 @@ public sealed partial class ImportViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(PeutValider))]
     private void Valider()
     {
+        var aVerifier = Lignes.Where(l => l.AVerifier).ToList();
+        if (aVerifier.Count > 0 && !_dialogues.Confirmer("Opérations à vérifier",
+                "Ces opérations du relevé sont datées d'un mois antérieur et ont le même montant qu'une opération de l'application :\n\n" +
+                string.Join("\n", aVerifier.Select(l => $"• {l.Date} {l.Libelle} ({Montants.Formater(l.Montant)} €) : {l.Verification}")) +
+                "\n\nImporter ainsi ?\nOui : valider l'import. Non : revenir à l'écran pour corriger."))
+            return;
+
         if (AMoisACreer && !_dialogues.Confirmer("Créer des mois",
                 $"Le relevé contient des opérations de mois pas encore créés.\n\nCréer : {MoisACreer} ?\n\n" +
                 "Ils seront préremplis avec la configuration, comme avec « Créer le mois suivant »."))
@@ -278,6 +292,13 @@ public sealed class LigneImportViewModel : ObservableObject
     /// <summary>Opération datée d'un mois antérieur au mois en cours (chevauchement de relevé) : alerte orange.</summary>
     public bool DateAnterieure => Ligne.DateAnterieure;
 
+    /// <summary>Question sur le même montant (voir <see cref="LigneImport.Verification"/>), affichée sous la ligne.</summary>
+    public string? Verification => Ligne.Verification;
+
+    public bool AVerification => Verification is not null;
+
+    public bool AVerifier => Ligne.AVerifier;
+
     public string AlerteDate => DateAnterieure
         ? $"Date antérieure au mois : opération de {Ligne.PeriodeDate.Libelle}, rangée dans {Ligne.Periode.Libelle}."
         : "";
@@ -320,6 +341,8 @@ public sealed class LigneImportViewModel : ObservableObject
                 return;
             Ligne.Importer = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(AVerifier));
+            OnPropertyChanged(nameof(StatutTexte));
             _modifie();
         }
     }
@@ -339,6 +362,7 @@ public sealed class LigneImportViewModel : ObservableObject
             OnPropertyChanged(nameof(StatutTexte));
             OnPropertyChanged(nameof(EnveloppeModifiable));
             OnPropertyChanged(nameof(PeutRetenirRegle));
+            OnPropertyChanged(nameof(AVerifier));
             _modifie();
         }
     }
@@ -363,7 +387,7 @@ public sealed class LigneImportViewModel : ObservableObject
 
     public StatutImport Statut => Ligne.Statut;
 
-    public string StatutTexte => Statut switch
+    public string StatutTexte => AVerifier ? "À vérifier" : Statut switch
     {
         StatutImport.Rapprochee => "Rapprochée",
         StatutImport.MontantAjuste => "Montant ajusté",

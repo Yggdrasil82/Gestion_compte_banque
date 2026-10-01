@@ -178,7 +178,19 @@
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
                            Text="Vérifiez le rapprochement proposé pour chaque ligne : elle peut être rattachée à une opération prévue du mois (elle sera pointée avec le montant de la banque) ou ajoutée comme nouvelle opération. Décochez une ligne pour l'ignorer. Rien n'est modifié avant « Valider l'import »." />
 
-                <DataGrid ItemsSource="{Binding Lignes}" RowStyle="{StaticResource LigneImport}">
+                <DataGrid ItemsSource="{Binding Lignes}" RowStyle="{StaticResource LigneImport}" RowDetailsVisibilityMode="Visible">
+                    <!-- Même montant déjà dans l'application (date antérieure) : la question s'affiche sous la ligne. -->
+                    <DataGrid.RowDetailsTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="78,0,8,6"
+                                        Visibility="{Binding AVerification, Converter={StaticResource Visible}}">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE9CE;" Foreground="{DynamicResource Avertissement}"
+                                           FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Verification}" Foreground="{DynamicResource Avertissement}" FontWeight="SemiBold"
+                                           TextWrapping="Wrap" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGrid.RowDetailsTemplate>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Importer" Width="70">
                             <DataGridTemplateColumn.CellTemplate>
@@ -279,6 +291,9 @@
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding StatutTexte}" Value="Nouvelle">
                                                         <Setter Property="Background" Value="{DynamicResource Accent1}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding StatutTexte}" Value="À vérifier">
+                                                        <Setter Property="Background" Value="{DynamicResource Avertissement}" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
