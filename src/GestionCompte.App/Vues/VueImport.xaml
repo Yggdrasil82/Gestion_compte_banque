@@ -201,7 +201,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <!-- Date antérieure au mois en cours : alerte orange. -->
-                        <DataGridTemplateColumn Header="Date" Width="105">
+                        <DataGridTemplateColumn Header="Date" Width="112">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" ToolTip="{Binding AlerteDate}">
@@ -224,7 +224,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Mois" Width="135">
+                        <DataGridTemplateColumn Header="Mois" Width="150">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -303,7 +303,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Rattachée à" Width="260">
+                        <DataGridTemplateColumn Header="Rattachée à" Width="235">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <ComboBox Style="{StaticResource ListeCellule}" ItemsSource="{Binding Options}" IsEnabled="{Binding Modifiable}"
