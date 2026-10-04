@@ -319,7 +319,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn x:Name="ColonneVirement" Header="Virement avec" Width="130">
+                        <DataGridTemplateColumn x:Name="ColonneVirement" Header="Virement avec" Width="155">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <DockPanel ToolTip="{Binding InfoLien}">

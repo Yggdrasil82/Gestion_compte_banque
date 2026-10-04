@@ -37,7 +37,7 @@
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Titre}" Margin="4,5" TextWrapping="Wrap" FontSize="13" />
+                                <TextBlock Text="{Binding Titre}" Margin="4,5" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource Texte}" />
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
