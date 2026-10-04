@@ -1,0 +1,306 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueBourse"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <Style x:Key="Tuile" TargetType="Border" BasedOn="{StaticResource Carte}">
+            <Setter Property="BorderThickness" Value="5,1,1,1" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+        <Style x:Key="LibelleTuile" TargetType="TextBlock" BasedOn="{StaticResource Discret}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="ValeurTuile" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style x:Key="Etape" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Bandeau -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource BoutonEntete}" Command="{Binding ImporterCommand}"
+                            ToolTip="Importer l'export des transactions de Trade Republic (.csv) ; les opérations déjà importées sont ignorées">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE8B5;" Margin="0,0,8,0" />
+                            <TextBlock Text="Importer" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BoutonEntete}" Command="{Binding ActualiserCoursCommand}"
+                            ToolTip="Chercher le dernier cours de chaque titre sur Yahoo Finance">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE72C;" Margin="0,0,8,0" />
+                            <TextBlock Text="Actualiser les cours" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource BoutonEntete}" Command="{Binding ViderCommand}" Margin="0"
+                            ToolTip="Effacer les opérations importées et les cours de ce compte">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" />
+                    </Button>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Bourse" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource EnteteTexte}" />
+                    <TextBlock Text="Vos placements Trade Republic (PEA et compte-titres) : positions, plus-values et dernier cours connu. Tout reste sur votre PC."
+                               Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Statut}" Margin="12,2,12,4" FontWeight="SemiBold"
+                   Foreground="{DynamicResource Accent1}" TextWrapping="Wrap">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <Grid>
+            <!-- Aucun placement : comment faire l'export -->
+            <Border Style="{StaticResource Carte}" VerticalAlignment="Top" MaxWidth="760" HorizontalAlignment="Left"
+                    Visibility="{Binding Vide, Converter={StaticResource Visible}}">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                        <TextBlock Text="Importer vos placements" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Etape}" Text="1. Dans l'application Trade Republic du téléphone : touchez votre profil, puis « Relevés »." />
+                    <TextBlock Style="{StaticResource Etape}" Text="2. Choisissez « Export des transactions », la période « Depuis le début », puis « Créer » : un fichier .csv est créé." />
+                    <TextBlock Style="{StaticResource Etape}" Text="3. Envoyez-vous ce fichier (mail, Google Drive…) et enregistrez-le sur ce PC." />
+                    <TextBlock Style="{StaticResource Etape}" Text="4. Cliquez sur « Importer » et choisissez le fichier. Refaites un export de temps en temps : seules les nouvelles opérations sont ajoutées." />
+                    <Button Style="{StaticResource BoutonPrincipal}" Command="{Binding ImporterCommand}" HorizontalAlignment="Left" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE8B5;" Margin="0,0,8,0" />
+                            <TextBlock Text="Importer l'export de Trade Republic" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Style="{StaticResource Aide}" Margin="0,10,0,0"
+                               Text="Le fichier contient le nom des titres, les quantités et les montants. Les cours sont ensuite cherchés sur Yahoo Finance (gratuit, sans compte) ; vous pouvez aussi les saisir à la main." />
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding Vide, Converter={StaticResource MasqueSiVrai}}">
+                <StackPanel>
+                    <!-- Chiffres clés -->
+                    <UniformGrid Rows="1">
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Valeur du portefeuille" />
+                                <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent1}"
+                                           Text="{Binding Bilan.ValeurTotale, Converter={StaticResource Euros}}" />
+                                <TextBlock Style="{StaticResource LibelleTuile}">
+                                    <Run Text="Titres" />
+                                    <Run Text="{Binding Bilan.ValeurTitres, Mode=OneWay, Converter={StaticResource Euros}}" />
+                                    <Run Text=", espèces" />
+                                    <Run Text="{Binding Bilan.Especes, Mode=OneWay, Converter={StaticResource Euros}}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}" ToolTip="{Binding DetailPlusValue}" Cursor="Help">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Plus-value latente" />
+                                <TextBlock Text="{Binding TextePlusValue}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource ValeurTuile}">
+                                            <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PlusValuePositive}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource LibelleTuile}"
+                                           Text="{Binding Bilan.PrixRevient, Converter={StaticResource Euros}, StringFormat='Prix de revient {0}'}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent4}" ToolTip="{Binding DetailVerse}" Cursor="Help">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Gain depuis le début" />
+                                <TextBlock Text="{Binding TexteGain}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource ValeurTuile}">
+                                            <Setter Property="Foreground" Value="{DynamicResource Accent4}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding GainPositif}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource LibelleTuile}"
+                                           Text="{Binding Bilan.VerseNet, Converter={StaticResource Euros}, StringFormat='Argent versé {0}'}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent3}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Réalisé, revenus et frais" />
+                                <DockPanel ToolTip="{Binding DetailRealise}" Cursor="Help" Margin="0,2,0,0">
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.PlusValuesRealisees, Converter={StaticResource Euros}}" />
+                                    <TextBlock Text="Plus-values des ventes" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.Dividendes, Converter={StaticResource Euros}}" />
+                                    <TextBlock Text="Dividendes et intérêts" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.FraisEtTaxes, Converter={StaticResource Euros}}" />
+                                    <TextBlock Text="Frais et taxes" Margin="0,0,12,0" />
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Positions -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right"
+                                            Visibility="{Binding AEnveloppes, Converter={StaticResource Visible}}">
+                                    <TextBlock Text="Afficher" Style="{StaticResource Discret}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <ComboBox ItemsSource="{Binding Filtres}" SelectedIndex="{Binding Filtre}" Width="140" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                                    <TextBlock Text="Mes titres" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Aide}"
+                                       Text="Le cours et le symbole Yahoo se corrigent dans le tableau (double-clic). Survolez un chiffre pour voir son calcul." />
+                            <DataGrid ItemsSource="{Binding Positions}" Margin="0,6,0,0">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Titre" Width="*" MinWidth="200" IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="6,2">
+                                                    <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Nom}" />
+                                                    <TextBlock FontSize="11" Foreground="{DynamicResource TexteDiscret}">
+                                                        <Run Text="{Binding Isin, Mode=OneWay}" />
+                                                        <Run Text="·" />
+                                                        <Run Text="{Binding Enveloppe, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Quantité" Width="80" IsReadOnly="True" Binding="{Binding TexteQuantite, Mode=OneWay}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Width="90" IsReadOnly="True" Binding="{Binding Pru, Mode=OneWay, Converter={StaticResource Montant}}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="PRU" ToolTip="Prix de revient unitaire : prix moyen pondéré des achats, frais et taxes compris" />
+                                        </DataGridTextColumn.Header>
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="ToolTip" Value="{Binding InfoPrixRevient}" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Cours" Width="90" Binding="{Binding Cours, Converter={StaticResource Montant}}"
+                                                        EditingElementStyle="{StaticResource EditionMontant}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="ToolTip" Value="{Binding InfoCours}" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Width="95" Binding="{Binding SymboleSaisi}"
+                                                        ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="Yahoo" ToolTip="Code du titre sur Yahoo Finance (ex. CW8.PA), trouvé à partir de l'ISIN ; à corriger si le cours est faux" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Valeur" Width="100" IsReadOnly="True" Binding="{Binding Valeur, Mode=OneWay, Converter={StaticResource Montant}}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Plus-value" Width="150" IsReadOnly="True" Binding="{Binding TextePlusValue, Mode=OneWay}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Perte}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTemplateColumn Header="Part" Width="130" IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="6,0">
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TextePart}" Width="46" TextAlignment="Right" VerticalAlignment="Center" />
+                                                    <Grid Height="6" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                        <Border Background="{DynamicResource Bordure}" CornerRadius="3" />
+                                                        <Border Background="{DynamicResource Accent1}" CornerRadius="3" HorizontalAlignment="Left">
+                                                            <Border.Width>
+                                                                <MultiBinding Converter="{StaticResource Proportion}">
+                                                                    <Binding Path="PartBarre" />
+                                                                    <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}" />
+                                                                </MultiBinding>
+                                                            </Border.Width>
+                                                        </Border>
+                                                    </Grid>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0" Foreground="{DynamicResource Avertissement}"
+                                       Text="{Binding TexteSansCours}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Historique -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                                <TextBlock Text="Opérations importées" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
+                            <DataGrid ItemsSource="{Binding Historique}" IsReadOnly="True" MaxHeight="320">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Date" Width="90" Binding="{Binding Date, Mode=OneWay, StringFormat=dd/MM/yyyy}"
+                                                        ElementStyle="{StaticResource CelluleTexte}" />
+                                    <DataGridTextColumn Header="Compte" Width="70" Binding="{Binding Enveloppe, Mode=OneWay}" ElementStyle="{StaticResource CelluleTexte}" />
+                                    <DataGridTextColumn Header="Type" Width="90" Binding="{Binding Type, Mode=OneWay}" ElementStyle="{StaticResource CelluleTexte}" />
+                                    <DataGridTextColumn Header="Libellé" Width="*" Binding="{Binding Libelle, Mode=OneWay}" ElementStyle="{StaticResource CelluleTexte}" />
+                                    <DataGridTextColumn Header="Montant" Width="110" Binding="{Binding Montant, Mode=OneWay, Converter={StaticResource Montant}}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Negatif}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Texte}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
+                                       Text="Montant : effet sur les espèces du compte Trade Republic, frais et taxes compris (négatif pour un achat)." />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

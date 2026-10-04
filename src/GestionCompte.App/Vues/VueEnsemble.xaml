@@ -36,7 +36,7 @@
         </Border>
 
         <!-- Chiffres clés -->
-        <UniformGrid DockPanel.Dock="Top" Columns="3">
+        <UniformGrid DockPanel.Dock="Top" Rows="1">
             <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}">
                 <StackPanel Orientation="Horizontal">
                     <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent1Clair}">
@@ -83,6 +83,23 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+            <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}"
+                    Visibility="{Binding ABourse, Converter={StaticResource Visible}}">
+                <StackPanel Orientation="Horizontal">
+                    <Border Style="{StaticResource IconeTuile}" Background="{DynamicResource Accent2Clair}">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE9D2;" FontSize="18" Foreground="{DynamicResource Accent2}" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource LibelleTuile}" Text="Placements en bourse" />
+                        <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent2}"
+                                   Text="{Binding TotalBourse, Converter={StaticResource Euros}}" />
+                        <TextBlock Style="{StaticResource LibelleTuile}">
+                            <Run Text="Avec les comptes :" />
+                            <Run Text="{Binding Patrimoine, Mode=OneWay, Converter={StaticResource Euros}}" FontWeight="SemiBold" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </UniformGrid>
 
         <Grid>
@@ -98,7 +115,7 @@
                         <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
                         <TextBlock Text="Vos comptes" Style="{StaticResource TitreCarte}" />
                     </StackPanel>
-                    <DataGrid ItemsSource="{Binding Lignes}" IsReadOnly="True">
+                    <DataGrid ItemsSource="{Binding Lignes}" IsReadOnly="True" DataContextChanged="DonneesChangees">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Compte" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -129,6 +146,9 @@
                             <DataGridTextColumn Header="Évolution" Width="120" Binding="{Binding Variation, Converter={StaticResource Euros}}"
                                                 ElementStyle="{StaticResource CelluleMontant}" />
                             <DataGridTextColumn Header="Fin sur 12 mois" Width="150" Binding="{Binding SoldeFin, Converter={StaticResource Euros}}"
+                                                ElementStyle="{StaticResource MontantCellule}" />
+                            <DataGridTextColumn x:Name="ColonneBourse" Header="Bourse" Width="130"
+                                                Binding="{Binding Bourse, Converter={StaticResource Euros}}"
                                                 ElementStyle="{StaticResource MontantCellule}" />
                             <DataGridTemplateColumn Header="Point le plus bas" Width="220">
                                 <DataGridTemplateColumn.CellTemplate>

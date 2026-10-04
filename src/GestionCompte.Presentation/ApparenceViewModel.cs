@@ -78,6 +78,9 @@ public sealed class PreferencesAffichage
     /// <summary>Onglet « Prêts » affiché dans la barre de gauche.</summary>
     public bool ModulePrets { get; set; } = true;
 
+    /// <summary>Onglet « Bourse » affiché dans la barre de gauche.</summary>
+    public bool ModuleBourse { get; set; } = true;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ModeEnvoiMail ModeEnvoiMail { get; set; } = ModeEnvoiMail.Gmail;
 
@@ -244,6 +247,19 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Bourse » affiché (portefeuille conservé même s'il est masqué).</summary>
+    public bool ModuleBourse
+    {
+        get => _preferences.ModuleBourse;
+        set
+        {
+            if (!SetProperty(_preferences.ModuleBourse, value, _preferences, (p, v) => p.ModuleBourse = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     /// <summary>Module « Assistant » affiché.</summary>
     public bool ModuleAssistant
     {
@@ -318,6 +334,7 @@ public sealed class ApparenceViewModel : ObservableObject
         ModuleLettres = true;
         ModuleAssistant = true;
         ModulePrets = true;
+        ModuleBourse = true;
         AnimationDemarrage = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;

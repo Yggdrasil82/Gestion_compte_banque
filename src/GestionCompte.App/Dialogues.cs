@@ -103,6 +103,17 @@ public sealed class Dialogues : IDialogues
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
     }
 
+    public string? ChoisirExportBourse()
+    {
+        var dialogue = new OpenFileDialog
+        {
+            Title = "Importer l'export de Trade Republic",
+            Filter = "Export des transactions (*.csv)|*.csv",
+            CheckFileExists = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
     public DemandeReinitialisation? ChoisirReinitialisation()
     {
         var fenetre = new FenetreReinitialisation { Owner = Fenetre };

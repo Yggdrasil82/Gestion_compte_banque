@@ -22,8 +22,10 @@ public sealed class DepotSqlite
     /// Version 8 : simulations de crédit.
     /// Version 9 : catégories d'opérations (nom, couleur).
     /// Version 10 : prêts en cours (module « Prêts »).
+    /// Version 11 : virements liés entre comptes.
+    /// Version 12 : portefeuille de bourse (module « Bourse »).
     /// </remarks>
-    public const int VersionSchema = 11;
+    public const int VersionSchema = 12;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -203,6 +205,10 @@ public sealed class DepotSqlite
                     compte.Prets.Add(pret);
             });
 
+        // Table absente des fichiers avant le format 12.
+        if (TableExiste(connexion, "bourse"))
+            Lire(connexion, "SELECT donnees FROM bourse", l => PortefeuilleEnregistre.Lire(l.GetString(0), compte.Portefeuille));
+
         return compte;
     }
 
@@ -219,7 +225,7 @@ public sealed class DepotSqlite
 
         using var transaction = connexion.BeginTransaction();
 
-        foreach (var table in new[] { "pret", "categorie_operation", "regle_classement", "objectif_epargne", "simulation_credit", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
+        foreach (var table in new[] { "bourse", "pret", "categorie_operation", "regle_classement", "objectif_epargne", "simulation_credit", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
                                       "modele_charge", "modele_enveloppe", "modele_revenu", "parametres" })
             Executer(connexion, $"DELETE FROM {table}");
 
@@ -312,6 +318,9 @@ public sealed class DepotSqlite
 
         foreach (var (pret, ordre) in compte.Prets.Select((p, i) => (p, i)))
             Executer(connexion, "INSERT INTO pret (ordre, donnees) VALUES ($o, $d)", ("$o", ordre), ("$d", PretEnregistre.Ecrire(pret)));
+
+        if (!compte.Portefeuille.Vide || compte.Portefeuille.Cours.Count > 0)
+            Executer(connexion, "INSERT INTO bourse (donnees) VALUES ($d)", ("$d", PortefeuilleEnregistre.Ecrire(compte.Portefeuille)));
 
         transaction.Commit();
     }
@@ -409,6 +418,7 @@ public sealed class DepotSqlite
                 type_credit INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS categorie_operation (ordre INTEGER NOT NULL, nom TEXT NOT NULL, couleur TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS pret (ordre INTEGER NOT NULL, donnees TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS bourse (donnees TEXT NOT NULL);
             """);
 
         // Mise à jour des fichiers aux formats 1 et 2.

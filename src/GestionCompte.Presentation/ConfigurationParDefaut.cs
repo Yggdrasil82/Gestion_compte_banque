@@ -1,4 +1,5 @@
 using GestionCompte.Core;
+using GestionCompte.Core.Bourse;
 using GestionCompte.Core.Modeles;
 
 namespace GestionCompte.Presentation;
@@ -166,6 +167,39 @@ public static class ConfigurationParDefaut
 
         return compte;
     }
+
+    /// <summary>
+    /// Compte « Trade Republic » d'exemple pour les captures du module Bourse : un export inventé (PEA et compte-titres),
+    /// lu comme un vrai, et des cours d'exemple.
+    /// </summary>
+    public static CompteBancaire CreerDemoBourse()
+    {
+        var compte = new CompteBancaire(new ConfigurationBudget { PremierMois = new PeriodeMois(2026, 11) });
+        compte.Portefeuille.Ajouter(ImportTradeRepublic.Lire(ExportBourseDemo()).Operations);
+        var date = new DateTime(2026, 11, 13, 17, 35, 0);
+        compte.Portefeuille.Cours["IE00B4L5Y983"] = new CoursTitre(108.42m, date, false, "EUNL.DE");
+        compte.Portefeuille.Cours["FR0011871128"] = new CoursTitre(47.85m, date, false, "PSP5.PA");
+        compte.Portefeuille.Cours["FR0000120271"] = new CoursTitre(56.30m, date, false, "TTE.PA");
+        compte.Portefeuille.Cours["FR0000120073"] = new CoursTitre(182.60m, date.AddDays(1), true, "AI.PA");
+        return compte;
+    }
+
+    /// <summary>Export des transactions inventé, au format de Trade Republic.</summary>
+    public static string ExportBourseDemo() =>
+        "\"datetime\",\"date\",\"account_type\",\"category\",\"type\",\"asset_class\",\"name\",\"symbol\",\"shares\",\"price\",\"amount\",\"fee\",\"tax\",\"currency\",\"original_amount\",\"original_currency\",\"fx_rate\",\"description\",\"transaction_id\",\"counterparty_name\",\"counterparty_iban\",\"payment_reference\",\"mcc_code\"\n" +
+        "2025-01-06T09:12:00Z,2025-01-06,DEFAULT,CASH,TRANSFER_INSTANT_INBOUND,,,,,,3500.00,,,EUR,,,,Virement,demo-01,,,,\n" +
+        "2025-01-08T10:02:00Z,2025-01-08,PEA,CASH,TRANSFER_INSTANT_INBOUND,,,,,,5000.00,,,EUR,,,,Virement,demo-02,,,,\n" +
+        "2025-01-09T14:30:00Z,2025-01-09,DEFAULT,TRADING,BUY,FUND,iShares Core MSCI World,IE00B4L5Y983,20,95.10,-1902.00,-1.00,,EUR,,,,Achat,demo-03,,,,\n" +
+        "2025-01-10T11:05:00Z,2025-01-10,PEA,TRADING,BUY,FUND,Amundi PEA S&P 500,FR0011871128,60,40.25,-2415.00,-1.00,,EUR,,,,Achat,demo-04,,,,\n" +
+        "2025-03-03T15:41:00Z,2025-03-03,PEA,TRADING,BUY,STOCK,TotalEnergies,FR0000120271,25,58.40,-1460.00,-1.00,,EUR,,,,Achat,demo-05,,,,\n" +
+        "2025-06-02T09:20:00Z,2025-06-02,DEFAULT,TRADING,BUY,STOCK,Air Liquide,FR0000120073,4,175.50,-702.00,-1.00,-2.11,EUR,,,,Achat,demo-06,,,,\n" +
+        "2025-06-20T06:00:00Z,2025-06-20,PEA,TRADING,DIVIDEND,STOCK,TotalEnergies,FR0000120271,,,19.75,,,EUR,,,,Dividende,demo-07,,,,\n" +
+        "2025-09-01T08:00:00Z,2025-09-01,DEFAULT,TRADING,SAVINGS_PLAN,FUND,iShares Core MSCI World,IE00B4L5Y983,1.5371,97.58,-150.00,,,EUR,,,,Plan d'investissement,demo-08,,,,\n" +
+        "2025-12-01T08:00:00Z,2025-12-01,DEFAULT,TRADING,SAVINGS_PLAN,FUND,iShares Core MSCI World,IE00B4L5Y983,1.4482,103.58,-150.00,,,EUR,,,,Plan d'investissement,demo-09,,,,\n" +
+        "2026-02-16T13:10:00Z,2026-02-16,PEA,TRADING,SELL,STOCK,TotalEnergies,FR0000120271,-10,62.10,621.00,-1.00,,EUR,,,,Vente,demo-10,,,,\n" +
+        "2026-03-02T05:00:00Z,2026-03-02,DEFAULT,CASH,INTEREST_PAYMENT,,,,,,4.12,,,EUR,,,,Intérêts,demo-11,,,,\n" +
+        "2026-05-20T06:00:00Z,2026-05-20,DEFAULT,TRADING,DIVIDEND,STOCK,Air Liquide,FR0000120073,,,13.20,,-3.96,EUR,,,,Dividende,demo-12,,,,\n" +
+        "2026-06-01T09:00:00Z,2026-06-01,DEFAULT,CASH,TRANSFER_INSTANT_OUTBOUND,,,,,,-200.00,,,EUR,,,,Virement,demo-13,,,,\n";
 
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>
     public static CompteBancaire CreerDemo()

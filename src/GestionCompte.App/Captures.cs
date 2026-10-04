@@ -45,6 +45,9 @@ internal static class Captures
     /// <summary>Module Prêts : liste, paliers, conditions, tableau d'amortissement et remboursement anticipé.</summary>
     private const double HauteurPrets = 2000;
 
+    /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
+    private const double HauteurBourse = 1180;
+
     /// <summary>Mois en entier (virements liés : toutes les opérations visibles).</summary>
     private const double HauteurMoisComplet = 1500;
 
@@ -147,6 +150,7 @@ internal static class Captures
                 MainViewModel.OngletLettres => HauteurMail,
                 MainViewModel.OngletAssistant => HauteurMail,
                 MainViewModel.OngletPrets => HauteurPrets,
+                MainViewModel.OngletBourse => HauteurBourse,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -209,6 +213,18 @@ internal static class Captures
             vm.ManuelUtilisation.Recherche = "virement";
             await Capturer(("36-aide-recherche-nuit", Ambiance.Nuit, false, MainViewModel.OngletManuel, false));
             vm.ManuelUtilisation.Recherche = "";
+
+            // Bourse : l'écran vide (comment faire l'export), puis un compte « Trade Republic » d'exemple (export et cours inventés).
+            await Capturer(("38-bourse-vide-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
+            new DepotSqlite(registre.Chemin(registre.Ajouter("Trade Republic"))).Enregistrer(ConfigurationParDefaut.CreerDemoBourse());
+            vm.CompteActif = "Trade Republic";
+            vm.Bourse.Statut = "13 opérations importées.";
+            await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
+            vm.Bourse.Filtre = 2;
+            await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));
+            vm.Bourse.Filtre = 0;
+            await Capturer(("41-ensemble-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletEnsemble, false));
+            vm.CompteActif = RegistreComptes.NomPrincipal;
 
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
             new DepotSqlite(registre.Chemin(registre.Ajouter("Compte joint"))).Enregistrer(ConfigurationParDefaut.CreerDemoHistorique());

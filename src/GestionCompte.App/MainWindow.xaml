@@ -98,6 +98,11 @@
                                  ToolTip="Prêts en cours : tableau d'amortissement, remboursement anticipé"
                                  Visibility="{Binding Apparence.ModulePrets, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=13}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Bourse"
+                                 Tag="&#xE9D2;" Background="{DynamicResource Accent1}"
+                                 ToolTip="Placements en bourse (Trade Republic) : positions, plus-values, cours"
+                                 Visibility="{Binding Apparence.ModuleBourse, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=15}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Vue d'ensemble"
                                  Tag="&#xE80A;" Background="{DynamicResource Positif}"
                                  Visibility="{Binding PlusieursComptes, Converter={StaticResource Visible}}"
@@ -279,6 +284,10 @@
                 <!-- Module Prêts -->
                 <ContentControl Content="{Binding Prets}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=13}" />
+
+                <!-- Module Bourse -->
+                <ContentControl Content="{Binding Bourse}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=15}" />
 
                 <!-- Écran Configuration -->
                 <ContentControl Content="{Binding Configuration}"

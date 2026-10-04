@@ -554,6 +554,10 @@
             <vues:VuePrets />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:BourseViewModel}">
+            <vues:VueBourse />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ManuelViewModel}">
             <vues:VueManuel />
         </DataTemplate>

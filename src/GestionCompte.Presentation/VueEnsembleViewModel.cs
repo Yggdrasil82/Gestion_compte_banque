@@ -1,4 +1,5 @@
 using GestionCompte.Core;
+using GestionCompte.Core.Bourse;
 using GestionCompte.Core.Calculs;
 using GestionCompte.Core.Modeles;
 
@@ -25,7 +26,11 @@ public sealed class VueEnsembleViewModel
         MoisFin = periodes[^1].Libelle;
 
         var soldes = comptes.Select(c => (c, Soldes: Soldes(c.Compte, periodes))).ToList();
-        Lignes = soldes.Select(x => new LigneEnsemble(x.c.Nom, x.c.Actif, periodes, x.Soldes)).ToList();
+        Lignes = soldes.Select(x => new LigneEnsemble(x.c.Nom, x.c.Actif, periodes, x.Soldes,
+            x.c.Compte.Portefeuille.Vide ? null : CalculBourse.Calculer(x.c.Compte.Portefeuille))).ToList();
+        ABourse = Lignes.Any(l => l.Bourse is not null);
+        TotalBourse = Lignes.Sum(l => l.Bourse ?? 0);
+        PlusValueBourse = Lignes.Sum(l => l.PlusValueBourse ?? 0);
 
         Courbe = periodes.Select((p, i) => new LignePrevisionViewModel(new MoisPrevision(
                 p, soldes.Count > 0 && soldes.All(x => x.Soldes[i].Reel), 0m, 0m, 0m,
@@ -61,6 +66,18 @@ public sealed class VueEnsembleViewModel
 
     public string Illisibles { get; }
 
+    /// <summary>Au moins un compte a des placements en bourse (module « Bourse »).</summary>
+    public bool ABourse { get; }
+
+    /// <summary>Valeur de tous les portefeuilles (titres au dernier cours connu et espèces).</summary>
+    public decimal TotalBourse { get; }
+
+    /// <summary>Gain de tous les portefeuilles depuis le début (valeur moins argent versé).</summary>
+    public decimal PlusValueBourse { get; }
+
+    /// <summary>Comptes à la fin du mois en cours et placements en bourse.</summary>
+    public decimal Patrimoine => TotalActuel + TotalBourse;
+
     public bool AIllisibles => Illisibles.Length > 0;
 
     /// <summary>
@@ -83,8 +100,11 @@ public sealed class VueEnsembleViewModel
 
 public sealed class LigneEnsemble
 {
-    internal LigneEnsemble(string nom, bool actif, IReadOnlyList<PeriodeMois> periodes, IReadOnlyList<(decimal Solde, bool Reel)> soldes)
+    internal LigneEnsemble(string nom, bool actif, IReadOnlyList<PeriodeMois> periodes, IReadOnlyList<(decimal Solde, bool Reel)> soldes,
+        BilanBourse? bourse = null)
     {
+        Bourse = bourse?.ValeurTotale;
+        PlusValueBourse = bourse?.Gain;
         Nom = nom;
         Actif = actif;
         SoldeActuel = soldes[0].Solde;
@@ -110,4 +130,9 @@ public sealed class LigneEnsemble
     public string MoisPointBas { get; }
 
     public bool PointBasNegatif => PointBas < 0;
+
+    /// <summary>Valeur des placements en bourse du compte, null s'il n'en a pas.</summary>
+    public decimal? Bourse { get; }
+
+    public decimal? PlusValueBourse { get; }
 }

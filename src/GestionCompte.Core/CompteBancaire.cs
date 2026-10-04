@@ -1,3 +1,4 @@
+using GestionCompte.Core.Bourse;
 using GestionCompte.Core.Calculs;
 using GestionCompte.Core.Modeles;
 
@@ -40,6 +41,9 @@ public sealed class CompteBancaire
 
     /// <summary>Prêts en cours du module « Prêts » (tableau d'amortissement, remboursement anticipé).</summary>
     public List<PretImmobilier> Prets { get; } = new();
+
+    /// <summary>Placements en bourse du module « Bourse » (opérations importées du courtier, cours des titres).</summary>
+    public Portefeuille Portefeuille { get; } = new();
 
     /// <summary>Mois qui sera créé ensuite : le suivant du dernier mois, ou le premier mois de la configuration.</summary>
     public PeriodeMois ProchainMois => _mois.Count == 0 ? Configuration.PremierMois : _mois[^1].Periode.Suivant();
