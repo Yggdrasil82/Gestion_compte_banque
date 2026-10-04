@@ -45,6 +45,9 @@ internal static class Captures
     /// <summary>Module Prêts : liste, paliers, conditions, tableau d'amortissement et remboursement anticipé.</summary>
     private const double HauteurPrets = 2000;
 
+    /// <summary>Mois en entier (virements liés : toutes les opérations visibles).</summary>
+    private const double HauteurMoisComplet = 1500;
+
     public static void Lancer(App app, string dossier)
     {
         dossier = Path.GetFullPath(dossier);
@@ -123,6 +126,8 @@ internal static class Captures
         File.WriteAllText(releve, ConfigurationParDefaut.ReleveDemo());
         vm.OuvrirImport(releve);
 
+        double? hauteurSpeciale = null;
+
         async Task Capturer((string Nom, Ambiance Ambiance, bool Sombre, int Onglet, bool MoisPrecedent) etape)
         {
             vm.Apparence.Ambiance = etape.Ambiance;
@@ -131,7 +136,7 @@ internal static class Captures
             if (etape.MoisPrecedent)
                 vm.MoisPrecedentCommand.Execute(null);
 
-            var hauteur = etape.Onglet switch
+            var hauteur = hauteurSpeciale ?? etape.Onglet switch
             {
                 MainViewModel.OngletAide => HauteurAide,
                 MainViewModel.OngletCredits => HauteurCredits,
@@ -182,6 +187,28 @@ internal static class Captures
             vm.Prets.MontantAnticipe = 30000m;
             vm.Prets.Selection.Rafraichir();
             await Capturer(("32-prets-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletPrets, false));
+
+            // Virement lié : du compte principal vers le livret, puis son double (un crédit) dans le livret.
+            vm.OngletSelectionne = MainViewModel.OngletMois;
+            vm.MoisCourant!.Operations.Selection = vm.MoisCourant.Operations.Elements.FirstOrDefault();
+            vm.MoisCourant.Operations.AjouterCommand.Execute(null);
+            var virement = vm.MoisCourant.Operations.Selection!;
+            virement.Libelle = "Virement vers le livret";
+            virement.Debit = 200m;
+            virement.CompteLie = "Livret A";
+            hauteurSpeciale = HauteurMoisComplet;
+            await Capturer(("33-virement-lie-ocean", Ambiance.Ocean, false, MainViewModel.OngletMois, false));
+            vm.CompteActif = "Livret A";
+            await Capturer(("34-virement-lie-livret-pastel", Ambiance.Pastel, false, MainViewModel.OngletMois, false));
+            vm.CompteActif = RegistreComptes.NomPrincipal;
+            hauteurSpeciale = null;
+
+            // Aide : le manuel intégré, puis une recherche.
+            vm.ManuelUtilisation.Selection = vm.ManuelUtilisation.Chapitres.FirstOrDefault(c => c.Titre.EndsWith("Mois"));
+            await Capturer(("35-aide-manuel-ocean", Ambiance.Ocean, false, MainViewModel.OngletManuel, false));
+            vm.ManuelUtilisation.Recherche = "virement";
+            await Capturer(("36-aide-recherche-nuit", Ambiance.Nuit, false, MainViewModel.OngletManuel, false));
+            vm.ManuelUtilisation.Recherche = "";
 
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
             new DepotSqlite(registre.Chemin(registre.Ajouter("Compte joint"))).Enregistrer(ConfigurationParDefaut.CreerDemoHistorique());

@@ -9,6 +9,13 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
+  <!-- Manuel d'utilisation affiché dans la rubrique « Aide » (même source que le manuel PDF). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\docs\manuel\manuel.html" LogicalName="GestionCompte.Manuel.manuel.html" />
+    <EmbeddedResource Include="..\..\docs\manuel\images\*.png" Exclude="..\..\docs\manuel\images\logo.png"
+                      LogicalName="GestionCompte.Manuel.images.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

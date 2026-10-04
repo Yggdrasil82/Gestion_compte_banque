@@ -317,6 +317,66 @@ public sealed class ComptesTests : IDisposable
         Assert.Null(vm.Import);
     }
 
+    // ---- Virements liés ----
+
+    private static CompteBancaire Lire(string chemin) => new DepotSqlite(chemin).Charger(Novembre)!;
+
+    [Fact]
+    public void VirementLie_CreeModifieEtSupprimeDansLAutreCompte()
+    {
+        var vm = OuvrirAvecLivret();
+        vm.CompteActif = RegistreComptes.NomPrincipal;
+        Assert.Equal(new[] { "", "Livret A" }, vm.MoisCourant!.Comptes.Noms);
+
+        vm.MoisCourant.Operations.AjouterCommand.Execute(null);
+        var operation = vm.MoisCourant.Operations.Selection!;
+        operation.Libelle = "Virement livret";
+        operation.Debit = 200m;
+        operation.CompteLie = "Livret A";
+
+        var livret = Lire(Chemin("compte-2.db"));
+        var double_ = Assert.Single(livret.Trouver(Novembre)!.Operations, o => o.IdLien is not null);
+        Assert.Equal(("Virement livret", 200m, "compte.db"), (double_.Libelle, double_.Credit, double_.CompteLie));
+
+        operation.Debit = 120m;
+        Assert.Equal(120m, Lire(Chemin("compte-2.db")).Trouver(Novembre)!.Operations.Single(o => o.IdLien is not null).Credit);
+
+        // Modifié depuis le livret : le compte principal suit.
+        vm.CompteActif = "Livret A";
+        vm.MoisCourant!.Operations.Elements.Single(o => o.EstLie).Credit = 130m;
+        vm.CompteActif = RegistreComptes.NomPrincipal;
+        Assert.Equal(130m, vm.MoisCourant!.Operations.Elements.Single(o => o.EstLie).Debit);
+
+        vm.MoisCourant.Operations.Selection = vm.MoisCourant.Operations.Elements.Single(o => o.EstLie);
+        vm.MoisCourant.Operations.SupprimerCommand.Execute(null);
+        Assert.DoesNotContain(Lire(Chemin("compte-2.db")).Trouver(Novembre)!.Operations, o => o.IdLien is not null);
+    }
+
+    [Fact]
+    public void VirementLie_UnSeulCompte_AucunChoix()
+    {
+        var vm = Ouvrir();
+
+        Assert.False(vm.MoisCourant!.Comptes.Disponibles);
+        Assert.False(vm.Configuration.Comptes.Disponibles);
+    }
+
+    [Fact]
+    public void ChargeLiee_AjouteeALaConfigurationDeLAutreCompte()
+    {
+        var vm = OuvrirAvecLivret();
+        vm.CompteActif = RegistreComptes.NomPrincipal;
+
+        vm.Configuration.Charges.AjouterCommand.Execute(null);
+        var charge = vm.Configuration.Charges.Selection!;
+        charge.Nom = "Épargne livret";
+        charge.Debit = 100m;
+        charge.CompteLie = "Livret A";
+
+        var miroir = Assert.Single(Lire(Chemin("compte-2.db")).Configuration.Charges, c => c.Lien is not null);
+        Assert.Equal(("Épargne livret", 100m, "compte.db"), (miroir.Nom, miroir.Credit, miroir.CompteLie));
+    }
+
     private sealed class FauxDialogues : IDialogues
     {
         public bool Reponse { get; set; } = true;

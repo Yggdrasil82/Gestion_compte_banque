@@ -47,6 +47,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Prêts » (masquable dans la configuration).</summary>
     public const int OngletPrets = 13;
 
+    /// <summary>Rubrique « Aide » : le manuel d'utilisation.</summary>
+    public const int OngletManuel = 14;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -146,14 +149,75 @@ public sealed partial class MainViewModel : ObservableObject
         else
         {
             _compte = compte;
+            _signaturesVirements.Clear();
             _indexMois = IndexMoisParDefaut();
             if (OngletSelectionne == OngletImport)
                 OngletSelectionne = OngletMois;
             Statut = $"Données chargées depuis {depot.CheminFichier}";
+            SynchroniserVirements();
         }
 
         Reconstruire();
         NotifierComptes();
+    }
+
+    // ---- Virements liés entre comptes ----
+
+    /// <summary>Empreinte des virements déjà recopiés dans chaque autre compte (par fichier).</summary>
+    private readonly Dictionary<string, string> _signaturesVirements = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Autres comptes de la liste, proposés dans les colonnes « Virement avec ».</summary>
+    private ComptesLiables AutresComptes() =>
+        _registre is null
+            ? ComptesLiables.Aucun
+            : new ComptesLiables(_registre.Comptes.Where(c => c != _registre.Actif).Select(c => (c.Fichier, c.Nom)));
+
+    /// <summary>
+    /// Recopie les virements liés du compte ouvert dans les autres comptes (création, modification, suppression),
+    /// seulement pour les comptes dont les virements ont changé depuis la dernière fois.
+    /// </summary>
+    private void SynchroniserVirements()
+    {
+        if (_registre is null)
+            return;
+
+        var actif = _registre.Actif;
+        var cibles = VirementsLies.ComptesLies(_compte).Concat(_signaturesVirements.Keys)
+            .Where(id => !string.Equals(id, actif.Fichier, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        foreach (var id in cibles)
+        {
+            var entree = _registre.Comptes.FirstOrDefault(c => string.Equals(c.Fichier, id, StringComparison.OrdinalIgnoreCase));
+            if (entree is null)
+                continue;
+            var signature = VirementsLies.Signature(_compte, id);
+            if (_signaturesVirements.TryGetValue(id, out var precedente) && precedente == signature)
+                continue;
+
+            try
+            {
+                var depot = new DepotSqlite(_registre.Chemin(entree));
+                var autre = depot.Charger(_moisDuJour);
+                if (autre is null)
+                    continue;
+                var resultat = VirementsLies.Synchroniser(_compte, actif.Fichier, autre, entree.Fichier);
+                if (resultat.Modifie)
+                {
+                    depot.Enregistrer(autre);
+                    Statut = resultat.MoisCrees.Count > 0
+                        ? $"Virement reporté dans « {entree.Nom} » (mois créé : {string.Join(", ", resultat.MoisCrees.Select(m => m.Libelle))})."
+                        : $"Virement reporté dans « {entree.Nom} ».";
+                }
+                if (resultat.Ignores > 0)
+                    Statut = $"{resultat.Ignores} virement(s) daté(s) d'avant le premier mois de « {entree.Nom} » : non reporté(s).";
+                _signaturesVirements[id] = signature;
+            }
+            catch (Exception e)
+            {
+                Statut = $"ERREUR : le virement n'a pas pu être reporté dans « {entree.Nom} » ({e.Message})";
+            }
+        }
     }
 
     private readonly PeriodeMois _moisDuJour;
@@ -283,6 +347,7 @@ public sealed partial class MainViewModel : ObservableObject
 
         _registre.Renommer(actif, nom);
         NotifierComptes();
+        Reconstruire();
         Statut = $"Compte renommé en « {_registre.Actif.Nom} ».";
     }
 
@@ -333,6 +398,11 @@ public sealed partial class MainViewModel : ObservableObject
     public string CheminDonnees => _depot.CheminFichier;
 
     public ApparenceViewModel Apparence { get; }
+
+    /// <summary>Manuel d'utilisation (rubrique « Aide »), lu à la première ouverture.</summary>
+    public ManuelViewModel ManuelUtilisation => _manuel ??= new ManuelViewModel(Manuel.Charger());
+
+    private ManuelViewModel? _manuel;
 
     [ObservableProperty] private ConfigurationViewModel _configuration = null!;
 
@@ -837,7 +907,8 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Recrée les écrans après un changement de structure (mois créé, supprimé, restauré…).</summary>
     private void Reconstruire()
     {
-        Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour)
+        Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour,
+                AutresComptes())
             { Apparence = Apparence, Google = Google, IA = IA };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
@@ -898,7 +969,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void AfficherMoisCourant()
     {
-        MoisCourant = _indexMois >= 0 ? new MoisViewModel(_compte, _compte.Mois[_indexMois], MoisModifie, Apparence) : null;
+        MoisCourant = _indexMois >= 0 ? new MoisViewModel(_compte, _compte.Mois[_indexMois], MoisModifie, Apparence, AutresComptes()) : null;
 
         OnPropertyChanged(nameof(TexteCreerMois));
         MettreAJourListeMois();
@@ -935,6 +1006,7 @@ public sealed partial class MainViewModel : ObservableObject
             _depot.Enregistrer(_compte);
             _erreurEnregistrementSignalee = false;
             Statut = $"Enregistré à {DateTime.Now:HH:mm:ss}";
+            SynchroniserVirements();
         }
         catch (Exception e)
         {

@@ -39,7 +39,8 @@ public sealed class ConfigurationBudget
         var copie = new ConfigurationBudget { PremierMois = premierMois, SoldeInitial = 0m };
         copie.Revenus.AddRange(Revenus);
         copie.Enveloppes.AddRange(Enveloppes);
-        copie.Charges.AddRange(Charges);
+        // Un virement lié à un autre compte ne l'est pas dans la copie.
+        copie.Charges.AddRange(Charges.Select(c => c.CompteLie is null ? c : c with { CompteLie = null, Lien = null }));
         copie.ComptesCumul.AddRange(ComptesCumul.Select(c => c with { MontantInitial = 0m }));
         copie.Regles.AddRange(Regles);
         copie.CategoriesOperations.AddRange(CategoriesOperations);
@@ -84,6 +85,13 @@ public sealed record ModeleCharge(
     string Nom, decimal Debit, decimal Credit = 0m, string? CompteCumul = null, Categorie Categorie = Categorie.NonClassee,
     int Frequence = 1, PeriodeMois? Depart = null, string? CategorieOperation = null)
 {
+    /// <summary>Fichier de l'autre compte (ex. « compte-2.db ») pour un virement entre comptes, ou null.</summary>
+    /// <remarks>L'opération inverse (crédit pour un débit) est créée et tenue à jour dans l'autre compte.</remarks>
+    public string? CompteLie { get; init; }
+
+    /// <summary>Identifiant commun à ce virement et à son double dans l'autre compte, ou null.</summary>
+    public string? Lien { get; init; }
+
     /// <summary>Vrai si la charge est prélevée ce mois-ci.</summary>
     public bool TombeEn(PeriodeMois periode)
     {

@@ -21,9 +21,11 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     public ServicesIA? IA { get; init; }
 
     /// <param name="moisDuJour">Premier mois proposé dans la colonne « À partir de » des charges (par défaut, le premier mois).</param>
+    /// <param name="comptes">Autres comptes vers lesquels une charge peut être un virement de chaque mois ; par défaut, aucun.</param>
     public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee,
-        PeriodeMois? moisDuJour = null)
+        PeriodeMois? moisDuJour = null, ComptesLiables? comptes = null)
     {
+        Comptes = comptes ?? ComptesLiables.Aucun;
         _configuration = configuration;
         _modifiee = modifiee;
         PremierMoisModifiable = premierMoisModifiable;
@@ -49,8 +51,8 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             Synchroniser);
 
         Charges = new ListeEditable<ChargeConfigViewModel>(
-            configuration.Charges.Select(c => new ChargeConfigViewModel(c, Synchroniser, MoisDepart[0])),
-            () => new ChargeConfigViewModel(new ModeleCharge("Nouvelle charge", 0m), Synchroniser, MoisDepart[0]),
+            configuration.Charges.Select(c => new ChargeConfigViewModel(c, Synchroniser, MoisDepart[0], Comptes)),
+            () => new ChargeConfigViewModel(new ModeleCharge("Nouvelle charge", 0m), Synchroniser, MoisDepart[0], Comptes),
             Synchroniser);
 
         ComptesCumul = new ListeEditable<CompteCumulConfigViewModel>(
@@ -73,6 +75,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     public static IReadOnlyList<string> NomsMois { get; } =
         Enumerable.Range(1, 12).Select(m => CultureInfo.GetCultureInfo("fr-FR").TextInfo.ToTitleCase(
             new DateTime(2000, m, 1).ToString("MMMM", CultureInfo.GetCultureInfo("fr-FR")))).ToList();
+
+    /// <summary>Autres comptes : choix de la colonne « Virement avec » des charges (masquée avec un seul compte).</summary>
+    public ComptesLiables Comptes { get; }
 
     /// <summary>Le premier mois ne peut plus changer une fois des mois créés.</summary>
     public bool PremierMoisModifiable { get; }
@@ -220,9 +225,15 @@ public sealed class ChargeConfigViewModel : ObservableObject
     private PeriodeMois? _depart;
     private string? _categorieOperation;
     private readonly PeriodeMois _departParDefaut;
+    private readonly ComptesLiables _comptes;
+    private string? _compteLie;
+    private string? _lien;
 
-    public ChargeConfigViewModel(ModeleCharge charge, Action modifie, PeriodeMois departParDefaut)
+    public ChargeConfigViewModel(ModeleCharge charge, Action modifie, PeriodeMois departParDefaut, ComptesLiables? comptes = null)
     {
+        _comptes = comptes ?? ComptesLiables.Aucun;
+        _compteLie = charge.CompteLie;
+        _lien = charge.Lien;
         _nom = charge.Nom;
         _debit = charge.Debit;
         _credit = charge.Credit;
@@ -300,7 +311,30 @@ public sealed class ChargeConfigViewModel : ObservableObject
         set { if (SetProperty(ref _compteCumul, OperationViewModel.VideVersNull(value))) _modifie(); }
     }
 
-    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur, _frequence.Mois, _depart, _categorieOperation);
+    /// <summary>
+    /// Compte de l'autre côté du virement de chaque mois (« Livret A ») ; chaîne vide = charge simple.
+    /// La charge inverse est ajoutée à la configuration de l'autre compte, et chaque mois créé y a son virement.
+    /// </summary>
+    public string CompteLie
+    {
+        get => _comptes.Nom(_compteLie);
+        set
+        {
+            var id = _comptes.Id(value);
+            if (string.Equals(id, _compteLie, StringComparison.OrdinalIgnoreCase))
+                return;
+            _compteLie = id;
+            _lien = id is null ? null : _lien ?? Core.VirementsLies.NouveauLien();
+            OnPropertyChanged();
+            _modifie();
+        }
+    }
+
+    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur, _frequence.Mois, _depart, _categorieOperation)
+    {
+        CompteLie = _lien is null ? null : _compteLie,
+        Lien = _compteLie is null ? null : _lien,
+    };
 }
 
 public sealed class CompteCumulConfigViewModel : ObservableObject

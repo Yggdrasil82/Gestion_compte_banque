@@ -1,0 +1,54 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueManuel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <!-- Bandeau : recherche dans le manuel. -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding Resultat}" Foreground="{DynamicResource EnteteTexte}" FontSize="13"
+                           VerticalAlignment="Center" Margin="12,0,0,0" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE897;" Foreground="{DynamicResource EnteteTexte}" FontSize="18" Margin="0,0,10,0" />
+                    <TextBlock Text="Manuel d'utilisation" Foreground="{DynamicResource EnteteTexte}" FontSize="16" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Margin="0,0,18,0" />
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE721;" Foreground="{DynamicResource EnteteTexte}" Margin="0,0,8,0" />
+                    <TextBox Text="{Binding Recherche, UpdateSourceTrigger=PropertyChanged, Delay=250}" Width="300" Height="30"
+                             VerticalContentAlignment="Center" FontSize="14"
+                             ToolTip="Cherchez un mot (sans tenir compte des accents) : les chapitres qui le contiennent restent dans la liste et le mot est surligné." />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="270" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Chapitres. -->
+            <Border Style="{StaticResource Carte}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                        <TextBlock Text="Chapitres" Style="{StaticResource TitreCarte}" />
+                    </StackPanel>
+                    <ListBox ItemsSource="{Binding ChapitresAffiches}" SelectedItem="{Binding Selection}"
+                             Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Titre}" Margin="4,5" TextWrapping="Wrap" FontSize="13" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Chapitre choisi. -->
+            <Border Grid.Column="1" Style="{StaticResource Carte}" Padding="6">
+                <FlowDocumentScrollViewer x:Name="Lecteur" IsToolBarVisible="False" VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled" Focusable="False" />
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

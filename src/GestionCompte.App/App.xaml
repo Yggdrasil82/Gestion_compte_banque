@@ -554,6 +554,10 @@
             <vues:VuePrets />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ManuelViewModel}">
+            <vues:VueManuel />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ConfigurationViewModel}">
             <vues:VueConfiguration />
         </DataTemplate>

@@ -239,7 +239,7 @@
                     </StackPanel>
                 </DockPanel>
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
-                           Text="Cochez « Pointé » quand l'opération apparaît sur le relevé. Choisissez une enveloppe pour les dépenses de courses, carburant… : elles sont déduites de son budget." />
+                           Text="{Binding AideOperations}" />
 
                 <!-- Liste remplie par le code (VueMois.xaml.cs) : regroupée par catégorie ou dans l'ordre de saisie. -->
                 <DataGrid x:Name="GrilleOperations" SelectedItem="{Binding Operations.Selection}">
@@ -316,6 +316,20 @@
                                     <ComboBox Style="{StaticResource ListeCellule}"
                                               ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                               SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn x:Name="ColonneVirement" Header="Virement avec" Width="130">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <DockPanel ToolTip="{Binding InfoLien}">
+                                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icone}" Text="&#xE8AB;" FontSize="11" Margin="4,0,2,0"
+                                                   VerticalAlignment="Center" Foreground="{DynamicResource Accent1}"
+                                                   Visibility="{Binding EstLie, Converter={StaticResource Visible}}" />
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  ItemsSource="{Binding DataContext.Comptes.Noms, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding CompteLie, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DockPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

@@ -309,7 +309,7 @@
                         </StackPanel>
                     </DockPanel>
                     <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
-                               Text="Ajoutées automatiquement à chaque nouveau mois, dans cet ordre. Pour une charge qui ne passe pas tous les mois (poubelles tous les 2 mois…), choisissez sa fréquence et un mois où elle est prélevée : elle ne sera ajoutée que les mois concernés." />
+                               Text="Ajoutées automatiquement à chaque nouveau mois, dans cet ordre. Pour une charge qui ne passe pas tous les mois (poubelles tous les 2 mois…), choisissez sa fréquence et un mois où elle est prélevée : elle ne sera ajoutée que les mois concernés. Pour un virement vers un autre compte (livret…), choisissez ce compte dans « Virement avec » : il y sera crédité chaque mois." />
                     <DataGrid ItemsSource="{Binding Charges.Elements}" SelectedItem="{Binding Charges.Selection}" MinHeight="200">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Charge" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
@@ -355,6 +355,16 @@
                                         <ComboBox Style="{StaticResource ListeCellule}"
                                                   ItemsSource="{Binding DataContext.NomsComptesCumul, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                   SelectedItem="{Binding CompteCumul, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn x:Name="ColonneVirement" Header="Virement avec" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  ItemsSource="{Binding DataContext.Comptes.Noms, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding CompteLie, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="Virement de chaque mois vers un autre compte : la charge inverse est ajoutée à sa configuration, et chaque mois créé a son virement des deux côtés." />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

@@ -77,4 +77,11 @@ public sealed class Operation
 
     /// <summary>Identifiant de l'opération bancaire importée (FITID du fichier OFX), ou null si saisie à la main.</summary>
     public string? IdentifiantBanque { get; set; }
+
+    /// <summary>Fichier de l'autre compte (ex. « compte-2.db ») pour un virement entre comptes, ou null.</summary>
+    /// <remarks>L'opération inverse (crédit pour un débit) est créée et tenue à jour dans l'autre compte.</remarks>
+    public string? CompteLie { get; set; }
+
+    /// <summary>Identifiant commun à ce virement et à son double dans l'autre compte, ou null.</summary>
+    public string? IdLien { get; set; }
 }

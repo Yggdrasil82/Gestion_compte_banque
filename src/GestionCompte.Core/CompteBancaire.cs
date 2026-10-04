@@ -69,7 +69,7 @@ public sealed class CompteBancaire
             mois.Enveloppes.Add(new LigneEnveloppe(enveloppe.Nom, enveloppe.BudgetParDefaut));
 
         foreach (var charge in Configuration.Charges.Where(c => c.TombeEn(periode)))
-            mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul, CategorieOperation = charge.CategorieOperation });
+            mois.Operations.Add(VirementsLies.OperationDe(charge, periode));
 
         foreach (var prevue in OperationsPrevues.Where(o => o.Periode == periode))
             mois.Operations.Add(prevue.VersOperation());
@@ -121,13 +121,19 @@ public sealed class CompteBancaire
             if (existante is null)
             {
                 if (charge.TombeEn(mois.Periode))
-                    mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul, CategorieOperation = charge.CategorieOperation });
+                    mois.Operations.Add(VirementsLies.OperationDe(charge, mois.Periode));
             }
             else
             {
                 existante.Debit = charge.Debit;
                 existante.Credit = charge.Credit;
                 existante.CompteCumul = charge.CompteCumul;
+                // Virement lié : l'opération du mois devient le virement de ce mois (son double suit dans l'autre compte).
+                if (charge.Lien is not null)
+                {
+                    existante.CompteLie = charge.CompteLie;
+                    existante.IdLien = VirementsLies.LienDuMois(charge.Lien, mois.Periode);
+                }
                 // Une catégorie choisie à la main dans le mois est gardée si la charge n'en a pas.
                 if (charge.CategorieOperation is not null)
                     existante.CategorieOperation = charge.CategorieOperation;

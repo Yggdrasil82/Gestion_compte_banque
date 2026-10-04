@@ -23,7 +23,7 @@ public sealed class DepotSqlite
     /// Version 9 : catégories d'opérations (nom, couleur).
     /// Version 10 : prêts en cours (module « Prêts »).
     /// </remarks>
-    public const int VersionSchema = 10;
+    public const int VersionSchema = 11;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -76,13 +76,19 @@ public sealed class DepotSqlite
             ? "frequence, depart_annee, depart_mois" : "1, NULL, NULL";
         // Colonne absente avant le format 9.
         var categorieOperationCharge = ColonneExiste(connexion, "modele_charge", "categorie_operation") ? "categorie_operation" : "NULL";
-        Lire(connexion, $"SELECT nom, debit, credit, compte_cumul, {categorieCharge}, {frequence}, {categorieOperationCharge} FROM modele_charge ORDER BY ordre",
+        // Colonnes absentes avant le format 11.
+        var lienCharge = ColonneExiste(connexion, "modele_charge", "lien") ? "compte_lie, lien" : "NULL, NULL";
+        Lire(connexion, $"SELECT nom, debit, credit, compte_cumul, {categorieCharge}, {frequence}, {categorieOperationCharge}, {lienCharge} FROM modele_charge ORDER BY ordre",
             l => configuration.Charges.Add(new ModeleCharge(
                 l.GetString(0), LireDecimal(l.GetString(1)), LireDecimal(l.GetString(2)), TexteOuNull(l, 3),
                 LireCategorie(l, 4, Categorie.NonClassee),
                 Math.Max(1, l.GetInt32(5)),
                 l.IsDBNull(6) || l.IsDBNull(7) ? null : new PeriodeMois(l.GetInt32(6), l.GetInt32(7)),
-                TexteOuNull(l, 8))));
+                TexteOuNull(l, 8))
+            {
+                CompteLie = TexteOuNull(l, 9),
+                Lien = TexteOuNull(l, 10),
+            }));
         Lire(connexion, "SELECT nom, montant_initial, objectif FROM compte_cumul ORDER BY ordre",
             l => configuration.ComptesCumul.Add(new CompteCumul(
                 l.GetString(0), LireDecimal(l.GetString(1)), l.IsDBNull(2) ? null : LireDecimal(l.GetString(2)))));
@@ -123,9 +129,11 @@ public sealed class DepotSqlite
             l => moisParId[l.GetInt64(0)].Enveloppes.Add(new LigneEnveloppe(l.GetString(1), LireDecimal(l.GetString(2)))));
         // Colonne absente avant le format 9.
         var categorieOperation = ColonneExiste(connexion, "operation", "categorie") ? "categorie" : "NULL";
+        // Colonnes absentes avant le format 11.
+        var lienOperation = ColonneExiste(connexion, "operation", "id_lien") ? "compte_lie, id_lien" : "NULL, NULL";
         Lire(connexion,
             "SELECT mois_id, libelle, debit, credit, pointee, enveloppe, compte_cumul, " +
-            (format4 ? "identifiant_banque" : "NULL") + $", {categorieOperation} FROM operation ORDER BY mois_id, ordre",
+            (format4 ? "identifiant_banque" : "NULL") + $", {categorieOperation}, {lienOperation} FROM operation ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Operations.Add(
                 new Operation(l.GetString(1), LireDecimal(l.GetString(2)), LireDecimal(l.GetString(3)))
                 {
@@ -134,6 +142,8 @@ public sealed class DepotSqlite
                     CompteCumul = TexteOuNull(l, 6),
                     IdentifiantBanque = TexteOuNull(l, 7),
                     CategorieOperation = TexteOuNull(l, 8),
+                    CompteLie = TexteOuNull(l, 9),
+                    IdLien = TexteOuNull(l, 10),
                 }));
 
         // Table absente avant le format 9.
@@ -232,11 +242,12 @@ public sealed class DepotSqlite
 
         foreach (var (charge, ordre) in configuration.Charges.Select((c, i) => (c, i)))
             Executer(connexion,
-                "INSERT INTO modele_charge (ordre, nom, debit, credit, compte_cumul, categorie, frequence, depart_annee, depart_mois, categorie_operation) " +
-                "VALUES ($o, $n, $d, $c, $cc, $cat, $f, $da, $dm, $co)",
+                "INSERT INTO modele_charge (ordre, nom, debit, credit, compte_cumul, categorie, frequence, depart_annee, depart_mois, categorie_operation, compte_lie, lien) " +
+                "VALUES ($o, $n, $d, $c, $cc, $cat, $f, $da, $dm, $co, $cl, $li)",
                 ("$o", ordre), ("$n", charge.Nom), ("$d", EcrireDecimal(charge.Debit)), ("$c", EcrireDecimal(charge.Credit)),
                 ("$cc", charge.CompteCumul), ("$cat", charge.Categorie.ToString()), ("$f", charge.Frequence),
-                ("$da", charge.Depart?.Annee), ("$dm", charge.Depart?.Mois), ("$co", charge.CategorieOperation));
+                ("$da", charge.Depart?.Annee), ("$dm", charge.Depart?.Mois), ("$co", charge.CategorieOperation),
+                ("$cl", charge.CompteLie), ("$li", charge.Lien));
 
         foreach (var (cumul, ordre) in configuration.ComptesCumul.Select((c, i) => (c, i)))
             Executer(connexion, "INSERT INTO compte_cumul (ordre, nom, montant_initial, objectif) VALUES ($o, $n, $m, $obj)",
@@ -261,12 +272,12 @@ public sealed class DepotSqlite
 
             foreach (var (operation, ordre) in mois.Operations.Select((o, i) => (o, i)))
                 Executer(connexion,
-                    "INSERT INTO operation (mois_id, ordre, libelle, debit, credit, pointee, enveloppe, compte_cumul, identifiant_banque, categorie) " +
-                    "VALUES ($id, $o, $l, $d, $c, $p, $e, $cc, $ib, $cat)",
+                    "INSERT INTO operation (mois_id, ordre, libelle, debit, credit, pointee, enveloppe, compte_cumul, identifiant_banque, categorie, compte_lie, id_lien) " +
+                    "VALUES ($id, $o, $l, $d, $c, $p, $e, $cc, $ib, $cat, $cl, $li)",
                     ("$id", moisId), ("$o", ordre), ("$l", operation.Libelle), ("$d", EcrireDecimal(operation.Debit)),
                     ("$c", EcrireDecimal(operation.Credit)), ("$p", operation.Pointee ? 1 : 0),
                     ("$e", operation.Enveloppe), ("$cc", operation.CompteCumul), ("$ib", operation.IdentifiantBanque),
-                    ("$cat", operation.CategorieOperation));
+                    ("$cat", operation.CategorieOperation), ("$cl", operation.CompteLie), ("$li", operation.IdLien));
         }
 
         foreach (var (prevue, ordre) in compte.OperationsPrevues.Select((o, i) => (o, i)))
@@ -424,6 +435,16 @@ public sealed class DepotSqlite
             Executer(connexion, "ALTER TABLE operation ADD COLUMN categorie TEXT");
         if (!ColonneExiste(connexion, "objectif_epargne", "compte_cumul"))
             Executer(connexion, "ALTER TABLE objectif_epargne ADD COLUMN compte_cumul TEXT");
+        if (!ColonneExiste(connexion, "modele_charge", "lien"))
+        {
+            Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN compte_lie TEXT");
+            Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN lien TEXT");
+        }
+        if (!ColonneExiste(connexion, "operation", "id_lien"))
+        {
+            Executer(connexion, "ALTER TABLE operation ADD COLUMN compte_lie TEXT");
+            Executer(connexion, "ALTER TABLE operation ADD COLUMN id_lien TEXT");
+        }
         Executer(connexion, $"PRAGMA user_version = {VersionSchema}");
     }
 

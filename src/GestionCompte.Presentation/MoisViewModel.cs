@@ -16,8 +16,11 @@ public sealed partial class MoisViewModel : ObservableObject
     private readonly ApparenceViewModel? _apparence;
 
     /// <param name="apparence">Réglage « ranger par catégorie » (propre au PC) ; null = rangé par catégorie.</param>
-    public MoisViewModel(CompteBancaire compte, MoisBudget mois, Action donneesModifiees, ApparenceViewModel? apparence = null)
+    /// <param name="comptes">Autres comptes vers lesquels un virement peut être lié ; par défaut, aucun.</param>
+    public MoisViewModel(CompteBancaire compte, MoisBudget mois, Action donneesModifiees, ApparenceViewModel? apparence = null,
+        ComptesLiables? comptes = null)
     {
+        Comptes = comptes ?? ComptesLiables.Aucun;
         _compte = compte;
         _mois = mois;
         _donneesModifiees = donneesModifiees;
@@ -31,8 +34,8 @@ public sealed partial class MoisViewModel : ObservableObject
         Enveloppes = mois.Enveloppes.Select(e => new EnveloppeMoisViewModel(e, ValeurModifiee)).ToList();
 
         Operations = new ListeEditable<OperationViewModel>(
-            mois.Operations.Select(o => new OperationViewModel(o, ValeurModifiee, EnveloppeSuggeree)),
-            () => new OperationViewModel(new Operation("Nouvelle opération"), ValeurModifiee, EnveloppeSuggeree),
+            mois.Operations.Select(o => new OperationViewModel(o, ValeurModifiee, EnveloppeSuggeree, Comptes)),
+            () => new OperationViewModel(new Operation("Nouvelle opération"), ValeurModifiee, EnveloppeSuggeree, Comptes),
             StructureModifiee);
 
         NomsEnveloppes = new[] { "" }.Concat(mois.Enveloppes.Select(e => e.Nom)).ToList();
@@ -49,6 +52,16 @@ public sealed partial class MoisViewModel : ObservableObject
     }
 
     public PeriodeMois Periode => _mois.Periode;
+
+    /// <summary>Autres comptes : choix de la colonne « Virement avec » (masquée avec un seul compte).</summary>
+    public ComptesLiables Comptes { get; }
+
+    /// <summary>Aide au-dessus du tableau des opérations.</summary>
+    public string AideOperations =>
+        "Cochez « Pointé » quand l'opération apparaît sur le relevé. Choisissez une enveloppe pour les dépenses de courses, carburant… : elles sont déduites de son budget."
+        + (Comptes.Disponibles
+            ? " Pour un virement vers un autre de vos comptes, choisissez-le dans « Virement avec » : l'opération inverse y est créée et suit vos modifications."
+            : "");
 
     /// <summary>
     /// Enveloppe proposée pour un libellé saisi : l'enveloppe du même nom (« Courses »),
@@ -267,13 +280,46 @@ public sealed partial class OperationViewModel : ObservableObject
 
     private readonly Func<string, string?>? _enveloppeSuggeree;
 
+    private readonly ComptesLiables _comptes;
+
     /// <param name="enveloppeSuggeree">Enveloppe proposée pour un nouveau libellé (remplie si aucune n'est choisie).</param>
-    public OperationViewModel(Operation modele, Action modifie, Func<string, string?>? enveloppeSuggeree = null)
+    /// <param name="comptes">Autres comptes vers lesquels l'opération peut être un virement lié.</param>
+    public OperationViewModel(Operation modele, Action modifie, Func<string, string?>? enveloppeSuggeree = null, ComptesLiables? comptes = null)
     {
         Modele = modele;
         _modifie = modifie;
         _enveloppeSuggeree = enveloppeSuggeree;
+        _comptes = comptes ?? ComptesLiables.Aucun;
     }
+
+    /// <summary>
+    /// Compte de l'autre côté du virement (« Livret A ») ; chaîne vide = opération simple.
+    /// L'opération inverse est créée, modifiée et supprimée avec celle-ci dans l'autre compte.
+    /// </summary>
+    public string CompteLie
+    {
+        get => _comptes.Nom(Modele.CompteLie);
+        set
+        {
+            var id = _comptes.Id(value);
+            if (string.Equals(id, Modele.CompteLie, StringComparison.OrdinalIgnoreCase))
+                return;
+            Modele.CompteLie = id;
+            Modele.IdLien = id is null ? null : Modele.IdLien ?? Core.VirementsLies.NouveauLien();
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(EstLie));
+            OnPropertyChanged(nameof(InfoLien));
+            _modifie();
+        }
+    }
+
+    public bool EstLie => Modele.IdLien is not null && Modele.CompteLie is not null;
+
+    /// <summary>Infobulle de la colonne « Virement avec ».</summary>
+    public string InfoLien => EstLie
+        ? $"Virement lié avec « {CompteLie} » : l'opération inverse ({(Debit > 0 ? "crédit" : "débit")}) y est tenue à jour automatiquement. " +
+          "Le pointage reste propre à chaque compte."
+        : "Choisissez un autre compte pour en faire un virement : l'opération inverse y sera créée automatiquement, dans le même mois.";
 
     public Operation Modele { get; }
 

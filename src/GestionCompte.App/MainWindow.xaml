@@ -105,6 +105,10 @@
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Configuration"
                                  Tag="&#xE713;" Background="{DynamicResource Accent3}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=3}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Aide"
+                                 Tag="&#xE897;" Background="{DynamicResource Accent4}"
+                                 ToolTip="Manuel d'utilisation, avec une recherche"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=14}" />
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom">
@@ -283,6 +287,10 @@
                 <!-- Vue d'ensemble de tous les comptes -->
                 <ContentControl Content="{Binding Ensemble}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=5}" />
+
+                <!-- Manuel d'utilisation -->
+                <ContentControl Content="{Binding ManuelUtilisation}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=14}" />
 
                 <!-- Aperçu d'un import de relevé -->
                 <ContentControl Content="{Binding Import}"

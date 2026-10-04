@@ -42,6 +42,7 @@ public partial class VueMois : UserControl
         if (_mois is null)
         {
             GrilleOperations.ItemsSource = null;
+            ColonneVirement.Visibility = Visibility.Collapsed;
             return;
         }
 
@@ -57,5 +58,6 @@ public partial class VueMois : UserControl
         vue.SortDescriptions.Add(new SortDescription(nameof(OperationViewModel.Position), ListSortDirection.Ascending));
         GrilleOperations.ItemsSource = vue;
         ColonneCategorie.Visibility = _mois.ACategories ? Visibility.Visible : Visibility.Collapsed;
+        ColonneVirement.Visibility = _mois.Comptes.Disponibles ? Visibility.Visible : Visibility.Collapsed;
     }
 }
