@@ -9,12 +9,18 @@ public partial class VueEnsemble : UserControl
 {
     public VueEnsemble() => InitializeComponent();
 
-    /// <summary>Colonne « Bourse » seulement si un compte a des placements (les colonnes ne sont pas dans l'arbre visuel).</summary>
-    /// <remarks>Appliqué après la mise à jour des lignes : changer une colonne pendant le changement de données gêne leur affichage.</remarks>
+    /// <summary>
+    /// Lignes des comptes et colonne « Bourse » (seulement si un compte a des placements ; les colonnes ne sont pas
+    /// dans l'arbre visuel). Les lignes sont données ici : l'écran est réutilisé d'une ouverture à l'autre de la vue d'ensemble.
+    /// </summary>
     private void DonneesChangees(object sender, DependencyPropertyChangedEventArgs e)
     {
-        var bourse = e.NewValue is VueEnsembleViewModel { ABourse: true };
-        Dispatcher.InvokeAsync(() => ColonneBourse.Visibility = bourse ? Visibility.Visible : Visibility.Collapsed,
-            DispatcherPriority.Loaded);
+        var ensemble = e.NewValue as VueEnsembleViewModel;
+        GrilleComptes.ItemsSource = ensemble?.Lignes;
+        Dispatcher.InvokeAsync(() =>
+        {
+            ColonneBourse.Visibility = ensemble is { ABourse: true } ? Visibility.Visible : Visibility.Collapsed;
+            GrilleComptes.Items.Refresh();
+        }, DispatcherPriority.Loaded);
     }
 }

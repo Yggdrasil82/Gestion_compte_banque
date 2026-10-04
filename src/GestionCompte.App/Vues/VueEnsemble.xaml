@@ -115,7 +115,7 @@
                         <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
                         <TextBlock Text="Vos comptes" Style="{StaticResource TitreCarte}" />
                     </StackPanel>
-                    <DataGrid ItemsSource="{Binding Lignes}" IsReadOnly="True" DataContextChanged="DonneesChangees"
+                    <DataGrid x:Name="GrilleComptes" IsReadOnly="True" DataContextChanged="DonneesChangees"
                               VirtualizingPanel.IsVirtualizing="False">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Compte" Width="*">
