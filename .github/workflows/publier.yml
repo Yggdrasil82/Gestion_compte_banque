@@ -8,9 +8,9 @@ on:
       run_id:
         description: "Numéro de l'exécution « Application Windows » dont l'exe a été validé"
         required: true
-  # Ou en envoyant l'étiquette « publier-<run_id> » (supprimée une fois la version publiée).
+  # Ou par un envoi sur une branche « publier-<run_id> » (supprimée une fois la version publiée).
   push:
-    tags:
+    branches:
       - 'publier-*'
 
 permissions:
@@ -56,5 +56,5 @@ jobs:
           gh release create "v${{ steps.version.outputs.version }}" publication/GestionCompte.exe \
             --title "Mon Budget ${{ steps.version.outputs.version }}" --notes-file notes.md --target "$sha"
           if [ "${{ github.event_name }}" = push ]; then
-            gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/${{ github.ref_name }}"
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ github.ref_name }}"
           fi
