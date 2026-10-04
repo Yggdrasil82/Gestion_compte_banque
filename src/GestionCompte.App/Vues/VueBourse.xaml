@@ -98,12 +98,7 @@
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="Valeur du portefeuille" />
                                 <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent1}"
                                            Text="{Binding Bilan.ValeurTotale, Converter={StaticResource Euros}}" />
-                                <TextBlock Style="{StaticResource LibelleTuile}">
-                                    <Run Text="Titres" />
-                                    <Run Text="{Binding Bilan.ValeurTitres, Mode=OneWay, Converter={StaticResource Euros}}" />
-                                    <Run Text=", espèces" />
-                                    <Run Text="{Binding Bilan.Especes, Mode=OneWay, Converter={StaticResource Euros}}" />
-                                </TextBlock>
+                                <TextBlock Style="{StaticResource LibelleTuile}"><Run Text="Titres " /><Run Text="{Binding Bilan.ValeurTitres, Mode=OneWay, Converter={StaticResource Euros}}" /><Run Text=", espèces " /><Run Text="{Binding Bilan.Especes, Mode=OneWay, Converter={StaticResource Euros}}" /></TextBlock>
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}" ToolTip="{Binding DetailPlusValue}" Cursor="Help">
@@ -179,7 +174,7 @@
                             </DockPanel>
                             <TextBlock Style="{StaticResource Aide}"
                                        Text="Le cours et le symbole Yahoo se corrigent dans le tableau (double-clic). Survolez un chiffre pour voir son calcul." />
-                            <DataGrid ItemsSource="{Binding Positions}" Margin="0,6,0,0">
+                            <DataGrid ItemsSource="{Binding Positions}" Margin="0,6,0,0" RowHeight="44">
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="Titre" Width="*" MinWidth="200" IsReadOnly="True">
                                         <DataGridTemplateColumn.CellTemplate>
