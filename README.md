@@ -78,6 +78,7 @@ du classeur Excel d'origine.
 
 - Module Bourse / Trade Republic (en attente).
 - Virements liés entre comptes.
+- Manuel intégré dans l'application (rubrique Aide).
 
 ## Télécharger l'application
 
