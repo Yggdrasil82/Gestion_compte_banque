@@ -78,7 +78,8 @@ du classeur Excel d'origine.
 
 ## Prochainement
 
-- Rien pour l'instant.
+- Prêts : durée modifiable directement (« 25 ans » ou 300 mois), échéance du dernier palier recalculée.
+- Petits écrans : barre de gauche défilante pour voir le menu sous « Données ».
 
 ## Télécharger l'application
 
