@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.4.2</p>
+  <p class="sous">Manuel d'utilisation · version 2.6.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -62,6 +62,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li>Lettres</li>
     <li>Assistant</li>
     <li>Crédits</li>
+    <li>Prêts</li>
     <li>Vue d'ensemble</li>
     <li>Configuration</li>
     <li>Compte Google et IA gratuites</li>
@@ -94,7 +95,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <table>
     <tr><th style="width:28%">Zone</th><th>Rôle</th></tr>
     <tr><td><b>Compte</b></td><td>Choisit le compte affiché (compte principal, compte joint, livret…). « Nouveau » crée un compte ; le crayon le renomme ; la corbeille le supprime. Chaque compte a son propre fichier et sa propre configuration, qu'on peut copier depuis un autre compte.</td></tr>
-    <tr><td><b>Onglets</b></td><td>Mois, Prévisionnel, Aide au budget, Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Vue d'ensemble, Configuration. Les modules non utilisés se masquent dans Configuration › Modules.</td></tr>
+    <tr><td><b>Onglets</b></td><td>Mois, Prévisionnel, Aide au budget, Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts, Vue d'ensemble, Configuration. Les modules non utilisés se masquent dans Configuration › Modules.</td></tr>
     <tr><td><b>Apparence</b></td><td>Thème de couleurs (Océan, Pastel, Nuit…) et case « Mode sombre ».</td></tr>
     <tr><td><b>Données</b></td><td>Importer un relevé, Enregistrer une copie (sauvegarde), Restaurer une sauvegarde, Ouvrir le dossier des données, Réinitialiser (effacer les mois ou tout effacer).</td></tr>
   </table>
@@ -110,7 +111,8 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li><b>Les quatre chiffres</b> : solde de fin de mois, revenus, dépenses prévues, épargne cumulée.</li>
     <li><b>Revenus du mois</b> : cochez « Reçu » quand l'argent est arrivé.</li>
     <li><b>Enveloppes</b> : budget, déjà dépensé et reste (courses, carburant…). Le reste est réservé dans le solde.</li>
-    <li><b>Opérations</b> : cochez « Pointé » quand l'opération apparaît sur le relevé. Choisissez une enveloppe pour une dépense de courses ou de carburant, ou un compte cumulé pour l'épargne.</li>
+    <li><b>Opérations</b> : cochez « Pointé » quand l'opération apparaît sur le relevé ; la ligne passe en vert. Choisissez une enveloppe pour une dépense de courses ou de carburant, ou un compte cumulé pour l'épargne.</li>
+    <li><b>Catégories</b> : choisissez une catégorie de couleur dans la colonne « Catégorie » (ex. « Maison »). Les opérations sont rangées par catégorie, avec le nombre et le total de chacune ; décochez « Ranger par catégorie » pour revenir à l'ordre de saisie. Le solde ligne par ligne suit l'ordre affiché.</li>
     <li><b>Détail du solde</b> : ancien solde + revenus = solde de départ, puis réservé, débits et crédits jusqu'à la fin de mois.</li>
     <li><b>Comptes cumulés</b> : total depuis le début (épargne, remboursements) et objectif restant.</li>
   </ul>
@@ -248,14 +250,39 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 </section>
 
 <section class="page">
-  <h2>14. Vue d'ensemble</h2>
+  <h2>14. Prêts</h2>
+  <p>Vos prêts en cours (immobilier, PTZ…) : tableau d'amortissement, capital restant dû et simulation de remboursement anticipé. Survolez un chiffre ou une ligne du tableau pour voir son calcul.</p>
+  <figure><img src="31-prets-ocean.png" alt="Prêts" style="width:78%;margin:0 auto"></figure>
+</section>
+
+<section class="page">
+  <h3>Saisir un prêt</h3>
+  <ul>
+    <li>« + » ajoute un prêt : nom, montant emprunté, taux nominal (hors assurance) et mois de la 1re échéance, tels qu'ils figurent sur l'offre de prêt.</li>
+    <li><b>Paliers</b> : nombre de mois et échéance hors assurance de chaque palier (un seul pour un prêt classique). 0 € pendant un différé : seule l'assurance est payée. « Calculer le dernier palier » trouve l'échéance qui solde le prêt à la date prévue.</li>
+    <li><b>Assurance</b> : taux sur le capital restant dû (elle baisse chaque mois), taux sur le montant emprunté, ou montant fixe par mois.</li>
+    <li><b>Conditions de remboursement anticipé</b> : recopiez celles de l'offre. Par défaut, le maximum légal : 6 mois d'intérêts, plafonnés à 3 % du capital remboursé. Cochez « Aucune indemnité » pour un PTZ ; indiquez au bout de combien d'années l'indemnité disparaît (comptées depuis la signature), le minimum d'un remboursement partiel et la règle du dernier palier.</li>
+  </ul>
+  <h3>Lire les résultats</h3>
+  <ul>
+    <li>Les tuiles donnent l'échéance du mois, le capital restant dû, les intérêts restant à payer et le coût total du prêt.</li>
+    <li>Le <b>tableau d'amortissement</b> s'ouvre sur le mois en cours. Intérêts du mois = capital restant dû × taux ÷ 12 ; capital = échéance − intérêts ; la dernière échéance solde le prêt.</li>
+    <li><b>Excel</b> exporte le prêt, ses paliers, le tableau et la simulation. <b>Ajouter aux charges</b> met l'échéance du mois dans les charges de la Configuration (à mettre à jour quand le palier change).</li>
+  </ul>
+  <h3>Simuler un remboursement anticipé</h3>
+  <p>Choisissez le montant et le mois : le remboursement a lieu juste après l'échéance de ce mois. L'application calcule l'indemnité, puis compare <b>Réduire la durée</b> (mêmes échéances, fin plus tôt) et <b>Réduire la mensualité</b> (même fin, échéances plus basses) : intérêts et assurance économisés, gain net une fois l'indemnité déduite. Cochez « Rachat par une autre banque » si un autre prêt rembourse celui-ci.</p>
+  <div class="encart"><p>Simulation indicative, calculée avec les conditions saisies : seul le décompte de la banque fait foi.</p></div>
+</section>
+
+<section class="page">
+  <h2>15. Vue d'ensemble</h2>
   <p>Tous vos comptes réunis : solde de fin de mois, évolution et point le plus bas de chacun, et le total sur 12 mois.</p>
   <figure><img src="14-ensemble-ocean.png" alt="Vue d'ensemble"></figure>
   <p>Les virements entre vos comptes se saisissent dans chacun des deux comptes.</p>
 </section>
 
 <section class="page">
-  <h2>15. Configuration</h2>
+  <h2>16. Configuration</h2>
   <p>Les réglages du compte ouvert et du PC.</p>
   <figure class="demi"><img src="9-configuration-ocean.png" alt="Configuration"></figure>
 </section>
@@ -264,18 +291,19 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <table>
     <tr><th style="width:28%">Carte</th><th>Rôle</th></tr>
     <tr><td><b>Démarrage</b></td><td>Premier mois et solde du compte au départ.</td></tr>
-    <tr><td><b>Charges</b></td><td>Débits ajoutés à chaque nouveau mois : montant, catégorie (Essentiel, Confort, Épargne), fréquence (tous les mois, tous les 2, 3, 6 ou 12 mois, avec le mois de prélèvement) et compte cumulé éventuel.</td></tr>
+    <tr><td><b>Charges</b></td><td>Débits ajoutés à chaque nouveau mois : montant, catégorie (Essentiel, Confort, Épargne), fréquence (tous les mois, tous les 2, 3, 6 ou 12 mois, avec le mois de prélèvement), compte cumulé éventuel et catégorie d'opération reprise dans le mois.</td></tr>
+    <tr><td><b>Catégories d'opérations</b></td><td>Nom et couleur (10 au choix) ; l'ordre de la liste est l'ordre des groupes dans le mois.</td></tr>
     <tr><td><b>Revenus</b></td><td>Montants habituels (salaire, CAF…).</td></tr>
     <tr><td><b>Comptes cumulés</b></td><td>Épargne, remboursements… avec un objectif facultatif.</td></tr>
     <tr><td><b>Enveloppes</b></td><td>Budgets de dépenses (courses, carburant) et leur catégorie.</td></tr>
     <tr><td><b>Règles de classement</b></td><td>Mot-clé du libellé → enveloppe, utilisé à l'import des relevés.</td></tr>
-    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Crédits, Documents, Mail, Achats, Lettres, Assistant et l'animation du canard. Réglage propre au PC ; vos données restent conservées.</td></tr>
+    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Crédits, Prêts, Documents, Mail, Achats, Lettres, Assistant et l'animation du canard. Réglage propre au PC ; vos données restent conservées.</td></tr>
     <tr><td><b>Compte Google</b></td><td>État « Connecté : adresse » ou « Non connecté », boutons Connecter, Reconnecter et Déconnecter. Pendant la connexion, la carte affiche l'étape en cours.</td></tr>
     <tr><td><b>Intelligence artificielle</b></td><td>Case pour couper tout envoi aux IA, et clés Gemini et Groq.</td></tr>
   </table>
   <p>Les montants de Configuration servent pour chaque nouveau mois. Pour un mois déjà créé, utilisez « Appliquer la configuration » dans l'onglet Mois.</p>
 
-  <h2 style="margin-top:8mm">16. Compte Google et IA gratuites</h2>
+  <h2 style="margin-top:8mm">17. Compte Google et IA gratuites</h2>
   <h3>Connecter le compte Google</h3>
   <ol>
     <li>Configuration › Compte Google › « Connecter… ». La page de Google s'ouvre directement dans le navigateur.</li>
@@ -296,7 +324,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <p>Collez la clé dans Configuration › Intelligence artificielle › « Saisir la clé… ». Elle est chiffrée par Windows et reste sur votre PC. Ne la communiquez à personne.</p>
   <div class="encart"><p><b>Tout reste gratuit</b> tant qu'aucune carte bancaire ni compte de facturation n'est ajouté chez Google ou Groq. Si une limite du jour est atteinte, l'application le dit et indique quand réessayer.</p></div>
 
-  <h2 style="margin-top:8mm">17. Sauvegarde et confidentialité</h2>
+  <h2 style="margin-top:8mm">18. Sauvegarde et confidentialité</h2>
   <ul>
     <li>Les données sont dans <b>Documents\GestionCompte</b> (un fichier par compte). « Ouvrir le dossier » y mène directement.</li>
     <li><b>Enregistrer une copie…</b> crée une sauvegarde ; <b>Restaurer une sauvegarde…</b> la reprend. Gardez une copie sur une clé USB ou dans Google Drive.</li>
