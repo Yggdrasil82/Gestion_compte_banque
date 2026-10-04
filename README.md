@@ -78,6 +78,7 @@ du classeur Excel d'origine.
 ## Prochainement
 
 - Module Bourse / Trade Republic (en attente).
+- Mises à jour automatiques de l'application (proposé en 2.8.0).
 
 ## Télécharger l'application
 
