@@ -52,9 +52,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sha=$(gh run view "$RUN_ID" --json headSha --jq .headSha)
+          # L'étiquette va sur la branche principale : le jeton de l'action ne peut pas étiqueter un commit
+          # dont les workflows ne sont pas encore sur cette branche. L'exe publié reste celui de l'exécution validée.
           gh release create "v${{ steps.version.outputs.version }}" publication/GestionCompte.exe \
-            --title "Mon Budget ${{ steps.version.outputs.version }}" --notes-file notes.md --target "$sha"
+            --title "Mon Budget ${{ steps.version.outputs.version }}" --notes-file notes.md \
+            --target "${{ github.event.repository.default_branch }}"
           if [ "${{ github.event_name }}" = push ]; then
-            gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ github.ref_name }}"
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ github.ref_name }}" || echo "Branche ${{ github.ref_name }} à supprimer à la main."
           fi
