@@ -550,6 +550,10 @@
             <vues:VueCredits />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:PretsViewModel}">
+            <vues:VuePrets />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ConfigurationViewModel}">
             <vues:VueConfiguration />
         </DataTemplate>

@@ -188,6 +188,18 @@ public static class ConfigurationParDefaut
         compte.SimulationsCredit.Add(new SimulationCredit("Moto", 9000m, 5.9m, 48, new PeriodeMois(2027, 1), 12m, TypeAssurance.ParMois)
             { Type = TypeCredit.AutoMoto });
 
+        // Prêts fictifs : un prêt lissé en 3 paliers et un prêt à taux zéro avec 5 ans de différé.
+        var maison = new PretImmobilier("Maison", 165000m, 1.35m, new PeriodeMois(2021, 3),
+            new[] { new PalierPret(60, 640m), new PalierPret(180, 520m), new PalierPret(60, 0m) }, 0.26m)
+        {
+            Signature = new PeriodeMois(2019, 1),
+            ExonerationAnnees = 7,
+        };
+        maison.Paliers[2] = new PalierPret(60, Core.Calculs.CalculPret.MensualiteDernierPalier(maison) ?? 0m);
+        compte.Prets.Add(maison);
+        compte.Prets.Add(new PretImmobilier("PTZ", 24000m, 0m, new PeriodeMois(2021, 3),
+            new[] { new PalierPret(60, 0m), new PalierPret(180, 133.33m) }, 0.26m) { SansIndemnite = true });
+
         var octobre = compte.CreerMoisSuivant();
         octobre.Operations.ForEach(o => o.Pointee = true);
         octobre.Revenus.ForEach(r => r.Recu = true);

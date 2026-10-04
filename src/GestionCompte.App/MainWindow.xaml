@@ -93,6 +93,11 @@
                                  Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
                                  Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=6}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Prêts"
+                                 Tag="&#xE80F;" Background="{DynamicResource Accent2}"
+                                 ToolTip="Prêts en cours : tableau d'amortissement, remboursement anticipé"
+                                 Visibility="{Binding Apparence.ModulePrets, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=13}" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Vue d'ensemble"
                                  Tag="&#xE80A;" Background="{DynamicResource Positif}"
                                  Visibility="{Binding PlusieursComptes, Converter={StaticResource Visible}}"
@@ -266,6 +271,10 @@
                 <!-- Module Crédits -->
                 <ContentControl Content="{Binding Credits}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=6}" />
+
+                <!-- Module Prêts -->
+                <ContentControl Content="{Binding Prets}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=13}" />
 
                 <!-- Écran Configuration -->
                 <ContentControl Content="{Binding Configuration}"

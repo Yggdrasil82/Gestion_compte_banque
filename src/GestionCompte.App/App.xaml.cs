@@ -1,3 +1,4 @@
+using System.Windows.Controls;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -14,6 +15,9 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Infobulles affichées tant que la souris reste dessus (les explications des calculs sont longues à lire).
+        ToolTipService.ShowDurationProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(int.MaxValue));
 
         // Toute l'application en français (dates, nombres), quelle que soit la langue de Windows.
         CultureInfo.DefaultThreadCurrentCulture = Montants.Francais;

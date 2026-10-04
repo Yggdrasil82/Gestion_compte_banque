@@ -42,6 +42,9 @@ internal static class Captures
     /// <summary>Mail : rédaction, carnet d'adresses et historique.</summary>
     private const double HauteurMail = 960;
 
+    /// <summary>Module Prêts : liste, paliers, conditions, tableau d'amortissement et remboursement anticipé.</summary>
+    private const double HauteurPrets = 2000;
+
     public static void Lancer(App app, string dossier)
     {
         dossier = Path.GetFullPath(dossier);
@@ -138,6 +141,7 @@ internal static class Captures
                 MainViewModel.OngletAchats => HauteurMail,
                 MainViewModel.OngletLettres => HauteurMail,
                 MainViewModel.OngletAssistant => HauteurMail,
+                MainViewModel.OngletPrets => HauteurPrets,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -167,6 +171,14 @@ internal static class Captures
 
             foreach (var etape in etapes)
                 await Capturer(etape);
+
+            // Prêts : le prêt lissé, avant le dernier palier (seule la durée peut baisser)…
+            vm.Prets.Liste.Selection = vm.Prets.Liste.Elements[0];
+            await Capturer(("31-prets-ocean", Ambiance.Ocean, false, MainViewModel.OngletPrets, false));
+            // … puis sans cette règle, pour comparer les deux options.
+            vm.Prets.Selection!.DureeSeuleAvantDernierPalier = false;
+            vm.Prets.MontantAnticipe = 30000m;
+            await Capturer(("32-prets-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletPrets, false));
 
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
             new DepotSqlite(registre.Chemin(registre.Ajouter("Compte joint"))).Enregistrer(ConfigurationParDefaut.CreerDemoHistorique());

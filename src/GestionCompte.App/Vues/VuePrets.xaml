@@ -1,0 +1,442 @@
+<UserControl x:Class="GestionCompte.App.Vues.VuePrets"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Racine">
+    <UserControl.Resources>
+        <Style x:Key="Tuile" TargetType="Border" BasedOn="{StaticResource Carte}">
+            <Setter Property="BorderThickness" Value="5,1,1,1" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Cursor" Value="Help" />
+        </Style>
+        <Style x:Key="ValeurTuile" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style x:Key="Libelle" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,8,6" />
+        </Style>
+        <Style x:Key="Saisie" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="70" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="Margin" Value="0,0,6,6" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
+        <!-- Carte d'une option de remboursement anticipé. -->
+        <DataTemplate x:Key="Option">
+            <Border Style="{StaticResource Carte}" Margin="0" Padding="14,10" Cursor="Help" ToolTip="{Binding Explication}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Titre}" FontWeight="Bold" FontSize="15" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Fin du prêt" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" TextAlignment="Right">
+                            <Run Text="{Binding Fin, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="{Binding MoisGagnes, Mode=OneWay, StringFormat='({0})'}" Foreground="{DynamicResource TexteDiscret}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Text="Échéance suivante" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" TextAlignment="Right">
+                            <Run Text="{Binding NouvelleMensualite, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="{Binding AncienneMensualite, Mode=OneWay, StringFormat='au lieu de {0}'}" Foreground="{DynamicResource TexteDiscret}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="2" Text="Intérêts économisés" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding InteretsEconomises}" TextAlignment="Right" />
+                        <TextBlock Grid.Row="3" Text="Assurance économisée" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AssuranceEconomisee}" TextAlignment="Right" />
+                        <TextBlock Grid.Row="4" Text="Gain net (indemnité déduite)" FontWeight="SemiBold" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GainNet}" TextAlignment="Right" FontWeight="Bold" FontSize="16" Margin="0,4,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GainPositif}" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Bandeau -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="18,12" Margin="6,6,6,4">
+            <StackPanel>
+                <TextBlock Text="Prêts" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource EnteteTexte}" />
+                <TextBlock Text="Vos prêts en cours : tableau d'amortissement, capital restant dû et simulation de remboursement anticipé. Survolez un chiffre pour voir son calcul."
+                           Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Liste des prêts -->
+                <Border Style="{StaticResource Carte}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Top">
+                                <Button ToolTip="Ajouter un prêt" Command="{Binding Liste.AjouterCommand}"
+                                        Style="{StaticResource BoutonPrincipal}" Padding="0" Width="30" Height="28">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" />
+                                </Button>
+                                <Button ToolTip="Supprimer le prêt sélectionné" Command="{Binding Liste.SupprimerCommand}"
+                                        Padding="0" Width="30" Height="28">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" FontSize="12" />
+                                </Button>
+                                <Button ToolTip="Monter" Command="{Binding Liste.MonterCommand}" Padding="0" Width="28" Height="28">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE70E;" FontSize="11" />
+                                </Button>
+                                <Button ToolTip="Descendre" Command="{Binding Liste.DescendreCommand}" Padding="0" Width="28" Height="28" Margin="0">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE70D;" FontSize="11" />
+                                </Button>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                                <TextBlock Text="Mes prêts" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
+                                   Text="Saisissez les chiffres de votre offre de prêt : montant, taux nominal (hors assurance), 1re échéance, puis les paliers et l'assurance plus bas. Tout reste sur votre PC." />
+                        <TextBlock DockPanel.Dock="Bottom" Text="{Binding TexteTotaux}" FontWeight="SemiBold" Margin="0,8,0,0" />
+
+                        <DataGrid ItemsSource="{Binding Liste.Elements}" SelectedItem="{Binding Liste.Selection}" Height="150">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Prêt" Binding="{Binding Nom}" Width="*" MinWidth="120"
+                                                    ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
+                                <DataGridTextColumn Header="Montant" Width="100" Binding="{Binding Montant, Converter={StaticResource Montant}}"
+                                                    ElementStyle="{StaticResource CelluleMontant}" EditingElementStyle="{StaticResource EditionMontant}" />
+                                <DataGridTextColumn Width="62" Binding="{Binding TauxAnnuel, Converter={StaticResource Montant}}"
+                                                    ElementStyle="{StaticResource CelluleMontant}" EditingElementStyle="{StaticResource EditionMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Taux %" ToolTip="Taux nominal annuel fixe, hors assurance (indiqué sur l'offre de prêt)" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="1re échéance" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Style="{StaticResource ListeCellule}" SelectedItem="{Binding PremiereEcheance, UpdateSourceTrigger=PropertyChanged}"
+                                                      ItemsSource="{Binding DataContext.Mois, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Durée" Width="120" IsReadOnly="True" Binding="{Binding DureeTexte, Mode=OneWay}"
+                                                    ElementStyle="{StaticResource CelluleTexte}" />
+                                <DataGridTextColumn Width="105" IsReadOnly="True"
+                                                    Binding="{Binding EcheanceDuMois, Mode=OneWay, Converter={StaticResource Montant}}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Ce mois-ci" ToolTip="Prélèvement du mois en cours, assurance comprise" />
+                                    </DataGridTextColumn.Header>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Width="110" IsReadOnly="True"
+                                                    Binding="{Binding CapitalRestant, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                    ElementStyle="{StaticResource CelluleMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Restant dû" ToolTip="Capital restant dû après l'échéance du mois en cours" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Fin" Width="115" IsReadOnly="True" Binding="{Binding Fin, Mode=OneWay}"
+                                                    ElementStyle="{StaticResource CelluleTexte}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <Grid Visibility="{Binding ASelection, Converter={StaticResource Visible}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="350" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <!-- Paliers et assurance -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Top">
+                                        <Button ToolTip="Ajouter un palier à la fin" Command="{Binding AjouterPalierCommand}"
+                                                Style="{StaticResource BoutonPrincipal}" Padding="0" Width="30" Height="28">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" />
+                                        </Button>
+                                        <Button ToolTip="Supprimer le dernier palier" Command="{Binding SupprimerPalierCommand}" Padding="0" Width="30" Height="28">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" FontSize="12" />
+                                        </Button>
+                                        <Button Content="Calculer le dernier palier" Command="{Binding CalculerDernierPalierCommand}" Margin="0"
+                                                ToolTip="Calcule l'échéance du dernier palier pour que le prêt soit soldé à la date prévue : capital restant × t ÷ (1 − (1 + t)^−n), avec t = taux ÷ 12 et n = nombre de mois du palier" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                                        <TextBlock Style="{StaticResource TitreCarte}">
+                                            <Run Text="Paliers :" />
+                                            <Run Text="{Binding Selection.Nom, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap"
+                                           Text="Échéances hors assurance, comme sur l'offre de prêt. Un seul palier pour un prêt classique ; 0 € pendant un différé (seule l'assurance est payée)." />
+                                <DataGrid ItemsSource="{Binding Selection.Paliers}" Height="125" Margin="0,6,0,0" CanUserAddRows="False">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Palier" Width="55" IsReadOnly="True" Binding="{Binding Numero, Mode=OneWay}"
+                                                            ElementStyle="{StaticResource CelluleMontant}" />
+                                        <DataGridTextColumn Header="Nombre de mois" Width="110" Binding="{Binding NombreMois}"
+                                                            ElementStyle="{StaticResource CelluleMontant}" EditingElementStyle="{StaticResource EditionMontant}" />
+                                        <DataGridTextColumn Width="150" Binding="{Binding Mensualite, Converter={StaticResource Montant}}"
+                                                            EditingElementStyle="{StaticResource EditionMontant}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="Échéance hors assur." ToolTip="Capital + intérêts par mois, sans l'assurance" />
+                                            </DataGridTextColumn.Header>
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                    <Setter Property="ToolTip" Value="{Binding Explication}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Période" Width="*" IsReadOnly="True" Binding="{Binding Periode, Mode=OneWay}"
+                                                            ElementStyle="{StaticResource CelluleTexte}" />
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="{Binding Selection.Avertissement}" Foreground="{DynamicResource Negatif}" FontWeight="SemiBold"
+                                           TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Text="Assurance" Style="{StaticResource Libelle}" />
+                                    <TextBox Style="{StaticResource Saisie}" Text="{Binding Selection.Assurance, Converter={StaticResource Montant}}" />
+                                    <ComboBox ItemsSource="{Binding TypesAssurance}" SelectedItem="{Binding Selection.TypeAssurance}" Width="185" Margin="0,0,0,6" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding Selection.ExplicationAssurance}" Style="{StaticResource Discret}" TextWrapping="Wrap" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Règles de la banque -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                                    <TextBlock Text="Remboursement anticipé : conditions de l'offre" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap"
+                                           Text="Valeurs par défaut : maximum légal (6 mois d'intérêts, plafonnés à 3 % du capital remboursé). Recopiez celles du paragraphe « Remboursements anticipés » de votre offre." />
+                                <CheckBox Content="Aucune indemnité (par exemple un prêt à taux zéro)" IsChecked="{Binding Selection.SansIndemnite}" Margin="0,8,0,8" />
+                                <WrapPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
+                                                ToolTip="Indemnité = capital remboursé × taux × nombre de mois ÷ 12 (6 mois au maximum)">
+                                        <TextBlock Text="Indemnité" Style="{StaticResource Libelle}" />
+                                        <TextBox Style="{StaticResource Saisie}" Width="45" Text="{Binding Selection.IndemniteMoisInterets, Converter={StaticResource Montant}}" />
+                                        <TextBlock Text="mois d'intérêts, plafonnée à" Style="{StaticResource Libelle}" />
+                                        <TextBox Style="{StaticResource Saisie}" Width="45" Text="{Binding Selection.IndemnitePlafond, Converter={StaticResource Montant}}" />
+                                        <TextBlock Text="% du capital remboursé" Style="{StaticResource Libelle}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
+                                                ToolTip="Certaines offres suppriment l'indemnité après quelques années, sauf si le prêt est racheté par une autre banque. 0 : jamais.">
+                                        <TextBlock Text="Plus d'indemnité après" Style="{StaticResource Libelle}" />
+                                        <TextBox Style="{StaticResource Saisie}" Width="40" Text="{Binding Selection.ExonerationAnnees}" />
+                                        <TextBlock Text="ans, comptés depuis la signature :" Style="{StaticResource Libelle}" />
+                                        <ComboBox ItemsSource="{Binding Mois}" SelectedItem="{Binding Selection.Signature}" Width="140" Margin="0,0,4,6" />
+                                        <Button Command="{Binding EffacerSignatureCommand}" ToolTip="Signature inconnue" Padding="0" Width="26" Height="26" Margin="0,0,0,6">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE711;" FontSize="10" />
+                                        </Button>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
+                                                ToolTip="Montant minimum d'un remboursement partiel (souvent 10 % du montant emprunté), sauf pour solder le prêt">
+                                        <TextBlock Text="Minimum" Style="{StaticResource Libelle}" />
+                                        <TextBox Style="{StaticResource Saisie}" Width="45" Text="{Binding Selection.MinimumPourcent, Converter={StaticResource Montant}}" />
+                                        <TextBlock Text="% du montant emprunté" Style="{StaticResource Libelle}" />
+                                    </StackPanel>
+                                </WrapPanel>
+                                <CheckBox Content="Avant le dernier palier, seule la réduction de la durée est possible" Margin="0,2,0,0"
+                                          IsChecked="{Binding Selection.DureeSeuleAvantDernierPalier}"
+                                          ToolTip="Règle fréquente des prêts à paliers : la baisse des échéances n'est possible que pendant le dernier palier" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Chiffres clés -->
+                    <StackPanel Grid.Column="1" Margin="0,6,6,0">
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}" ToolTip="{Binding Selection.ExplicationEcheanceDuMois}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Discret}" FontSize="12">
+                                    <Run Text="Échéance de" />
+                                    <Run Text="{Binding MoisDuJour.Libelle, Mode=OneWay}" />
+                                    <Run Text="(assurance comprise)" />
+                                </TextBlock>
+                                <TextBlock Text="{Binding Selection.EcheanceDuMois, Converter={StaticResource Euros}}" Style="{StaticResource ValeurTuile}"
+                                           Foreground="{DynamicResource Accent1}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent4}" ToolTip="{Binding Selection.ExplicationCapitalRestant}">
+                            <StackPanel>
+                                <TextBlock Text="Capital restant dû" Style="{StaticResource Discret}" FontSize="12" />
+                                <TextBlock Text="{Binding Selection.CapitalRestant, Converter={StaticResource Euros}}" Style="{StaticResource ValeurTuile}"
+                                           Foreground="{DynamicResource Accent4}" />
+                                <TextBlock Style="{StaticResource Discret}">
+                                    <Run Text="{Binding Selection.EcheancesRestantes, Mode=OneWay}" />
+                                    <Run Text="échéances restantes, fin en" />
+                                    <Run Text="{Binding Selection.Fin, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent3}" ToolTip="{Binding Selection.ExplicationInteretsRestants}">
+                            <StackPanel>
+                                <TextBlock Text="Intérêts restant à payer" Style="{StaticResource Discret}" FontSize="12" />
+                                <TextBlock Text="{Binding Selection.InteretsRestants, Converter={StaticResource Euros}}" Style="{StaticResource ValeurTuile}"
+                                           Foreground="{DynamicResource Accent3}" />
+                                <TextBlock Style="{StaticResource Discret}">
+                                    <Run Text="+ assurance" />
+                                    <Run Text="{Binding Selection.AssuranceRestante, Mode=OneWay, Converter={StaticResource Euros}}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}" ToolTip="{Binding Selection.ExplicationCout}">
+                            <StackPanel>
+                                <TextBlock Text="Coût total du prêt" Style="{StaticResource Discret}" FontSize="12" />
+                                <TextBlock Text="{Binding Selection.CoutTotal, Converter={StaticResource Euros}}" Style="{StaticResource ValeurTuile}"
+                                           Foreground="{DynamicResource Accent2}" />
+                                <TextBlock Style="{StaticResource Discret}">
+                                    <Run Text="intérêts" />
+                                    <Run Text="{Binding Selection.CoutInterets, Mode=OneWay, Converter={StaticResource Euros}}" />
+                                    <Run Text="+ assurance" />
+                                    <Run Text="{Binding Selection.CoutAssurance, Mode=OneWay, Converter={StaticResource Euros}}" />
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <WrapPanel HorizontalAlignment="Right">
+                            <Button Command="{Binding ExporterCommand}"
+                                    ToolTip="Exporter vers Excel : conditions, paliers, tableau d'amortissement et la simulation de remboursement anticipé">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE896;" Margin="0,0,6,0" />
+                                    <TextBlock Text="Excel" />
+                                </StackPanel>
+                            </Button>
+                            <Button Content="{Binding Selection.TexteBoutonCharges}" Command="{Binding AjouterAuxChargesCommand}"
+                                    Style="{StaticResource BoutonPrincipal}" Margin="0"
+                                    ToolTip="Met l'échéance du mois (assurance comprise) dans les charges de la configuration, reprises chaque mois" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Tableau d'amortissement -->
+                <Border Style="{StaticResource Carte}" Visibility="{Binding ASelection, Converter={StaticResource Visible}}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                            <TextBlock Style="{StaticResource TitreCarte}">
+                                <Run Text="Tableau d'amortissement :" />
+                                <Run Text="{Binding Selection.Nom, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
+                                   Text="Le mois en cours est surligné. Survolez une ligne pour voir le calcul : intérêts = capital restant dû × taux ÷ 12 ; capital = échéance − intérêts." />
+                        <DataGrid ItemsSource="{Binding Selection.Tableau}" IsReadOnly="True" Height="420" Margin="0,6,0,0">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="ToolTip" Value="{Binding Explication}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding MoisEnCours}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource Accent1Clair}" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="N°" Binding="{Binding Numero}" Width="50" ElementStyle="{StaticResource CelluleMontant}" />
+                                <DataGridTextColumn Header="Mois" Binding="{Binding Mois}" Width="*" ElementStyle="{StaticResource CelluleTexte}" />
+                                <DataGridTextColumn Width="105" Binding="{Binding Mensualite, Converter={StaticResource Montant}}" ElementStyle="{StaticResource CelluleMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Prélevé" ToolTip="Capital + intérêts + assurance" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Width="100" Binding="{Binding Capital, Converter={StaticResource Montant}}" ElementStyle="{StaticResource CelluleMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Capital" ToolTip="Échéance hors assurance − intérêts du mois" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Width="95" Binding="{Binding Interets, Converter={StaticResource Montant}}" ElementStyle="{StaticResource CelluleMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Intérêts" ToolTip="Capital restant dû avant l'échéance × taux ÷ 12, arrondi au centime" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Width="95" Binding="{Binding Assurance, Converter={StaticResource Montant}}" ElementStyle="{StaticResource CelluleMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Assurance" ToolTip="{Binding DataContext.Selection.ExplicationAssurance, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Width="120" Binding="{Binding CapitalRestant, Converter={StaticResource Montant}}" ElementStyle="{StaticResource CelluleMontant}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Restant dû" ToolTip="Capital restant dû après l'échéance" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
+                <!-- Simulation de remboursement anticipé -->
+                <Border Style="{StaticResource Carte}" Visibility="{Binding ASelection, Converter={StaticResource Visible}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                            <TextBlock Text="Simuler un remboursement anticipé" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <WrapPanel Margin="0,6,0,0">
+                            <TextBlock Text="Rembourser" Style="{StaticResource Libelle}" />
+                            <TextBox Style="{StaticResource Saisie}" Width="100" Text="{Binding MontantAnticipe, Converter={StaticResource Montant}}" />
+                            <TextBlock Text="€ juste après l'échéance de" Style="{StaticResource Libelle}" />
+                            <ComboBox ItemsSource="{Binding MoisAnticipe}" SelectedItem="{Binding DateAnticipe}" Width="150" Margin="0,0,18,6" />
+                            <CheckBox Content="Rachat par une autre banque" IsChecked="{Binding Rachat}" VerticalAlignment="Center" Margin="0,0,0,6"
+                                      ToolTip="Prêt remboursé grâce à un prêt d'une autre banque : l'exonération après quelques années ne s'applique pas" />
+                        </WrapPanel>
+                        <TextBlock Text="{Binding ErreurAnticipe}" Foreground="{DynamicResource Negatif}" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+                        <StackPanel Visibility="{Binding AnticipeValide, Converter={StaticResource Visible}}">
+                            <TextBlock Text="{Binding TexteRembourse}" Margin="0,4,0,4" TextWrapping="Wrap" />
+                            <Border Background="{DynamicResource Accent3Clair}" CornerRadius="8" Padding="12,8" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock>
+                                        <Run Text="Indemnité de remboursement anticipé :" FontWeight="SemiBold" />
+                                        <Run Text="{Binding TexteIndemnite, Mode=OneWay}" FontWeight="Bold" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding ExplicationIndemnite}" Style="{StaticResource Discret}" TextWrapping="Wrap" FontSize="12" />
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ContentControl Grid.Column="0" Content="{Binding OptionDuree}" ContentTemplate="{StaticResource Option}" />
+                                <ContentControl Grid.Column="2" Content="{Binding OptionMensualite}" ContentTemplate="{StaticResource Option}"
+                                                Visibility="{Binding AvecOptionMensualite, Converter={StaticResource Visible}}" />
+                                <Border Grid.Column="2" Style="{StaticResource Carte}" Margin="0" Padding="14,10"
+                                        Visibility="{Binding AvecOptionMensualite, Converter={StaticResource MasqueSiVrai}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Réduire la mensualité" FontWeight="Bold" FontSize="15" Margin="0,0,0,6" />
+                                        <TextBlock Text="{Binding SansOptionMensualite}" TextWrapping="Wrap" Style="{StaticResource Discret}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                            <TextBlock Text="{Binding ConseilAnticipe}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,10,0,0" />
+                            <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                       Text="Simulation indicative, calculée avec les conditions saisies : seul le décompte de votre banque fait foi. Le bouton Excel exporte aussi cette simulation." />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

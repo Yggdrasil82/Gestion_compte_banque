@@ -75,6 +75,9 @@ public sealed class PreferencesAffichage
     /// <summary>Onglet « Assistant » affiché dans la barre de gauche.</summary>
     public bool ModuleAssistant { get; set; } = true;
 
+    /// <summary>Onglet « Prêts » affiché dans la barre de gauche.</summary>
+    public bool ModulePrets { get; set; } = true;
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ModeEnvoiMail ModeEnvoiMail { get; set; } = ModeEnvoiMail.Gmail;
 
@@ -228,6 +231,19 @@ public sealed class ApparenceViewModel : ObservableObject
         }
     }
 
+    /// <summary>Module « Prêts » affiché (prêts conservés même s'il est masqué).</summary>
+    public bool ModulePrets
+    {
+        get => _preferences.ModulePrets;
+        set
+        {
+            if (!SetProperty(_preferences.ModulePrets, value, _preferences, (p, v) => p.ModulePrets = v))
+                return;
+            Enregistrer();
+            ModulesChanges?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
     /// <summary>Module « Assistant » affiché.</summary>
     public bool ModuleAssistant
     {
@@ -301,6 +317,7 @@ public sealed class ApparenceViewModel : ObservableObject
         ModuleAchats = true;
         ModuleLettres = true;
         ModuleAssistant = true;
+        ModulePrets = true;
         AnimationDemarrage = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;

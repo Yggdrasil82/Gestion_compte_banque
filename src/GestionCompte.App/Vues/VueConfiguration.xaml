@@ -226,6 +226,8 @@
                                   IsChecked="{Binding Apparence.ModuleBilan}" Margin="0,0,0,6" />
                         <CheckBox Content="Crédits : simulation et comparaison de crédits"
                                   IsChecked="{Binding Apparence.ModuleCredits}" Margin="0,0,0,6" />
+                        <CheckBox Content="Prêts : prêts en cours, tableau d'amortissement, remboursement anticipé"
+                                  IsChecked="{Binding Apparence.ModulePrets}" Margin="0,0,0,6" />
                         <CheckBox Content="Documents : documents importants, échéances, Google Drive"
                                   IsChecked="{Binding Apparence.ModuleDocuments}" Margin="0,0,0,6" />
                         <CheckBox Content="Mail : envoi de mails (Gmail ou autre messagerie), carnet d'adresses"

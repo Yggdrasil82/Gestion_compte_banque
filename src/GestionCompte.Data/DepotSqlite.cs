@@ -21,8 +21,9 @@ public sealed class DepotSqlite
     /// Version 7 : objectifs d'épargne alimentés par un compte cumulé.
     /// Version 8 : simulations de crédit.
     /// Version 9 : catégories d'opérations (nom, couleur).
+    /// Version 10 : prêts en cours (module « Prêts »).
     /// </remarks>
-    public const int VersionSchema = 9;
+    public const int VersionSchema = 10;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -184,6 +185,14 @@ public sealed class DepotSqlite
                 }));
         }
 
+        // Table absente des fichiers avant le format 10.
+        if (TableExiste(connexion, "pret"))
+            Lire(connexion, "SELECT donnees FROM pret ORDER BY ordre", l =>
+            {
+                if (PretEnregistre.Lire(l.GetString(0)) is { } pret)
+                    compte.Prets.Add(pret);
+            });
+
         return compte;
     }
 
@@ -200,7 +209,7 @@ public sealed class DepotSqlite
 
         using var transaction = connexion.BeginTransaction();
 
-        foreach (var table in new[] { "categorie_operation", "regle_classement", "objectif_epargne", "simulation_credit", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
+        foreach (var table in new[] { "pret", "categorie_operation", "regle_classement", "objectif_epargne", "simulation_credit", "operation_prevue", "operation", "mois_enveloppe", "mois_revenu", "mois", "compte_cumul",
                                       "modele_charge", "modele_enveloppe", "modele_revenu", "parametres" })
             Executer(connexion, $"DELETE FROM {table}");
 
@@ -289,6 +298,9 @@ public sealed class DepotSqlite
                 ("$d", simulation.DureeMois), ("$a", simulation.PremiereEcheance.Annee), ("$mo", simulation.PremiereEcheance.Mois),
                 ("$as", EcrireDecimal(simulation.Assurance)), ("$ta", (int)simulation.TypeAssurance),
                 ("$tc", (int)simulation.Type));
+
+        foreach (var (pret, ordre) in compte.Prets.Select((p, i) => (p, i)))
+            Executer(connexion, "INSERT INTO pret (ordre, donnees) VALUES ($o, $d)", ("$o", ordre), ("$d", PretEnregistre.Ecrire(pret)));
 
         transaction.Commit();
     }
@@ -385,6 +397,7 @@ public sealed class DepotSqlite
                 annee INTEGER NOT NULL, mois INTEGER NOT NULL, assurance TEXT NOT NULL, type_assurance INTEGER NOT NULL,
                 type_credit INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS categorie_operation (ordre INTEGER NOT NULL, nom TEXT NOT NULL, couleur TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS pret (ordre INTEGER NOT NULL, donnees TEXT NOT NULL);
             """);
 
         // Mise à jour des fichiers aux formats 1 et 2.

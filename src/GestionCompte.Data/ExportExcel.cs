@@ -161,6 +161,153 @@ public static class ExportExcel
         classeur.SaveAs(chemin);
     }
 
+    /// <summary>
+    /// Export d'un prêt : conditions, paliers, tableau d'amortissement et, si elle est fournie,
+    /// la simulation de remboursement anticipé (comparaison et nouveaux tableaux).
+    /// </summary>
+    public static void ExporterPret(PretImmobilier pret, string chemin, ResultatAnticipe? anticipe = null, PeriodeMois? dateAnticipe = null)
+    {
+        ArgumentNullException.ThrowIfNull(pret);
+        var tableau = CalculPret.Tableau(pret);
+
+        using var classeur = new XLWorkbook();
+        var feuille = classeur.Worksheets.Add("Prêt");
+        feuille.Cell(1, 1).Value = pret.Nom;
+        feuille.Cell(1, 1).Style.Font.SetBold().Font.SetFontSize(18).Font.SetFontColor(Bleu);
+        var ligne = 3;
+
+        ligne = Titre(feuille, ligne, "Conditions");
+        void Info(IXLWorksheet f, string libelle, XLCellValue valeur, bool euros = false)
+        {
+            f.Cell(ligne, 1).Value = libelle;
+            f.Cell(ligne, 2).Value = valeur;
+            if (euros)
+                f.Cell(ligne, 2).Style.NumberFormat.Format = FormatEuros;
+            ligne++;
+        }
+        Info(feuille, "Montant emprunté", pret.Montant, euros: true);
+        Info(feuille, "Taux nominal annuel (%)", pret.TauxAnnuel);
+        Info(feuille, "Première échéance", pret.PremiereEcheance.Libelle);
+        Info(feuille, "Durée (mois)", tableau.Count);
+        Info(feuille, "Assurance", pret.TypeAssurance switch
+        {
+            AssurancePret.CapitalRestant => $"{pret.Assurance} % par an du capital restant dû",
+            AssurancePret.CapitalInitial => $"{pret.Assurance} % par an du montant emprunté",
+            _ => $"{pret.Assurance} € par mois",
+        });
+        if (pret.Signature is { } signature)
+            Info(feuille, "Signature de l'offre", signature.Libelle);
+        Info(feuille, "Coût des intérêts", tableau.Sum(e => e.Interets), euros: true);
+        Info(feuille, "Coût de l'assurance", tableau.Sum(e => e.Assurance), euros: true);
+        Info(feuille, "Coût total du prêt", tableau.Sum(e => e.Interets + e.Assurance), euros: true);
+        feuille.Range(ligne - 1, 1, ligne - 1, 2).Style.Font.SetBold().Fill.SetBackgroundColor(BleuClair);
+        ligne++;
+
+        ligne = Titre(feuille, ligne, "Paliers");
+        ligne = Entete(feuille, ligne, "Palier", "Nombre de mois", "Échéance hors assurance");
+        foreach (var (palier, index) in pret.Paliers.Select((p, i) => (p, i)))
+        {
+            feuille.Cell(ligne, 1).Value = index + 1;
+            feuille.Cell(ligne, 2).Value = palier.NombreMois;
+            Montant(feuille.Cell(ligne, 3), palier.Mensualite);
+            ligne++;
+        }
+        ligne++;
+
+        ligne = Titre(feuille, ligne, "Calculs");
+        foreach (var texte in new[]
+                 {
+                     "Intérêts du mois = capital restant dû avant l'échéance × taux annuel ÷ 12, arrondi au centime.",
+                     "Capital remboursé = échéance hors assurance du palier − intérêts. La dernière échéance solde le prêt.",
+                     "Assurance = selon le contrat (taux sur le capital restant dû après l'échéance, sur le montant emprunté, ou montant fixe).",
+                 })
+            feuille.Cell(ligne++, 1).Value = texte;
+        ligne++;
+
+        ligne = Titre(feuille, ligne, "Tableau d'amortissement");
+        ligne = TableauPret(feuille, ligne, tableau);
+
+        foreach (var (colonne, largeur) in new[] { (1, 30), (2, 18), (3, 14), (4, 14), (5, 14), (6, 14), (7, 14), (8, 18), (9, 16) })
+            feuille.Column(colonne).Width = largeur;
+
+        if (anticipe is { Erreur: null, Duree: { } duree } && dateAnticipe is { } date)
+        {
+            var simulation = classeur.Worksheets.Add("Remboursement anticipé");
+            simulation.Cell(1, 1).Value = $"Remboursement anticipé de {Montants.Formater(anticipe.CapitalRembourse)} € après l'échéance de {date.Libelle}";
+            simulation.Cell(1, 1).Style.Font.SetBold().Font.SetFontSize(15).Font.SetFontColor(Bleu);
+            ligne = 3;
+            Info(simulation, "Capital restant dû avant", anticipe.CapitalRestantAvant, euros: true);
+            Info(simulation, "Capital remboursé", anticipe.CapitalRembourse, euros: true);
+            Info(simulation, "Indemnité", anticipe.Indemnite?.Montant ?? 0m, euros: true);
+            simulation.Cell(ligne++, 1).Value = anticipe.Indemnite?.Explication ?? "";
+            ligne++;
+
+            ligne = Entete(simulation, ligne, "", "Réduire la durée", "Réduire la mensualité");
+            var options = new[] { duree, anticipe.Mensualite };
+            void Comparer(string libelle, Func<OptionAnticipe, XLCellValue> valeur, bool euros)
+            {
+                simulation.Cell(ligne, 1).Value = libelle;
+                for (var i = 0; i < 2; i++)
+                {
+                    var cellule = simulation.Cell(ligne, i + 2);
+                    if (options[i] is { } option)
+                    {
+                        cellule.Value = valeur(option);
+                        if (euros)
+                            cellule.Style.NumberFormat.Format = FormatEuros;
+                    }
+                    else
+                        cellule.Value = "Non permis";
+                }
+                ligne++;
+            }
+            Comparer("Fin du prêt", o => o.Fin?.Libelle ?? "Soldé", false);
+            Comparer("Mois gagnés", o => o.MoisGagnes, false);
+            Comparer("Nouvelle échéance (assurance comprise)", o => o.NouvelleMensualite, true);
+            Comparer("Intérêts économisés", o => o.InteretsEconomises, true);
+            Comparer("Assurance économisée", o => o.AssuranceEconomisee, true);
+            Comparer("Gain net (économies − indemnité)", o => o.GainNet, true);
+            if (anticipe.SansOptionMensualite.Length > 0)
+                simulation.Cell(ligne++, 1).Value = anticipe.SansOptionMensualite;
+            ligne++;
+
+            ligne = Titre(simulation, ligne, "Nouveau tableau : réduire la durée");
+            ligne = TableauPret(simulation, ligne, duree.Tableau) + 1;
+            if (anticipe.Mensualite is { } mensualite)
+            {
+                ligne = Titre(simulation, ligne, "Nouveau tableau : réduire la mensualité");
+                TableauPret(simulation, ligne, mensualite.Tableau);
+            }
+            foreach (var (colonne, largeur) in new[] { (1, 38), (2, 18), (3, 20), (4, 14), (5, 14), (6, 14), (7, 14), (8, 18), (9, 16) })
+                simulation.Column(colonne).Width = largeur;
+        }
+
+        classeur.SaveAs(chemin);
+    }
+
+    private static int TableauPret(IXLWorksheet feuille, int ligne, IReadOnlyList<EcheancePret> tableau)
+    {
+        ligne = Entete(feuille, ligne, "N°", "Mois", "Échéance", "Capital", "Intérêts", "Assurance", "Hors assurance", "Capital restant dû", "Anticipé");
+        foreach (var echeance in tableau)
+        {
+            feuille.Cell(ligne, 1).Value = echeance.Numero;
+            feuille.Cell(ligne, 2).Value = echeance.Periode.Libelle;
+            Montant(feuille.Cell(ligne, 3), echeance.Mensualite);
+            Montant(feuille.Cell(ligne, 4), echeance.Capital);
+            Montant(feuille.Cell(ligne, 5), echeance.Interets);
+            Montant(feuille.Cell(ligne, 6), echeance.Assurance);
+            Montant(feuille.Cell(ligne, 7), echeance.HorsAssurance);
+            Montant(feuille.Cell(ligne, 8), echeance.CapitalRestant);
+            if (echeance.Anticipe > 0)
+            {
+                Montant(feuille.Cell(ligne, 9), echeance.Anticipe);
+                feuille.Range(ligne, 1, ligne, 9).Style.Font.SetBold();
+            }
+            ligne++;
+        }
+        return ligne;
+    }
+
     /// <summary>Export du bilan : totaux, mois par mois, postes de dépenses et pistes d'économie.</summary>
     public static void ExporterBilan(ResultatBilan bilan, string titre, string chemin)
     {

@@ -44,6 +44,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Assistant » (masquable dans la configuration).</summary>
     public const int OngletAssistant = 12;
 
+    /// <summary>Module « Prêts » (masquable dans la configuration).</summary>
+    public const int OngletPrets = 13;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -113,7 +116,8 @@ public sealed partial class MainViewModel : ObservableObject
                 || (OngletSelectionne == OngletMail && !Apparence.ModuleMail)
                 || (OngletSelectionne == OngletAchats && !Apparence.ModuleAchats)
                 || (OngletSelectionne == OngletLettres && !Apparence.ModuleLettres)
-                || (OngletSelectionne == OngletAssistant && !Apparence.ModuleAssistant))
+                || (OngletSelectionne == OngletAssistant && !Apparence.ModuleAssistant)
+                || (OngletSelectionne == OngletPrets && !Apparence.ModulePrets))
                 OngletSelectionne = OngletConfiguration;
             Documents.EnvoiParMailPossible = Apparence.ModuleMail;
             Lettres.EnvoiParMailPossible = Apparence.ModuleMail;
@@ -336,6 +340,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private AideBudgetViewModel _aideBudget = null!;
     [ObservableProperty] private CreditsViewModel _credits = null!;
+    [ObservableProperty] private PretsViewModel _prets = null!;
     [ObservableProperty] private BilanViewModel _bilan = null!;
 
     /// <summary>Documents importants, communs à tous les comptes.</summary>
@@ -605,6 +610,7 @@ public sealed partial class MainViewModel : ObservableObject
         var nouveau = new CompteBancaire(configuration);
         nouveau.ObjectifsEpargne.AddRange(_compte.ObjectifsEpargne);
         nouveau.SimulationsCredit.AddRange(_compte.SimulationsCredit);
+        nouveau.Prets.AddRange(_compte.Prets);
         Repartir(nouveau);
         Statut = "Mois effacés : vérifiez le premier mois et le solde de départ, puis créez le premier mois.";
     }
@@ -843,6 +849,9 @@ public sealed partial class MainViewModel : ObservableObject
         Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
         AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
         Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire, IA, () => _aujourdhui);
+        // Même prêt sélectionné après un changement de la configuration (ex. « Ajouter aux charges »).
+        var pretSelectionne = Prets is { } anciens && ReferenceEquals(anciens.Compte, _compte) ? anciens.IndexSelection : 0;
+        Prets = new PretsViewModel(_compte, _moisDuJour, _dialogues, Enregistrer, PretAjouteAuxCharges, pretSelectionne);
         Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues) { EnvoiParMailPossible = Apparence.ModuleMail };
         Bilan.EnvoiParMailDemande += (_, _) =>
         {
@@ -862,6 +871,14 @@ public sealed partial class MainViewModel : ObservableObject
         Bilan.Recalculer();
         AfficherMoisCourant();
         Statut = "Prévisionnel mis à jour avec la simulation de crédit.";
+    }
+
+    /// <summary>Échéance d'un prêt ajoutée aux charges de la configuration depuis le module Prêts.</summary>
+    private void PretAjouteAuxCharges()
+    {
+        Enregistrer();
+        Reconstruire();
+        Statut = "Charge du prêt enregistrée dans la configuration : elle sera reprise dans chaque nouveau mois.";
     }
 
     private void OperationsPrevuesModifiees()
