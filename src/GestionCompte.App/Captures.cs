@@ -174,10 +174,13 @@ internal static class Captures
 
             // Prêts : le prêt lissé, avant le dernier palier (seule la durée peut baisser)…
             vm.Prets.Liste.Selection = vm.Prets.Liste.Elements[0];
+            vm.OngletSelectionne = MainViewModel.OngletPrets;
+            vm.Prets.Selection!.Rafraichir(); // le tableau se place sur le mois en cours
             await Capturer(("31-prets-ocean", Ambiance.Ocean, false, MainViewModel.OngletPrets, false));
             // … puis sans cette règle, pour comparer les deux options.
             vm.Prets.Selection!.DureeSeuleAvantDernierPalier = false;
             vm.Prets.MontantAnticipe = 30000m;
+            vm.Prets.Selection.Rafraichir();
             await Capturer(("32-prets-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletPrets, false));
 
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.

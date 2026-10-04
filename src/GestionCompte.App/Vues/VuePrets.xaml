@@ -23,50 +23,6 @@
             <Setter Property="Margin" Value="0,0,6,6" />
             <Setter Property="HorizontalAlignment" Value="Left" />
         </Style>
-        <!-- Carte d'une option de remboursement anticipé. -->
-        <DataTemplate x:Key="Option">
-            <Border Style="{StaticResource Carte}" Margin="0" Padding="14,10" Cursor="Help" ToolTip="{Binding Explication}">
-                <StackPanel>
-                    <TextBlock Text="{Binding Titre}" FontWeight="Bold" FontSize="15" Margin="0,0,0,6" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="Fin du prêt" Style="{StaticResource Discret}" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" TextAlignment="Right">
-                            <Run Text="{Binding Fin, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text="{Binding MoisGagnes, Mode=OneWay, StringFormat='({0})'}" Foreground="{DynamicResource TexteDiscret}" />
-                        </TextBlock>
-                        <TextBlock Grid.Row="1" Text="Échéance suivante" Style="{StaticResource Discret}" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" TextAlignment="Right">
-                            <Run Text="{Binding NouvelleMensualite, Mode=OneWay}" FontWeight="SemiBold" />
-                            <Run Text="{Binding AncienneMensualite, Mode=OneWay, StringFormat='au lieu de {0}'}" Foreground="{DynamicResource TexteDiscret}" />
-                        </TextBlock>
-                        <TextBlock Grid.Row="2" Text="Intérêts économisés" Style="{StaticResource Discret}" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding InteretsEconomises}" TextAlignment="Right" />
-                        <TextBlock Grid.Row="3" Text="Assurance économisée" Style="{StaticResource Discret}" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AssuranceEconomisee}" TextAlignment="Right" />
-                        <TextBlock Grid.Row="4" Text="Gain net (indemnité déduite)" FontWeight="SemiBold" Margin="0,6,0,0" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GainNet}" TextAlignment="Right" FontWeight="Bold" FontSize="16" Margin="0,4,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource Positif}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding GainPositif}" Value="False">
-                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
     </UserControl.Resources>
 
     <DockPanel>
@@ -341,7 +297,7 @@
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
                                    Text="Le mois en cours est surligné. Survolez une ligne pour voir le calcul : intérêts = capital restant dû × taux ÷ 12 ; capital = échéance − intérêts." />
                         <DataGrid ItemsSource="{Binding Selection.Tableau, NotifyOnTargetUpdated=True}" IsReadOnly="True" Height="420" Margin="0,6,0,0"
-                                  TargetUpdated="TableauMisAJour">
+                                  TargetUpdated="TableauMisAJour" Loaded="TableauCharge" IsVisibleChanged="TableauVisible">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="ToolTip" Value="{Binding Explication}" />
@@ -420,9 +376,88 @@
                                     <ColumnDefinition Width="12" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <ContentControl Grid.Column="0" Content="{Binding OptionDuree}" ContentTemplate="{StaticResource Option}" />
-                                <ContentControl Grid.Column="2" Content="{Binding OptionMensualite}" ContentTemplate="{StaticResource Option}"
-                                                Visibility="{Binding AvecOptionMensualite, Converter={StaticResource Visible}}" />
+                                <Border Grid.Column="0" DataContext="{Binding OptionDuree}" Style="{StaticResource Carte}" Margin="0" Padding="14,10" Cursor="Help" ToolTip="{Binding Explication}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Titre}" FontWeight="Bold" FontSize="15" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Fin du prêt" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" TextAlignment="Right">
+                            <Run Text="{Binding Fin, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="{Binding MoisGagnes, Mode=OneWay, StringFormat='({0})'}" Foreground="{DynamicResource TexteDiscret}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Text="Échéance suivante" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" TextAlignment="Right">
+                            <Run Text="{Binding NouvelleMensualite, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="{Binding AncienneMensualite, Mode=OneWay, StringFormat='au lieu de {0}'}" Foreground="{DynamicResource TexteDiscret}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="2" Text="Intérêts économisés" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding InteretsEconomises}" TextAlignment="Right" />
+                        <TextBlock Grid.Row="3" Text="Assurance économisée" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AssuranceEconomisee}" TextAlignment="Right" />
+                        <TextBlock Grid.Row="4" Text="Gain net (indemnité déduite)" FontWeight="SemiBold" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GainNet}" TextAlignment="Right" FontWeight="Bold" FontSize="16" Margin="0,4,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GainPositif}" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </StackPanel>
+            </Border>
+                                <Border Grid.Column="2" DataContext="{Binding OptionMensualite}" Visibility="{Binding DataContext.AvecOptionMensualite, ElementName=Racine, Converter={StaticResource Visible}}" Style="{StaticResource Carte}" Margin="0" Padding="14,10" Cursor="Help" ToolTip="{Binding Explication}">
+                <StackPanel>
+                    <TextBlock Text="{Binding Titre}" FontWeight="Bold" FontSize="15" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Fin du prêt" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" TextAlignment="Right">
+                            <Run Text="{Binding Fin, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="{Binding MoisGagnes, Mode=OneWay, StringFormat='({0})'}" Foreground="{DynamicResource TexteDiscret}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Text="Échéance suivante" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" TextAlignment="Right">
+                            <Run Text="{Binding NouvelleMensualite, Mode=OneWay}" FontWeight="SemiBold" />
+                            <Run Text="{Binding AncienneMensualite, Mode=OneWay, StringFormat='au lieu de {0}'}" Foreground="{DynamicResource TexteDiscret}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="2" Text="Intérêts économisés" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding InteretsEconomises}" TextAlignment="Right" />
+                        <TextBlock Grid.Row="3" Text="Assurance économisée" Style="{StaticResource Discret}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AssuranceEconomisee}" TextAlignment="Right" />
+                        <TextBlock Grid.Row="4" Text="Gain net (indemnité déduite)" FontWeight="SemiBold" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding GainNet}" TextAlignment="Right" FontWeight="Bold" FontSize="16" Margin="0,4,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GainPositif}" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </StackPanel>
+            </Border>
                                 <Border Grid.Column="2" Style="{StaticResource Carte}" Margin="0" Padding="14,10"
                                         Visibility="{Binding AvecOptionMensualite, Converter={StaticResource MasqueSiVrai}}">
                                     <StackPanel>
