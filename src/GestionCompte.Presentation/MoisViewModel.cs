@@ -13,11 +13,15 @@ public sealed partial class MoisViewModel : ObservableObject
     private readonly MoisBudget _mois;
     private readonly Action _donneesModifiees;
 
-    public MoisViewModel(CompteBancaire compte, MoisBudget mois, Action donneesModifiees)
+    private readonly ApparenceViewModel? _apparence;
+
+    /// <param name="apparence">Réglage « ranger par catégorie » (propre au PC) ; null = rangé par catégorie.</param>
+    public MoisViewModel(CompteBancaire compte, MoisBudget mois, Action donneesModifiees, ApparenceViewModel? apparence = null)
     {
         _compte = compte;
         _mois = mois;
         _donneesModifiees = donneesModifiees;
+        _apparence = apparence;
 
         Revenus = new ListeEditable<RevenuMoisViewModel>(
             mois.Revenus.Select(r => new RevenuMoisViewModel(r, ValeurModifiee)),
@@ -33,6 +37,13 @@ public sealed partial class MoisViewModel : ObservableObject
 
         NomsEnveloppes = new[] { "" }.Concat(mois.Enveloppes.Select(e => e.Nom)).ToList();
         NomsComptesCumul = new[] { "" }.Concat(compte.Configuration.ComptesCumul.Select(c => c.Nom)).ToList();
+        // Catégories de la configuration, plus celles encore utilisées dans le mois (catégorie renommée ou supprimée).
+        NomsCategories = new[] { "" }
+            .Concat(compte.Configuration.CategoriesOperations.Select(c => c.Nom))
+            .Concat(mois.Operations.Select(o => o.CategorieOperation).OfType<string>())
+            .Distinct(StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+        _rangerParCategorie = apparence?.RangerParCategorie ?? true;
 
         Recalculer();
     }
@@ -63,6 +74,31 @@ public sealed partial class MoisViewModel : ObservableObject
 
     /// <summary>Choix possibles dans la colonne « Compte cumulé » (vide = aucun).</summary>
     public IReadOnlyList<string> NomsComptesCumul { get; }
+
+    /// <summary>Choix possibles dans la colonne « Catégorie » (vide = aucune).</summary>
+    public IReadOnlyList<string> NomsCategories { get; }
+
+    /// <summary>Le mois a au moins une catégorie d'opérations à proposer (sinon la colonne et le bouton sont masqués).</summary>
+    public bool ACategories => NomsCategories.Count > 1;
+
+    /// <summary>
+    /// Opérations rangées par catégorie (dans l'ordre de la configuration, sans catégorie à la fin),
+    /// sinon dans l'ordre de saisie. Le solde ligne par ligne suit l'ordre affiché.
+    /// </summary>
+    [ObservableProperty] private bool _rangerParCategorie;
+
+    partial void OnRangerParCategorieChanged(bool value)
+    {
+        if (_apparence is not null)
+            _apparence.RangerParCategorie = value;
+        Recalculer();
+    }
+
+    /// <summary>Opérations dans l'ordre affiché.</summary>
+    public IReadOnlyList<OperationViewModel> OperationsAffichees =>
+        RangerParCategorie
+            ? Operations.Elements.OrderBy(o => o.OrdreCategorie).ThenBy(o => o.Position).ToList()
+            : Operations.Elements.OrderBy(o => o.Position).ToList();
 
     [ObservableProperty] private decimal _ancienSolde;
     [ObservableProperty] private decimal _totalRevenus;
@@ -101,9 +137,32 @@ public sealed partial class MoisViewModel : ObservableObject
         foreach (var (vm, etat) in Enveloppes.Zip(resultat.Enveloppes))
             vm.MettreAJour(etat);
 
-        var soldesOperations = resultat.Lignes.Where(l => l.Type == Core.Calculs.TypeLigne.Operation).Select(l => l.Solde);
-        foreach (var (vm, solde) in Operations.Elements.Zip(soldesOperations))
+        // Solde ligne par ligne dans l'ordre affiché, à partir du solde avant les opérations.
+        var categories = _compte.Configuration.CategoriesOperations;
+        for (var i = 0; i < Operations.Elements.Count; i++)
+        {
+            var vm = Operations.Elements[i];
+            vm.Position = i;
+            var index = categories.FindIndex(c => string.Equals(c.Nom, vm.Modele.CategorieOperation, StringComparison.CurrentCultureIgnoreCase));
+            vm.OrdreCategorie = vm.Modele.CategorieOperation is null ? int.MaxValue : index >= 0 ? index : categories.Count;
+            vm.CouleurCategorie = index >= 0 ? categories[index].Couleur : vm.Modele.CategorieOperation is null ? null : "#7D8A93";
+        }
+
+        var soldeAvant = resultat.Lignes.LastOrDefault(l => l.Type != Core.Calculs.TypeLigne.Operation)?.Solde ?? resultat.AncienSolde;
+        var solde = soldeAvant;
+        foreach (var vm in OperationsAffichees)
+        {
+            solde += vm.Credit - vm.Debit;
             vm.Solde = solde;
+        }
+
+        foreach (var groupe in Operations.Elements.GroupBy(o => o.Modele.CategorieOperation ?? ""))
+        {
+            var total = groupe.Sum(o => o.Credit - o.Debit);
+            foreach (var vm in groupe)
+                vm.TotalCategorie = total;
+        }
+        OnPropertyChanged(nameof(OperationsAffichees));
 
         NombrePointees = _mois.Operations.Count(o => o.Pointee);
         ResumePointage = $"{NombrePointees} / {_mois.Operations.Count} opérations pointées";
@@ -266,6 +325,45 @@ public sealed partial class OperationViewModel : ObservableObject
         get => Modele.CompteCumul ?? "";
         set { if (SetProperty(Modele.CompteCumul, VideVersNull(value), Modele, (m, v) => m.CompteCumul = v)) _modifie(); }
     }
+
+    /// <summary>Catégorie d'opérations choisie à la main (ex. « Agen ») ; chaîne vide = aucune.</summary>
+    public string Categorie
+    {
+        get => Modele.CategorieOperation ?? "";
+        set
+        {
+            if (SetProperty(Modele.CategorieOperation, VideVersNull(value), Modele, (m, v) => m.CategorieOperation = v))
+            {
+                OnPropertyChanged(nameof(GroupeCategorie));
+                _modifie();
+            }
+        }
+    }
+
+    /// <summary>Titre du groupe affiché quand les opérations sont rangées par catégorie.</summary>
+    public string GroupeCategorie => Modele.CategorieOperation ?? "Sans catégorie";
+
+    /// <summary>Rang de la catégorie dans la configuration (sans catégorie : à la fin).</summary>
+    [ObservableProperty] private int _ordreCategorie;
+
+    /// <summary>Position dans l'ordre de saisie.</summary>
+    [ObservableProperty] private int _position;
+
+    /// <summary>Couleur de la catégorie (« #RRGGBB »), null sans catégorie.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ACategorie), nameof(CouleurBande), nameof(CouleurGroupe))]
+    private string? _couleurCategorie;
+
+    /// <summary>Liseré de couleur à gauche de la ligne (transparent sans catégorie).</summary>
+    public string CouleurBande => CouleurCategorie ?? "Transparent";
+
+    /// <summary>Pastille du bandeau de groupe (gris sans catégorie).</summary>
+    public string CouleurGroupe => CouleurCategorie ?? "#7D8A93";
+
+    public bool ACategorie => CouleurCategorie is not null;
+
+    /// <summary>Total (crédits − débits) des opérations de la même catégorie, affiché dans le bandeau du groupe.</summary>
+    [ObservableProperty] private decimal _totalCategorie;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SoldeNegatif))]

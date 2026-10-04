@@ -881,7 +881,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void AfficherMoisCourant()
     {
-        MoisCourant = _indexMois >= 0 ? new MoisViewModel(_compte, _compte.Mois[_indexMois], MoisModifie) : null;
+        MoisCourant = _indexMois >= 0 ? new MoisViewModel(_compte, _compte.Mois[_indexMois], MoisModifie, Apparence) : null;
 
         OnPropertyChanged(nameof(TexteCreerMois));
         MettreAJourListeMois();

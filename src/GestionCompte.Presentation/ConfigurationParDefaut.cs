@@ -213,6 +213,22 @@ public static class ConfigurationParDefaut
             new Operation("Remboursement mutuelle", credit: 42.30m),
         });
 
+        // Catégories d'opérations choisies à la main en novembre (captures du rangement par catégorie).
+        compte.Configuration.CategoriesOperations.AddRange(new[]
+        {
+            new CategorieOperation("Maison", "#2F7FD8"),
+            new CategorieOperation("Voiture", "#E8892B"),
+            new CategorieOperation("Enfants", "#8A5CD1"),
+        });
+        foreach (var (categorie, libelles) in new[]
+                 {
+                     ("Maison", new[] { "Loyer", "Électricité", "Eau", "Alarme", "Poubelle", "Internet" }),
+                     ("Voiture", new[] { "Crédit Voiture", "Assurance Voiture", "Plein Total" }),
+                     ("Enfants", new[] { "Mobile enfant 1", "Mobile enfant 2", "Mobile enfant 3", "Cantine" }),
+                 })
+            foreach (var operation in novembre.Operations.Where(o => libelles.Contains(o.Libelle)))
+                operation.CategorieOperation = categorie;
+
         // Poubelles prélevées un mois sur deux (novembre, janvier, mars…).
         var charges = compte.Configuration.Charges;
         var poubelle = charges.FindIndex(c => c.Nom == "Poubelle");

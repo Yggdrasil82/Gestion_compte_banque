@@ -62,6 +62,12 @@ public sealed partial class ConfigurationViewModel : ObservableObject
             configuration.Regles.Select(r => new RegleConfigViewModel(r, Synchroniser)),
             () => new RegleConfigViewModel(new RegleClassement("MOT-CLÉ", configuration.Enveloppes.FirstOrDefault()?.Nom ?? ""), Synchroniser),
             Synchroniser);
+
+        CategoriesOperations = new ListeEditable<CategorieOperationConfigViewModel>(
+            configuration.CategoriesOperations.Select(c => new CategorieOperationConfigViewModel(c, Synchroniser)),
+            () => new CategorieOperationConfigViewModel(new CategorieOperation("Nouvelle catégorie",
+                CategorieOperation.Couleurs[CategoriesOperations!.Elements.Count % CategorieOperation.Couleurs.Count].Code), Synchroniser),
+            Synchroniser);
     }
 
     public static IReadOnlyList<string> NomsMois { get; } =
@@ -124,6 +130,12 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     /// <summary>Règles de classement des opérations importées (mot-clé du libellé → enveloppe).</summary>
     public ListeEditable<RegleConfigViewModel> Regles { get; }
 
+    /// <summary>Catégories d'opérations (Agen, Maison…) et leur couleur, choisies à la main dans le mois.</summary>
+    public ListeEditable<CategorieOperationConfigViewModel> CategoriesOperations { get; }
+
+    /// <summary>Choix de la colonne « Couleur » des catégories d'opérations.</summary>
+    public static IReadOnlyList<ChoixCouleur> Couleurs => ChoixCouleur.Toutes;
+
     /// <summary>Choix de la colonne « Enveloppe » des règles.</summary>
     public IReadOnlyList<string> NomsEnveloppes => Enveloppes.Elements.Select(e => e.Nom).ToList();
 
@@ -145,6 +157,10 @@ public sealed partial class ConfigurationViewModel : ObservableObject
         _configuration.Regles.AddRange(Regles.Elements
             .Where(r => !string.IsNullOrWhiteSpace(r.MotCle) && !string.IsNullOrWhiteSpace(r.Enveloppe))
             .Select(r => new RegleClassement(r.MotCle.Trim(), r.Enveloppe)));
+        _configuration.CategoriesOperations.Clear();
+        _configuration.CategoriesOperations.AddRange(CategoriesOperations.Elements
+            .Where(c => !string.IsNullOrWhiteSpace(c.Nom))
+            .Select(c => new CategorieOperation(c.Nom.Trim(), c.Couleur.Code)));
 
         OnPropertyChanged(nameof(NomsComptesCumul));
         OnPropertyChanged(nameof(NomsEnveloppes));
@@ -370,4 +386,43 @@ public sealed record ChoixFrequence(int Mois, string Nom)
         Toutes.FirstOrDefault(f => f.Mois == mois) ?? new ChoixFrequence(mois, $"Tous les {mois} mois");
 
     public override string ToString() => Nom;
+}
+
+/// <summary>Couleur proposée pour une catégorie d'opérations.</summary>
+public sealed record ChoixCouleur(string Nom, string Code)
+{
+    public static IReadOnlyList<ChoixCouleur> Toutes { get; } =
+        CategorieOperation.Couleurs.Select(c => new ChoixCouleur(c.Nom, c.Code)).ToList();
+
+    /// <summary>Couleur correspondant à un code (un code inconnu est gardé tel quel).</summary>
+    public static ChoixCouleur De(string code) =>
+        Toutes.FirstOrDefault(c => string.Equals(c.Code, code, StringComparison.OrdinalIgnoreCase)) ?? new ChoixCouleur("Personnalisée", code);
+
+    public override string ToString() => Nom;
+}
+
+public sealed class CategorieOperationConfigViewModel : ObservableObject
+{
+    private readonly Action _modifie;
+    private string _nom;
+    private ChoixCouleur _couleur;
+
+    public CategorieOperationConfigViewModel(CategorieOperation categorie, Action modifie)
+    {
+        _nom = categorie.Nom;
+        _couleur = ChoixCouleur.De(categorie.Couleur);
+        _modifie = modifie;
+    }
+
+    public string Nom
+    {
+        get => _nom;
+        set { if (SetProperty(ref _nom, value ?? "")) _modifie(); }
+    }
+
+    public ChoixCouleur Couleur
+    {
+        get => _couleur;
+        set { if (value is not null && SetProperty(ref _couleur, value)) _modifie(); }
+    }
 }

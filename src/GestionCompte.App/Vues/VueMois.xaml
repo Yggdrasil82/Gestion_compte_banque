@@ -233,12 +233,46 @@
                         <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
                         <TextBlock Text="Opérations" Style="{StaticResource TitreCarte}" />
                         <TextBlock Text="{Binding ResumePointage}" Style="{StaticResource Discret}" Margin="14,0,0,8" VerticalAlignment="Center" />
+                        <CheckBox Content="Ranger par catégorie" IsChecked="{Binding RangerParCategorie}" Margin="18,0,0,8" VerticalAlignment="Center"
+                                  ToolTip="Décochez pour revenir à l'ordre de saisie des opérations"
+                                  Visibility="{Binding ACategories, Converter={StaticResource Visible}}" />
                     </StackPanel>
                 </DockPanel>
                 <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
                            Text="Cochez « Pointé » quand l'opération apparaît sur le relevé. Choisissez une enveloppe pour les dépenses de courses, carburant… : elles sont déduites de son budget." />
 
-                <DataGrid ItemsSource="{Binding Operations.Elements}" SelectedItem="{Binding Operations.Selection}">
+                <!-- Liste remplie par le code (VueMois.xaml.cs) : regroupée par catégorie ou dans l'ordre de saisie. -->
+                <DataGrid x:Name="GrilleOperations" SelectedItem="{Binding Operations.Selection}">
+                    <!-- Ligne pointée (à la main ou par l'import d'un relevé) : surlignée en vert. -->
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Pointee}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource Accent2Clair}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <!-- Bandeau de chaque catégorie : sa couleur, son nom et son total. -->
+                    <DataGrid.GroupStyle>
+                        <GroupStyle>
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,8,0,2" Padding="10,4" CornerRadius="6" Background="{DynamicResource LigneAlternee}">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Margin="0,0,8,0"
+                                                       Text="{Binding Items[0].TotalCategorie, Converter={StaticResource Euros}}" />
+                                            <Border Width="12" Height="12" CornerRadius="6" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                    Background="{Binding Items[0].CouleurGroupe}" />
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center" />
+                                            <TextBlock Text="{Binding ItemCount, StringFormat=' · {0} opération(s)'}" Style="{StaticResource Discret}"
+                                                       VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </DataGrid.GroupStyle>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Pointé" Width="70">
                             <DataGridTemplateColumn.CellTemplate>
@@ -254,6 +288,19 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Libellé" Binding="{Binding Libelle}" Width="*" MinWidth="160"
                                             ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
+                        <DataGridTemplateColumn x:Name="ColonneCategorie" Header="Catégorie" Width="135">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <DockPanel>
+                                        <Border DockPanel.Dock="Left" Width="5" Margin="2,4,4,4" CornerRadius="2"
+                                                Background="{Binding CouleurBande}" />
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  ItemsSource="{Binding DataContext.NomsCategories, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding Categorie, UpdateSourceTrigger=PropertyChanged}" />
+                                    </DockPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="Enveloppe" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

@@ -72,6 +72,9 @@ public sealed class Operation
     /// <summary>Compte cumulé alimenté par le débit de cette opération (ex. « Épargne »), ou null.</summary>
     public string? CompteCumul { get; set; }
 
+    /// <summary>Catégorie d'opérations choisie à la main (ex. « Agen »), ou null.</summary>
+    public string? CategorieOperation { get; set; }
+
     /// <summary>Identifiant de l'opération bancaire importée (FITID du fichier OFX), ou null si saisie à la main.</summary>
     public string? IdentifiantBanque { get; set; }
 }

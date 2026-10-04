@@ -69,6 +69,9 @@ public sealed class PreferencesAffichage
     /// <summary>Animation du logo à l'ouverture de l'application.</summary>
     public bool AnimationDemarrage { get; set; } = true;
 
+    /// <summary>Opérations du mois rangées par catégorie (sinon dans l'ordre de saisie).</summary>
+    public bool RangerParCategorie { get; set; } = true;
+
     /// <summary>Onglet « Assistant » affiché dans la barre de gauche.</summary>
     public bool ModuleAssistant { get; set; } = true;
 
@@ -245,6 +248,17 @@ public sealed class ApparenceViewModel : ObservableObject
         set
         {
             if (SetProperty(_preferences.AnimationDemarrage, value, _preferences, (p, v) => p.AnimationDemarrage = v))
+                Enregistrer();
+        }
+    }
+
+    /// <summary>Opérations du mois rangées par catégorie, ou dans l'ordre de saisie (réglage propre au PC).</summary>
+    public bool RangerParCategorie
+    {
+        get => _preferences.RangerParCategorie;
+        set
+        {
+            if (SetProperty(_preferences.RangerParCategorie, value, _preferences, (p, v) => p.RangerParCategorie = v))
                 Enregistrer();
         }
     }

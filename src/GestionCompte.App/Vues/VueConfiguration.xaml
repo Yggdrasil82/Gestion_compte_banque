@@ -146,6 +146,45 @@
                     </DockPanel>
                 </Border>
 
+                <!-- Catégories d'opérations (choisies à la main dans le mois) -->
+                <Border Style="{StaticResource Carte}">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top">
+                            <ContentControl DockPanel.Dock="Right" Content="{Binding CategoriesOperations}" ContentTemplate="{StaticResource BoutonsListe}" />
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                                <TextBlock Text="Catégories d'opérations" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}"
+                                   Text="Agen, Maison, Voiture… : choisissez la catégorie d'une opération dans le mois (colonne « Catégorie ») ; les opérations y sont rangées par catégorie, dans l'ordre de cette liste." />
+                        <DataGrid ItemsSource="{Binding CategoriesOperations.Elements}" SelectedItem="{Binding CategoriesOperations.Selection}" MinHeight="90">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Catégorie" Binding="{Binding Nom}" Width="*" ElementStyle="{StaticResource CelluleTexte}"
+                                                    EditingElementStyle="{StaticResource EditionTexte}" />
+                                <DataGridTemplateColumn Header="Couleur" Width="160">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Style="{StaticResource ListeCellule}"
+                                                      ItemsSource="{x:Static vm:ConfigurationViewModel.Couleurs}"
+                                                      SelectedItem="{Binding Couleur, UpdateSourceTrigger=PropertyChanged}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Border Width="12" Height="12" CornerRadius="6" Margin="0,0,8,0" Background="{Binding Code}" />
+                                                            <TextBlock Text="{Binding Nom}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+
                 <!-- Règles de classement des relevés importés -->
                 <Border Style="{StaticResource Carte}">
                     <DockPanel>

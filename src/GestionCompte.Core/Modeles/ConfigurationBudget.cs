@@ -27,6 +27,9 @@ public sealed class ConfigurationBudget
     /// <summary>Règles de classement des opérations importées : mot-clé du libellé → enveloppe.</summary>
     public List<RegleClassement> Regles { get; } = new();
 
+    /// <summary>Catégories d'opérations choisies à la main (Agen, Maison…), avec leur couleur, pour ranger les opérations du mois.</summary>
+    public List<CategorieOperation> CategoriesOperations { get; } = new();
+
     /// <summary>
     /// Copie pour un nouveau compte : mêmes revenus, enveloppes, charges, comptes cumulés et règles,
     /// mais nouveau premier mois, solde de départ et montants déjà cumulés à zéro.
@@ -39,6 +42,7 @@ public sealed class ConfigurationBudget
         copie.Charges.AddRange(Charges);
         copie.ComptesCumul.AddRange(ComptesCumul.Select(c => c with { MontantInitial = 0m }));
         copie.Regles.AddRange(Regles);
+        copie.CategoriesOperations.AddRange(CategoriesOperations);
         return copie;
     }
 }
@@ -52,6 +56,18 @@ public sealed record RegleClassement(string MotCle, string Enveloppe)
             .Select(m => new RegleClassement(m, "Courses"))
             .Concat(new[] { "TOTAL", "ESSO", "BP", "SHELL", "AVIA" }.Select(m => new RegleClassement(m, "Carburant")))
             .ToList();
+}
+
+/// <summary>Catégorie d'opérations (ex. « Agen ») ; à ne pas confondre avec la catégorie 50/30/20.</summary>
+/// <param name="Couleur">Couleur au format « #RRGGBB ».</param>
+public sealed record CategorieOperation(string Nom, string Couleur)
+{
+    /// <summary>Couleurs proposées (nom affiché, code).</summary>
+    public static IReadOnlyList<(string Nom, string Code)> Couleurs { get; } = new[]
+    {
+        ("Vert", "#2E9E5B"), ("Bleu", "#2F7FD8"), ("Orange", "#E8892B"), ("Violet", "#8A5CD1"), ("Rouge", "#D64545"),
+        ("Rose", "#D9539B"), ("Turquoise", "#1AA5A5"), ("Jaune", "#D8B21F"), ("Marron", "#9A6B44"), ("Gris", "#7D8A93"),
+    };
 }
 
 public sealed record ModeleRevenu(string Nom, decimal MontantParDefaut);
