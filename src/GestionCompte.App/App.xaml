@@ -17,6 +17,7 @@
         <BooleanToVisibilityConverter x:Key="Visible" />
         <local:ProportionConvertisseur x:Key="Proportion" />
         <local:MasqueSiVraiConvertisseur x:Key="MasqueSiVrai" />
+        <local:NouvelleVueEnsembleConvertisseur x:Key="NouvelleVueEnsemble" />
 
         <FontFamily x:Key="Icones">Segoe MDL2 Assets</FontFamily>
 

@@ -224,10 +224,6 @@ internal static class Captures
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 0;
             await Capturer(("41-ensemble-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletEnsemble, false));
-            // Contrôle : lignes du tableau des comptes (une par compte).
-            var grilles = Descendants(hote).OfType<DataGrid>().Where(g => g.Name == "GrilleComptes").ToList();
-            File.WriteAllText(Path.Combine(dossier, "controle-ensemble.txt"),
-                $"Comptes : {vm.Ensemble?.Lignes.Count}, grilles : {grilles.Count}, lignes affichées : {string.Join(", ", grilles.Select(g => g.Items.Count))}");
             vm.CompteActif = RegistreComptes.NomPrincipal;
 
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
@@ -465,17 +461,6 @@ internal static class Captures
             }, new byte[d.Taille]);
             if (d.Protege)
                 await coffre.ProtegerAsync(document, true);
-        }
-    }
-
-    private static IEnumerable<DependencyObject> Descendants(DependencyObject parent)
-    {
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var enfant = VisualTreeHelper.GetChild(parent, i);
-            yield return enfant;
-            foreach (var d in Descendants(enfant))
-                yield return d;
         }
     }
 

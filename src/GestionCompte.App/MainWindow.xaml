@@ -294,7 +294,7 @@
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=3}" />
 
                 <!-- Vue d'ensemble de tous les comptes -->
-                <ContentControl Content="{Binding Ensemble}"
+                <ContentControl Content="{Binding Ensemble, Converter={StaticResource NouvelleVueEnsemble}}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=5}" />
 
                 <!-- Manuel d'utilisation -->

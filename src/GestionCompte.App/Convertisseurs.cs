@@ -77,3 +77,16 @@ public sealed class MasqueSiVraiConvertisseur : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         DependencyProperty.UnsetValue;
 }
+
+/// <summary>
+/// Un nouvel écran « Vue d'ensemble » à chaque calcul : réutilisé, son tableau gardait la hauteur
+/// de l'ouverture précédente et un compte ajouté depuis n'y apparaissait pas.
+/// </summary>
+public sealed class NouvelleVueEnsembleConvertisseur : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is Presentation.VueEnsembleViewModel ensemble ? new Vues.VueEnsemble { DataContext = ensemble } : null!;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        DependencyProperty.UnsetValue;
+}
