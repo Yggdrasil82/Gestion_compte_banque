@@ -8,6 +8,10 @@ on:
       run_id:
         description: "Numéro de l'exécution « Application Windows » dont l'exe a été validé"
         required: true
+  # Ou en envoyant l'étiquette « publier-<run_id> » (supprimée une fois la version publiée).
+  push:
+    tags:
+      - 'publier-*'
 
 permissions:
   contents: write
@@ -19,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
+    env:
+      RUN_ID: ${{ inputs.run_id || github.ref_name }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +33,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh run download "${{ inputs.run_id }}" --name GestionCompte-windows --dir publication
+          RUN_ID="${RUN_ID#publier-}"
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          gh run download "$RUN_ID" --name GestionCompte-windows --dir publication
           ls -l publication/GestionCompte.exe
 
       - name: Version et nouveautés
@@ -43,6 +52,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sha=$(gh run view "${{ inputs.run_id }}" --json headSha --jq .headSha)
+          sha=$(gh run view "$RUN_ID" --json headSha --jq .headSha)
           gh release create "v${{ steps.version.outputs.version }}" publication/GestionCompte.exe \
             --title "Mon Budget ${{ steps.version.outputs.version }}" --notes-file notes.md --target "$sha"
+          if [ "${{ github.event_name }}" = push ]; then
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/${{ github.ref_name }}"
+          fi
