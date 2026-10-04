@@ -286,6 +286,35 @@ internal static class Captures
             vm.Credits.ReprendreTauxCommand.Execute(vm.Credits.TauxTrouves[0]);
             await Capturer(("30-credits-taux-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletCredits, false));
 
+            // Mises à jour : la carte de la Configuration, puis la fenêtre qui annonce une nouvelle version (exemple).
+            vm.Apparence.Ambiance = Ambiance.Ocean;
+            vm.Apparence.ModeSombre = false;
+            var annonce = new FenetreMiseAJour("2.8.1", "2.8.0",
+                "Version 2.8.1\n- Exemple : liste des mois plus rapide\n- Exemple : correction de l'import d'un relevé\n\n" +
+                "Version 2.8.0\n- Mises à jour automatiques\n- Nouveautés affichées avant l'installation");
+            var contenuAnnonce = (FrameworkElement)annonce.Content;
+            annonce.Content = null;
+            var hoteAnnonce = new Border { Child = contenuAnnonce, Width = annonce.Width, Height = annonce.Height };
+            annonce.Content = hoteAnnonce;
+            hoteAnnonce.SetResourceReference(Border.BackgroundProperty, "Fond");
+            hoteAnnonce.SetResourceReference(TextElement.ForegroundProperty, "Texte");
+            TextElement.SetFontFamily(hoteAnnonce, new FontFamily("Segoe UI"));
+            TextElement.SetFontSize(hoteAnnonce, 13);
+            for (var passe = 0; passe < 3; passe++)
+            {
+                hoteAnnonce.Measure(new Size(annonce.Width, annonce.Height));
+                hoteAnnonce.Arrange(new Rect(0, 0, annonce.Width, annonce.Height));
+                hoteAnnonce.UpdateLayout();
+                await Task.Delay(250);
+                await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+            }
+            var imageAnnonce = new RenderTargetBitmap((int)annonce.Width, (int)annonce.Height, 96, 96, PixelFormats.Pbgra32);
+            imageAnnonce.Render(hoteAnnonce);
+            var encodeurAnnonce = new PngBitmapEncoder();
+            encodeurAnnonce.Frames.Add(BitmapFrame.Create(imageAnnonce));
+            using (var flux = File.Create(Path.Combine(dossier, "37-mise-a-jour.png")))
+                encodeurAnnonce.Save(flux);
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             app.Shutdown(0);

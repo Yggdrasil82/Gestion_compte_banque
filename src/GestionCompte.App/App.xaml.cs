@@ -80,6 +80,17 @@ public partial class App : Application
         fenetre.SourceInitialized += (_, _) => Themes.BarreDeTitreSombre(fenetre, apparence.Sombre);
         MainWindow = fenetre;
         fenetre.Show();
+
+        // Mises à jour : l'exe de la version précédente est supprimé, puis une nouvelle version est cherchée sur GitHub
+        // une fois la fenêtre affichée (sans rien dire si l'application est à jour ou hors ligne).
+        if (Environment.ProcessPath is { } exe)
+            ServiceMisesAJour.NettoyerAncienneVersion(exe);
+        vm.MisesAJour.RedemarrageDemande += (_, chemin) =>
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(chemin) { UseShellExecute = true });
+            Shutdown();
+        };
+        fenetre.ContentRendered += async (_, _) => await vm.MisesAJour.VerifierAuDemarrageAsync();
     }
 
     private void ErreurNonPrevue(object sender, DispatcherUnhandledExceptionEventArgs e)

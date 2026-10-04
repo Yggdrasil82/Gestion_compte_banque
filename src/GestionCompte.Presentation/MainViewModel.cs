@@ -105,6 +105,11 @@ public sealed partial class MainViewModel : ObservableObject
             Mail.PreparerLettre(lettre.Objet, lettre.Texte, lettre.Piece);
             OngletSelectionne = OngletMail;
         };
+        // Mises à jour : seulement depuis l'exe publié (pas pendant les tests).
+        var exe = Environment.ProcessPath;
+        MisesAJour = new MisesAJourViewModel(new ServiceMisesAJour(), dialogues,
+            Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0),
+            exe is not null && string.Equals(Path.GetFileName(exe), ServiceMisesAJour.NomExe, StringComparison.OrdinalIgnoreCase) ? exe : null);
         Assistant = new AssistantViewModel(IA, () => _compte is null ? "" : ResumeBudget.Construire(_compte, _moisDuJour));
         Documents.EnvoiParMailDemande += async (_, fiche) =>
         {
@@ -398,6 +403,9 @@ public sealed partial class MainViewModel : ObservableObject
     public string CheminDonnees => _depot.CheminFichier;
 
     public ApparenceViewModel Apparence { get; }
+
+    /// <summary>Recherche et installation des nouvelles versions (carte de la Configuration).</summary>
+    public MisesAJourViewModel MisesAJour { get; }
 
     /// <summary>Manuel d'utilisation (rubrique « Aide »), lu à la première ouverture.</summary>
     public ManuelViewModel ManuelUtilisation => _manuel ??= new ManuelViewModel(Manuel.Charger());
@@ -909,7 +917,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour,
                 AutresComptes())
-            { Apparence = Apparence, Google = Google, IA = IA };
+            { Apparence = Apparence, Google = Google, IA = IA, MisesAJour = MisesAJour };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }

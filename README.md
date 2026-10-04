@@ -74,11 +74,11 @@ du classeur Excel d'origine.
 - **2.5.0** : catégories d'opérations (Configuration : nom et couleur, ex. « Agen ») choisies à la main dans le mois, ou données à une charge de la Configuration (reprise dans chaque nouveau mois) ; les opérations sont rangées par catégorie avec un bandeau de couleur et le total de chaque catégorie (case « Ranger par catégorie » pour revenir à l'ordre de saisie), le solde ligne par ligne suit l'ordre affiché ; les opérations pointées (à la main ou par l'import) sont surlignées en vert. Données au format 9.
 - **2.6.0** : module « Prêts » (activable dans Configuration › Modules) : plusieurs prêts en cours (immobilier, PTZ…) à paliers et différé, assurance sur le capital restant dû, le montant emprunté ou fixe ; tableau d'amortissement calculé au centime avec le mois en cours surligné et le détail de chaque calcul en infobulle ; capital restant dû, intérêts restants et coût total ; simulation de remboursement anticipé avec les règles de l'offre (indemnité de 6 mois d'intérêts plafonnée à 3 %, exonération après N ans sauf rachat, minimum, réduction de durée seule avant le dernier palier) comparant « réduire la durée » et « réduire la mensualité » ; export Excel ; échéance ajoutée aux charges en un clic. Données au format 10.
 - **2.7.0** : virements liés entre comptes : colonne « Virement avec » dans le mois et dans les charges de la Configuration ; l'opération inverse est créée dans l'autre compte (mois créé au besoin) et suit les modifications et suppressions, d'un côté comme de l'autre ; pour une charge, la charge inverse est ajoutée à la configuration de l'autre compte. Manuel d'utilisation intégré (onglet « Aide ») avec recherche sans accents. Données au format 11.
+- **2.8.0** : mises à jour automatiques : à l'ouverture, et avec le bouton « Rechercher une mise à jour » (Configuration › Mises à jour), l'application cherche une version plus récente sur GitHub ; ses nouveautés s'affichent, puis elle se télécharge, remplace l'exe et redémarre après votre accord ; les données ne sont pas modifiées.
 
 ## Prochainement
 
 - Module Bourse / Trade Republic (en attente).
-- Mises à jour automatiques de l'application (proposé en 2.8.0).
 
 ## Télécharger l'application
 

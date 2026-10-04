@@ -75,6 +75,9 @@ public interface IDialogues
     /// <summary>Demande quel relevé bancaire (.ofx) importer ; null si l'utilisateur annule.</summary>
     string? ChoisirReleve();
 
+    /// <summary>Annonce une nouvelle version avec ses nouveautés ; vrai pour l'installer maintenant.</summary>
+    bool ProposerMiseAJour(string nouvelle, string actuelle, string nouveautes) => false;
+
     /// <summary>Demande quelle sauvegarde restaurer ; null si l'utilisateur annule.</summary>
     string? ChoisirFichierARestaurer();
 

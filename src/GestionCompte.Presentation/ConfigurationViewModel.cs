@@ -20,6 +20,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     /// <summary>Clés des IA gratuites (réglage propre à ce PC).</summary>
     public ServicesIA? IA { get; init; }
 
+    /// <summary>Recherche des nouvelles versions de l'application.</summary>
+    public MisesAJourViewModel? MisesAJour { get; init; }
+
     /// <param name="moisDuJour">Premier mois proposé dans la colonne « À partir de » des charges (par défaut, le premier mois).</param>
     /// <param name="comptes">Autres comptes vers lesquels une charge peut être un virement de chaque mois ; par défaut, aucun.</param>
     public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee,

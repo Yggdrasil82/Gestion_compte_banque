@@ -245,6 +245,24 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Mises à jour de l'application -->
+                <Border Style="{StaticResource Carte}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                            <TextBlock Text="Mises à jour" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Rechercher une mise à jour" Command="{Binding MisesAJour.RechercherCommand}"
+                                    Padding="12,6" />
+                            <TextBlock Text="{Binding MisesAJour.VersionActuelle}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding MisesAJour.Statut}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                        <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
+                                   Text="Une nouvelle version est aussi cherchée à chaque ouverture de l'application. Ses nouveautés s'affichent avant l'installation ; vos données ne sont pas modifiées." />
+                    </StackPanel>
+                </Border>
+
                 <!-- Compte Google (réglage propre à ce PC) -->
                 <Border Style="{StaticResource Carte}">
                     <StackPanel>

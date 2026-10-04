@@ -1,0 +1,48 @@
+name: Publier une version
+
+# Lancé à la main une fois une version validée : l'exe déjà compilé par « Application Windows » (run_id) est publié
+# sur la page « Releases » du dépôt, avec les nouveautés du README. L'application y cherche ses mises à jour.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Numéro de l'exécution « Application Windows » dont l'exe a été validé"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publier:
+    name: Publication de la version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exe validé
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run download "${{ inputs.run_id }}" --name GestionCompte-windows --dir publication
+          ls -l publication/GestionCompte.exe
+
+      - name: Version et nouveautés
+        id: version
+        run: |
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/GestionCompte.App/GestionCompte.App.csproj)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # Ligne « - **x.y.z** : … » du README, découpée en une nouveauté par ligne.
+          grep -F -- "- **$version** :" README.md | sed "s/^- \*\*$version\*\* : //" | sed 's/ ; /\n- /g; s/^/- /' > notes.md
+          [ -s notes.md ] || echo "Corrections et améliorations." > notes.md
+          cat notes.md
+
+      - name: Publication
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sha=$(gh run view "${{ inputs.run_id }}" --json headSha --jq .headSha)
+          gh release create "v${{ steps.version.outputs.version }}" publication/GestionCompte.exe \
+            --title "Mon Budget ${{ steps.version.outputs.version }}" --notes-file notes.md --target "$sha"

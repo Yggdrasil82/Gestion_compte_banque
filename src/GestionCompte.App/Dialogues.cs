@@ -115,6 +115,9 @@ public sealed class Dialogues : IDialogues
         return fenetre.ShowDialog() == true ? fenetre.Demande : null;
     }
 
+    public bool ProposerMiseAJour(string nouvelle, string actuelle, string nouveautes) =>
+        new FenetreMiseAJour(nouvelle, actuelle, nouveautes) { Owner = Fenetre }.ShowDialog() == true;
+
     public string? DemanderNom(string titre, string message, string valeur)
     {
         var fenetre = new FenetreNom(titre, message, valeur) { Owner = Fenetre };
