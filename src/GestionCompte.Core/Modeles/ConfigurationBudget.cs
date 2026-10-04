@@ -79,9 +79,10 @@ public sealed record ModeleEnveloppe(string Nom, decimal BudgetParDefaut, Catego
 /// <param name="Categorie">Catégorie pour la répartition 50/30/20.</param>
 /// <param name="Frequence">Nombre de mois entre deux prélèvements : 1 = tous les mois, 2 = un mois sur deux…</param>
 /// <param name="Depart">Un mois où la charge est prélevée (sert de repère quand <paramref name="Frequence"/> &gt; 1).</param>
+/// <param name="CategorieOperation">Catégorie d'opérations donnée à l'opération du mois (ex. « Agen »), ou null.</param>
 public sealed record ModeleCharge(
     string Nom, decimal Debit, decimal Credit = 0m, string? CompteCumul = null, Categorie Categorie = Categorie.NonClassee,
-    int Frequence = 1, PeriodeMois? Depart = null)
+    int Frequence = 1, PeriodeMois? Depart = null, string? CategorieOperation = null)
 {
     /// <summary>Vrai si la charge est prélevée ce mois-ci.</summary>
     public bool TombeEn(PeriodeMois periode)

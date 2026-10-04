@@ -133,6 +133,10 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     /// <summary>Catégories d'opérations (Agen, Maison…) et leur couleur, choisies à la main dans le mois.</summary>
     public ListeEditable<CategorieOperationConfigViewModel> CategoriesOperations { get; }
 
+    /// <summary>Choix de la colonne « Catégorie d'opération » des charges (vide = aucune).</summary>
+    public IReadOnlyList<string> NomsCategoriesOperations =>
+        new[] { "" }.Concat(CategoriesOperations.Elements.Select(c => c.Nom).Where(n => !string.IsNullOrWhiteSpace(n))).ToList();
+
     /// <summary>Choix de la colonne « Couleur » des catégories d'opérations.</summary>
     public static IReadOnlyList<ChoixCouleur> Couleurs => ChoixCouleur.Toutes;
 
@@ -164,6 +168,7 @@ public sealed partial class ConfigurationViewModel : ObservableObject
 
         OnPropertyChanged(nameof(NomsComptesCumul));
         OnPropertyChanged(nameof(NomsEnveloppes));
+        OnPropertyChanged(nameof(NomsCategoriesOperations));
         _modifiee();
     }
 }
@@ -213,6 +218,7 @@ public sealed class ChargeConfigViewModel : ObservableObject
     private ChoixCategorie _categorie;
     private ChoixFrequence _frequence;
     private PeriodeMois? _depart;
+    private string? _categorieOperation;
     private readonly PeriodeMois _departParDefaut;
 
     public ChargeConfigViewModel(ModeleCharge charge, Action modifie, PeriodeMois departParDefaut)
@@ -224,6 +230,7 @@ public sealed class ChargeConfigViewModel : ObservableObject
         _categorie = ChoixCategorie.De(charge.Categorie);
         _frequence = ChoixFrequence.De(charge.Frequence);
         _depart = charge.Depart;
+        _categorieOperation = charge.CategorieOperation;
         _departParDefaut = departParDefaut;
         _modifie = modifie;
     }
@@ -254,6 +261,13 @@ public sealed class ChargeConfigViewModel : ObservableObject
     }
 
     public bool DepartModifiable => _frequence.Mois > 1;
+
+    /// <summary>Catégorie d'opérations reprise dans chaque nouveau mois ; chaîne vide = aucune.</summary>
+    public string CategorieOperation
+    {
+        get => _categorieOperation ?? "";
+        set { if (SetProperty(ref _categorieOperation, OperationViewModel.VideVersNull(value))) _modifie(); }
+    }
 
     public ChoixCategorie Categorie
     {
@@ -286,7 +300,7 @@ public sealed class ChargeConfigViewModel : ObservableObject
         set { if (SetProperty(ref _compteCumul, OperationViewModel.VideVersNull(value))) _modifie(); }
     }
 
-    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur, _frequence.Mois, _depart);
+    internal ModeleCharge VersModele() => new(Nom, Debit, Credit, _compteCumul, _categorie.Valeur, _frequence.Mois, _depart, _categorieOperation);
 }
 
 public sealed class CompteCumulConfigViewModel : ObservableObject

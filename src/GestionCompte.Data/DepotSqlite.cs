@@ -73,12 +73,15 @@ public sealed class DepotSqlite
         // Colonnes absentes des fichiers aux formats 1 à 5 : charge mensuelle.
         var frequence = ColonneExiste(connexion, "modele_charge", "frequence")
             ? "frequence, depart_annee, depart_mois" : "1, NULL, NULL";
-        Lire(connexion, $"SELECT nom, debit, credit, compte_cumul, {categorieCharge}, {frequence} FROM modele_charge ORDER BY ordre",
+        // Colonne absente avant le format 9.
+        var categorieOperationCharge = ColonneExiste(connexion, "modele_charge", "categorie_operation") ? "categorie_operation" : "NULL";
+        Lire(connexion, $"SELECT nom, debit, credit, compte_cumul, {categorieCharge}, {frequence}, {categorieOperationCharge} FROM modele_charge ORDER BY ordre",
             l => configuration.Charges.Add(new ModeleCharge(
                 l.GetString(0), LireDecimal(l.GetString(1)), LireDecimal(l.GetString(2)), TexteOuNull(l, 3),
                 LireCategorie(l, 4, Categorie.NonClassee),
                 Math.Max(1, l.GetInt32(5)),
-                l.IsDBNull(6) || l.IsDBNull(7) ? null : new PeriodeMois(l.GetInt32(6), l.GetInt32(7)))));
+                l.IsDBNull(6) || l.IsDBNull(7) ? null : new PeriodeMois(l.GetInt32(6), l.GetInt32(7)),
+                TexteOuNull(l, 8))));
         Lire(connexion, "SELECT nom, montant_initial, objectif FROM compte_cumul ORDER BY ordre",
             l => configuration.ComptesCumul.Add(new CompteCumul(
                 l.GetString(0), LireDecimal(l.GetString(1)), l.IsDBNull(2) ? null : LireDecimal(l.GetString(2)))));
@@ -220,11 +223,11 @@ public sealed class DepotSqlite
 
         foreach (var (charge, ordre) in configuration.Charges.Select((c, i) => (c, i)))
             Executer(connexion,
-                "INSERT INTO modele_charge (ordre, nom, debit, credit, compte_cumul, categorie, frequence, depart_annee, depart_mois) " +
-                "VALUES ($o, $n, $d, $c, $cc, $cat, $f, $da, $dm)",
+                "INSERT INTO modele_charge (ordre, nom, debit, credit, compte_cumul, categorie, frequence, depart_annee, depart_mois, categorie_operation) " +
+                "VALUES ($o, $n, $d, $c, $cc, $cat, $f, $da, $dm, $co)",
                 ("$o", ordre), ("$n", charge.Nom), ("$d", EcrireDecimal(charge.Debit)), ("$c", EcrireDecimal(charge.Credit)),
                 ("$cc", charge.CompteCumul), ("$cat", charge.Categorie.ToString()), ("$f", charge.Frequence),
-                ("$da", charge.Depart?.Annee), ("$dm", charge.Depart?.Mois));
+                ("$da", charge.Depart?.Annee), ("$dm", charge.Depart?.Mois), ("$co", charge.CategorieOperation));
 
         foreach (var (cumul, ordre) in configuration.ComptesCumul.Select((c, i) => (c, i)))
             Executer(connexion, "INSERT INTO compte_cumul (ordre, nom, montant_initial, objectif) VALUES ($o, $n, $m, $obj)",
@@ -402,6 +405,8 @@ public sealed class DepotSqlite
             Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN recu INTEGER NOT NULL DEFAULT 0");
             Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN identifiant_banque TEXT");
         }
+        if (!ColonneExiste(connexion, "modele_charge", "categorie_operation"))
+            Executer(connexion, "ALTER TABLE modele_charge ADD COLUMN categorie_operation TEXT");
         if (!ColonneExiste(connexion, "operation", "categorie"))
             Executer(connexion, "ALTER TABLE operation ADD COLUMN categorie TEXT");
         if (!ColonneExiste(connexion, "objectif_epargne", "compte_cumul"))

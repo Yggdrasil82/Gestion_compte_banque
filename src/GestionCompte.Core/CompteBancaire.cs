@@ -66,7 +66,7 @@ public sealed class CompteBancaire
             mois.Enveloppes.Add(new LigneEnveloppe(enveloppe.Nom, enveloppe.BudgetParDefaut));
 
         foreach (var charge in Configuration.Charges.Where(c => c.TombeEn(periode)))
-            mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
+            mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul, CategorieOperation = charge.CategorieOperation });
 
         foreach (var prevue in OperationsPrevues.Where(o => o.Periode == periode))
             mois.Operations.Add(prevue.VersOperation());
@@ -118,13 +118,16 @@ public sealed class CompteBancaire
             if (existante is null)
             {
                 if (charge.TombeEn(mois.Periode))
-                    mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul });
+                    mois.Operations.Add(new Operation(charge.Nom, charge.Debit, charge.Credit) { CompteCumul = charge.CompteCumul, CategorieOperation = charge.CategorieOperation });
             }
             else
             {
                 existante.Debit = charge.Debit;
                 existante.Credit = charge.Credit;
                 existante.CompteCumul = charge.CompteCumul;
+                // Une catégorie choisie à la main dans le mois est gardée si la charge n'en a pas.
+                if (charge.CategorieOperation is not null)
+                    existante.CategorieOperation = charge.CategorieOperation;
             }
         }
     }

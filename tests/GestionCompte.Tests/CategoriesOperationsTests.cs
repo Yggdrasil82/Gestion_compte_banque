@@ -114,4 +114,48 @@ public sealed class CategoriesOperationsTests : IDisposable
 
         Assert.Equal(new[] { new CategorieOperation("Agen", "#D64545") }, configuration.CategoriesOperations);
     }
+
+    [Fact]
+    public void ChargeAvecCategorie_RepriseDansLeNouveauMoisEtEnregistree()
+    {
+        var compte = CompteAvecCategories();
+        var charges = compte.Configuration.Charges;
+        charges[0] = charges[0] with { CategorieOperation = "Agen" };
+
+        var novembre = compte.CreerMoisSuivant();
+        Assert.Equal("Agen", novembre.Operations.Single(o => o.Libelle == charges[0].Nom).CategorieOperation);
+        Assert.Null(novembre.Operations.Single(o => o.Libelle == charges[1].Nom).CategorieOperation);
+
+        var depot = new DepotSqlite(Path.Combine(_dossier, "compte.db"));
+        depot.Enregistrer(compte);
+        Assert.Equal("Agen", depot.Charger()!.Configuration.Charges[0].CategorieOperation);
+    }
+
+    [Fact]
+    public void AppliquerLaConfiguration_GardeLaCategorieChoisieALaMainSiLaChargeNEnAPas()
+    {
+        var compte = CompteAvecCategories();
+        var novembre = compte.CreerMoisSuivant();
+        var charges = compte.Configuration.Charges;
+        novembre.Operations.Single(o => o.Libelle == charges[1].Nom).CategorieOperation = "Maison";
+        charges[0] = charges[0] with { CategorieOperation = "Agen" };
+
+        compte.AppliquerConfiguration(novembre);
+
+        Assert.Equal("Agen", novembre.Operations.Single(o => o.Libelle == charges[0].Nom).CategorieOperation);
+        Assert.Equal("Maison", novembre.Operations.Single(o => o.Libelle == charges[1].Nom).CategorieOperation);
+    }
+
+    [Fact]
+    public void Configuration_CategorieDUneCharge()
+    {
+        var configuration = DonneesExcel.ConfigurationOctobre2026();
+        configuration.CategoriesOperations.Add(new CategorieOperation("Agen", "#2E9E5B"));
+        var vm = new ConfigurationViewModel(configuration, premierMoisModifiable: true, () => { });
+
+        Assert.Equal(new[] { "", "Agen" }, vm.NomsCategoriesOperations);
+        vm.Charges.Elements[0].CategorieOperation = "Agen";
+
+        Assert.Equal("Agen", configuration.Charges[0].CategorieOperation);
+    }
 }

@@ -226,8 +226,14 @@ public static class ConfigurationParDefaut
                      ("Voiture", new[] { "Crédit Voiture", "Assurance Voiture", "Plein Total" }),
                      ("Enfants", new[] { "Mobile enfant 1", "Mobile enfant 2", "Mobile enfant 3", "Cantine" }),
                  })
+        {
             foreach (var operation in novembre.Operations.Where(o => libelles.Contains(o.Libelle)))
                 operation.CategorieOperation = categorie;
+            var modeles = compte.Configuration.Charges;
+            for (var i = 0; i < modeles.Count; i++)
+                if (libelles.Contains(modeles[i].Nom))
+                    modeles[i] = modeles[i] with { CategorieOperation = categorie };
+        }
 
         // Poubelles prélevées un mois sur deux (novembre, janvier, mars…).
         var charges = compte.Configuration.Charges;

@@ -356,6 +356,16 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Catégorie d'opération" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox Style="{StaticResource ListeCellule}"
+                                                  ItemsSource="{Binding DataContext.NomsCategoriesOperations, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding CategorieOperation, UpdateSourceTrigger=PropertyChanged}"
+                                                  ToolTip="Reprise dans chaque nouveau mois (et avec « Appliquer la configuration »)." />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
