@@ -17,7 +17,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="0,0,8,6" />
         </Style>
-        <Style x:Key="Saisie" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Style x:Key="ChampPret" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="Width" Value="70" />
             <Setter Property="TextAlignment" Value="Right" />
             <Setter Property="Margin" Value="0,0,6,6" />
@@ -214,7 +214,7 @@
                                            TextWrapping="Wrap" Margin="0,6,0,0" />
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                     <TextBlock Text="Assurance" Style="{StaticResource Libelle}" />
-                                    <TextBox Style="{StaticResource Saisie}" Text="{Binding Selection.Assurance, Converter={StaticResource Montant}}" />
+                                    <TextBox Style="{StaticResource ChampPret}" Text="{Binding Selection.Assurance, Converter={StaticResource Montant}}" />
                                     <ComboBox ItemsSource="{Binding TypesAssurance}" SelectedItem="{Binding Selection.TypeAssurance}" Width="185" Margin="0,0,0,6" />
                                 </StackPanel>
                                 <TextBlock Text="{Binding Selection.ExplicationAssurance}" Style="{StaticResource Discret}" TextWrapping="Wrap" FontSize="12" />
@@ -235,15 +235,15 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
                                                 ToolTip="Indemnité = capital remboursé × taux × nombre de mois ÷ 12 (6 mois au maximum)">
                                         <TextBlock Text="Indemnité" Style="{StaticResource Libelle}" />
-                                        <TextBox Style="{StaticResource Saisie}" Width="45" Text="{Binding Selection.IndemniteMoisInterets, Converter={StaticResource Montant}}" />
+                                        <TextBox Style="{StaticResource ChampPret}" Width="45" Text="{Binding Selection.IndemniteMoisInterets, Converter={StaticResource Montant}}" />
                                         <TextBlock Text="mois d'intérêts, plafonnée à" Style="{StaticResource Libelle}" />
-                                        <TextBox Style="{StaticResource Saisie}" Width="45" Text="{Binding Selection.IndemnitePlafond, Converter={StaticResource Montant}}" />
+                                        <TextBox Style="{StaticResource ChampPret}" Width="45" Text="{Binding Selection.IndemnitePlafond, Converter={StaticResource Montant}}" />
                                         <TextBlock Text="% du capital remboursé" Style="{StaticResource Libelle}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
                                                 ToolTip="Certaines offres suppriment l'indemnité après quelques années, sauf si le prêt est racheté par une autre banque. 0 : jamais.">
                                         <TextBlock Text="Plus d'indemnité après" Style="{StaticResource Libelle}" />
-                                        <TextBox Style="{StaticResource Saisie}" Width="40" Text="{Binding Selection.ExonerationAnnees}" />
+                                        <TextBox Style="{StaticResource ChampPret}" Width="40" Text="{Binding Selection.ExonerationAnnees}" />
                                         <TextBlock Text="ans, comptés depuis la signature :" Style="{StaticResource Libelle}" />
                                         <ComboBox ItemsSource="{Binding Mois}" SelectedItem="{Binding Selection.Signature}" Width="140" Margin="0,0,4,6" />
                                         <Button Command="{Binding EffacerSignatureCommand}" ToolTip="Signature inconnue" Padding="0" Width="26" Height="26" Margin="0,0,0,6">
@@ -253,7 +253,7 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
                                                 ToolTip="Montant minimum d'un remboursement partiel (souvent 10 % du montant emprunté), sauf pour solder le prêt">
                                         <TextBlock Text="Minimum" Style="{StaticResource Libelle}" />
-                                        <TextBox Style="{StaticResource Saisie}" Width="45" Text="{Binding Selection.MinimumPourcent, Converter={StaticResource Montant}}" />
+                                        <TextBox Style="{StaticResource ChampPret}" Width="45" Text="{Binding Selection.MinimumPourcent, Converter={StaticResource Montant}}" />
                                         <TextBlock Text="% du montant emprunté" Style="{StaticResource Libelle}" />
                                     </StackPanel>
                                 </WrapPanel>
@@ -340,7 +340,8 @@
                         </StackPanel>
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Aide}" TextWrapping="Wrap"
                                    Text="Le mois en cours est surligné. Survolez une ligne pour voir le calcul : intérêts = capital restant dû × taux ÷ 12 ; capital = échéance − intérêts." />
-                        <DataGrid ItemsSource="{Binding Selection.Tableau}" IsReadOnly="True" Height="420" Margin="0,6,0,0">
+                        <DataGrid ItemsSource="{Binding Selection.Tableau, NotifyOnTargetUpdated=True}" IsReadOnly="True" Height="420" Margin="0,6,0,0"
+                                  TargetUpdated="TableauMisAJour">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="ToolTip" Value="{Binding Explication}" />
@@ -394,7 +395,7 @@
                         </StackPanel>
                         <WrapPanel Margin="0,6,0,0">
                             <TextBlock Text="Rembourser" Style="{StaticResource Libelle}" />
-                            <TextBox Style="{StaticResource Saisie}" Width="100" Text="{Binding MontantAnticipe, Converter={StaticResource Montant}}" />
+                            <TextBox Style="{StaticResource ChampPret}" Width="100" Text="{Binding MontantAnticipe, Converter={StaticResource Montant}}" />
                             <TextBlock Text="€ juste après l'échéance de" Style="{StaticResource Libelle}" />
                             <ComboBox ItemsSource="{Binding MoisAnticipe}" SelectedItem="{Binding DateAnticipe}" Width="150" Margin="0,0,18,6" />
                             <CheckBox Content="Rachat par une autre banque" IsChecked="{Binding Rachat}" VerticalAlignment="Center" Margin="0,0,0,6"

@@ -190,7 +190,7 @@ public static class ConfigurationParDefaut
 
         // Prêts fictifs : un prêt lissé en 3 paliers et un prêt à taux zéro avec 5 ans de différé.
         var maison = new PretImmobilier("Maison", 165000m, 1.35m, new PeriodeMois(2021, 3),
-            new[] { new PalierPret(60, 640m), new PalierPret(180, 520m), new PalierPret(60, 0m) }, 0.26m)
+            new[] { new PalierPret(60, 740m), new PalierPret(180, 600m), new PalierPret(60, 0m) }, 0.26m)
         {
             Signature = new PeriodeMois(2019, 1),
             ExonerationAnnees = 7,

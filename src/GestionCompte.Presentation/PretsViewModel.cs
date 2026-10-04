@@ -156,13 +156,9 @@ public sealed partial class PretsViewModel : ObservableObject
             : $"{Montants.Formater(a.CapitalRembourse)} € remboursés sur {Montants.Formater(a.CapitalRestantAvant)} € restant dus après l'échéance de {DateAnticipe!.Libelle}.")
         : "";
 
-    public OptionAnticipeViewModel? OptionDuree => Anticipe is { Erreur: null, Duree: { } o } a
-        ? new OptionAnticipeViewModel(o, a, reduireMensualite: false)
-        : null;
+    public OptionAnticipeViewModel? OptionDuree { get; private set; }
 
-    public OptionAnticipeViewModel? OptionMensualite => Anticipe is { Erreur: null, Mensualite: { } o } a
-        ? new OptionAnticipeViewModel(o, a, reduireMensualite: true)
-        : null;
+    public OptionAnticipeViewModel? OptionMensualite { get; private set; }
 
     public string SansOptionMensualite => Anticipe is { Erreur: null } a ? a.SansOptionMensualite : "";
 
@@ -300,6 +296,11 @@ public sealed partial class PretsViewModel : ObservableObject
 
     private void AnticipeChange()
     {
+        var anticipe = Anticipe;
+        OptionDuree = anticipe is { Erreur: null, Duree: { } duree } ? new OptionAnticipeViewModel(duree, anticipe, reduireMensualite: false) : null;
+        OptionMensualite = anticipe is { Erreur: null, Mensualite: { } mensualite }
+            ? new OptionAnticipeViewModel(mensualite, anticipe, reduireMensualite: true)
+            : null;
         foreach (var nom in new[]
                  {
                      nameof(Anticipe), nameof(AnticipeValide), nameof(ErreurAnticipe), nameof(TexteIndemnite), nameof(ExplicationIndemnite),
