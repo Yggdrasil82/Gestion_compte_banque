@@ -33,6 +33,11 @@ public sealed class SecretsWindows : ISecretsLocaux
         }
     }
 
+    public IEnumerable<string> Noms() =>
+        Directory.Exists(_dossier)
+            ? Directory.EnumerateFiles(_dossier, "*.secret").Select(f => Path.GetFileNameWithoutExtension(f)).ToList()
+            : Enumerable.Empty<string>();
+
     public void Ecrire(string nom, string? valeur)
     {
         var chemin = Chemin(nom);

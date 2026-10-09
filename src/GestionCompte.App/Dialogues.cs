@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using GestionCompte.Core.Achats;
 using GestionCompte.Core.Lettres;
 using GestionCompte.Core.Mail;
@@ -128,6 +129,46 @@ public sealed class Dialogues : IDialogues
 
     public bool ProposerMiseAJour(string nouvelle, string actuelle, string nouveautes) =>
         new FenetreMiseAJour(nouvelle, actuelle, nouveautes) { Owner = Fenetre }.ShowDialog() == true;
+
+    public int? ChoisirOption(string titre, string message, IReadOnlyList<string> options)
+    {
+        int? choix = null;
+        var fenetre = new Window
+        {
+            Title = titre,
+            Width = 480,
+            SizeToContent = SizeToContent.Height,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = Fenetre is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
+            ShowInTaskbar = Fenetre is null,
+            Owner = Fenetre,
+            FontFamily = new System.Windows.Media.FontFamily("Segoe UI"),
+            FontSize = 13,
+        };
+        fenetre.SetResourceReference(Control.BackgroundProperty, "Fond");
+        fenetre.SetResourceReference(Control.ForegroundProperty, "Texte");
+        var boutons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0) };
+        for (var i = 0; i < options.Count; i++)
+        {
+            var position = i;
+            var bouton = new Button { Content = options[i], Padding = new Thickness(16, 7, 16, 7), Margin = new Thickness(8, 0, 0, 0), IsDefault = i == 0 };
+            if (i == 0)
+                bouton.Style = (Style)Application.Current.FindResource("BoutonPrincipal");
+            bouton.Click += (_, _) =>
+            {
+                choix = position;
+                fenetre.Close();
+            };
+            boutons.Children.Add(bouton);
+        }
+        fenetre.Content = new StackPanel
+        {
+            Margin = new Thickness(20),
+            Children = { new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, boutons },
+        };
+        fenetre.ShowDialog();
+        return choix;
+    }
 
     public string? DemanderNom(string titre, string message, string valeur)
     {

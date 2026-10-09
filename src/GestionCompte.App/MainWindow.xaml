@@ -17,7 +17,11 @@
 
         <!-- Barre de gauche : navigation, apparence, données. -->
         <Border Grid.Column="0" Background="{DynamicResource Barre}" BorderBrush="{DynamicResource Bordure}" BorderThickness="0,0,1,0">
-            <DockPanel Margin="12,16,12,12">
+            <!-- Petits écrans : la barre défile pour atteindre le bas (Apparence, Données) ; sinon le bas reste collé en bas. -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+            <Border Padding="12,16,12,12"
+                    MinHeight="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
+            <DockPanel>
                 <StackPanel DockPanel.Dock="Top">
                     <StackPanel Orientation="Horizontal" Margin="8,0,0,16">
                         <Image Source="/Ressources/icone.png" Width="34" Height="34" />
@@ -161,6 +165,8 @@
 
                 <Border />
             </DockPanel>
+            </Border>
+            </ScrollViewer>
         </Border>
 
         <DockPanel Grid.Column="1">

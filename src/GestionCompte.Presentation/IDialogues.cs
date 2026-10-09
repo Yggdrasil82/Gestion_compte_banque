@@ -36,6 +36,9 @@ public interface IDialogues
     /// <summary>Demande un mot de passe, saisi deux fois si <paramref name="confirmer"/> ; null si annulé.</summary>
     string? DemanderMotDePasse(string titre, string message, bool confirmer) => null;
 
+    /// <summary>Question à plusieurs réponses (boutons) ; renvoie la position choisie, null si la fenêtre est fermée.</summary>
+    int? ChoisirOption(string titre, string message, IReadOnlyList<string> options) => null;
+
     /// <summary>Montre la clé de secours du coffre, à noter ou imprimer.</summary>
     void AfficherCleSecours(string cle) { }
 

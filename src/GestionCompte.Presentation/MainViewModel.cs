@@ -434,6 +434,20 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Compte Google (Google Drive, Gmail, contacts), propre à ce PC.</summary>
     public CompteGoogle Google { get; }
 
+    private DonneesDriveViewModel? _donneesDrive;
+
+    /// <summary>Carte « Stockage des données » de la configuration (fournie par l'application Windows).</summary>
+    public DonneesDriveViewModel? DonneesDrive
+    {
+        get => _donneesDrive;
+        set
+        {
+            _donneesDrive = value;
+            if (Configuration is not null)
+                Configuration.DonneesDrive = value;
+        }
+    }
+
     /// <summary>Envoi de mails, carnet d'adresses et historique, communs à tous les comptes.</summary>
     public MailViewModel Mail { get; }
 
@@ -927,7 +941,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour,
                 AutresComptes())
-            { Apparence = Apparence, Google = Google, IA = IA, MisesAJour = MisesAJour };
+            { Apparence = Apparence, Google = Google, IA = IA, MisesAJour = MisesAJour, DonneesDrive = DonneesDrive };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }

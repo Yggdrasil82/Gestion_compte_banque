@@ -287,6 +287,34 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Stockage des données : sur ce PC ou dans Google Drive (chiffrées) -->
+                <Border Style="{StaticResource Carte}" DataContext="{Binding DonneesDrive}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                            <TextBlock Text="Stockage des données" Style="{StaticResource TitreCarte}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Etat}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8" />
+                        <StackPanel Visibility="{Binding Inactif, Converter={StaticResource Visible}}">
+                            <Button Content="Stocker mes données dans Google Drive…" Command="{Binding ActiverCommand}" Padding="12,6"
+                                    HorizontalAlignment="Left" />
+                            <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
+                                       Text="Vos données (comptes, préférences, documents, clés des IA) sont chiffrées avec votre mot de passe puis rangées dans votre Google Drive. L'application les ouvre ensuite depuis n'importe quel PC, même lancée depuis une clé USB." />
+                        </StackPanel>
+                        <StackPanel Visibility="{Binding Actif, Converter={StaticResource Visible}}">
+                            <CheckBox Content="C'est mon PC (PC de confiance)" IsChecked="{Binding Confiance}" Margin="0,0,0,8"
+                                      ToolTip="Garde la connexion Google et une copie chiffrée des données : sans internet, elles s'ouvrent en lecture seule." />
+                            <WrapPanel>
+                                <Button Content="Changer le mot de passe…" Command="{Binding ChangerMotDePasseCommand}" Padding="10,5" Margin="0,0,6,6" />
+                                <Button Content="Préparer une clé USB…" Command="{Binding PreparerCleUsbCommand}" Padding="10,5" Margin="0,0,6,6" />
+                                <Button Content="Remettre les données sur ce PC…" Command="{Binding ArreterCommand}" Padding="10,5" Margin="0,0,6,6" />
+                            </WrapPanel>
+                            <TextBlock Style="{StaticResource Aide}" Margin="0,4,0,0"
+                                       Text="Les données sont envoyées dans Google Drive à chaque modification et à la fermeture. Si l'application est déjà ouverte sur un autre PC, vous êtes prévenu. Sur un PC qui n'est pas le vôtre, rien ne reste à la fermeture." />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- Intelligence artificielle (réglage propre à ce PC) -->
                 <Border Style="{StaticResource Carte}">
                     <StackPanel>
@@ -313,7 +341,7 @@
                             <TextBlock Text="{Binding IA.EtatGroq}" VerticalAlignment="Center" />
                         </DockPanel>
                         <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
-                                   Text="Clés gratuites de Google AI Studio (Gemini) et de GroqCloud (Groq), gardées sur ce PC et chiffrées par Windows. Seul ce que vous demandez est envoyé (le nom d'un produit pour une recherche de prix) ; l'IA ne modifie jamais vos comptes." />
+                                   Text="Clés gratuites de Google AI Studio (Gemini) et de GroqCloud (Groq), chiffrées (par Windows, ou avec vos données dans Google Drive). Seul ce que vous demandez est envoyé (le nom d'un produit pour une recherche de prix) ; l'IA ne modifie jamais vos comptes." />
                     </StackPanel>
                 </Border>
             </StackPanel>

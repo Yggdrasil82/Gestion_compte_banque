@@ -37,7 +37,7 @@ internal static class Captures
     private const double HauteurBilan = 1420;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
-    private const double HauteurConfiguration = 2080;
+    private const double HauteurConfiguration = 2480;
 
     /// <summary>Mail : rédaction, carnet d'adresses et historique.</summary>
     private const double HauteurMail = 960;
@@ -87,6 +87,11 @@ internal static class Captures
             new ReglagesSmtp("smtp.orange.fr", 465, SecuriteSmtp.Ssl, "prenom.nom@exemple.fr", "", "Prénom Nom")));
         secrets.Ecrire(MailViewModel.SecretSmtpMotDePasse, "demo");
         var vm = new MainViewModel(registre, new Dialogues(), new DateTime(2026, 11, 15), null, secrets);
+        // Stockage des données : sur ce PC (réglage Google Drive dans un dossier temporaire, rien n'est envoyé).
+        var dossierPC = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"gestioncompte-pc-{Guid.NewGuid():N}")).FullName;
+        const string DossierLocalDemo = @"C:\Users\Prénom\Documents\GestionCompte";
+        vm.DonneesDrive = new DonneesDriveViewModel(vm.Google, new Dialogues(), new DemarrageDrive(dossierPC, null), null,
+            dossierDemo, DossierLocalDemo, secrets, secrets, null);
         vm.Apparence.Changee += (_, _) => Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
         Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
 
@@ -331,10 +336,55 @@ internal static class Captures
             using (var flux = File.Create(Path.Combine(dossier, "37-mise-a-jour.png")))
                 encodeurAnnonce.Save(flux);
 
+            // Google Drive : la fenêtre d'ouverture (compte d'exemple, rien n'est envoyé), puis la carte de la configuration.
+            var connexionDemo = new SecretsEnMemoire();
+            connexionDemo.Ecrire(CompteGoogle.SecretJeton, "demo");
+            connexionDemo.Ecrire(CompteGoogle.SecretAdresse, "prenom.nom@exemple.fr");
+            var demarrageDemo = new DemarrageDrive(dossierPC, null);
+            var ouverture = new OuvertureDriveViewModel(new CompteGoogle(connexionDemo, new Dialogues()), new Dialogues(), demarrageDemo,
+                Path.Combine(dossierPC, "session"), "PC-SALON") { Confiance = true };
+            await CapturerFenetre(new FenetreOuvertureDrive(ouverture), Path.Combine(dossier, "42-ouverture-drive.png"));
+            var sessionDemo = new SessionDrive(dossierDemo,
+                new GestionCompte.Data.Nuage.CoffreDonnees(new StockageDossier(Path.Combine(dossierPC, "drive-demo"))),
+                false, "demo", "PC-SALON", () => new DateTime(2026, 11, 15, 9, 41, 0));
+            vm.DonneesDrive = new DonneesDriveViewModel(vm.Google, new Dialogues(), demarrageDemo, sessionDemo,
+                dossierDemo, DossierLocalDemo, secrets, connexionDemo, null) { Confiance = true };
+            await Capturer(("43-configuration-drive-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
+            Directory.Delete(dossierPC, true);
             app.Shutdown(0);
         });
+    }
+
+    /// <summary>Capture le contenu d'une fenêtre (jamais affichée), à sa largeur et à la hauteur de son contenu.</summary>
+    private static async Task CapturerFenetre(Window fenetre, string chemin)
+    {
+        var contenu = (FrameworkElement)fenetre.Content;
+        fenetre.Content = null;
+        var hote = new Border { Child = contenu, Width = fenetre.Width, DataContext = fenetre.DataContext };
+        fenetre.Content = hote;
+        hote.SetResourceReference(Border.BackgroundProperty, "Fond");
+        hote.SetResourceReference(TextElement.ForegroundProperty, "Texte");
+        TextElement.SetFontFamily(hote, new FontFamily("Segoe UI"));
+        TextElement.SetFontSize(hote, 13);
+        var hauteur = 0.0;
+        for (var passe = 0; passe < 3; passe++)
+        {
+            hote.Measure(new Size(fenetre.Width, double.PositiveInfinity));
+            hauteur = Math.Ceiling(hote.DesiredSize.Height);
+            hote.Arrange(new Rect(0, 0, fenetre.Width, hauteur));
+            hote.UpdateLayout();
+            await Task.Delay(250);
+            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+        }
+        var image = new RenderTargetBitmap((int)fenetre.Width, (int)hauteur, 96, 96, PixelFormats.Pbgra32);
+        image.Render(hote);
+        var encodeur = new PngBitmapEncoder();
+        encodeur.Frames.Add(BitmapFrame.Create(image));
+        using var flux = File.Create(chemin);
+        encodeur.Save(flux);
     }
 
     private const string LettreDemo =

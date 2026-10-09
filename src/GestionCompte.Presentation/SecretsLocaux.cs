@@ -10,6 +10,9 @@ public interface ISecretsLocaux
 
     /// <param name="valeur">null : efface le secret.</param>
     void Ecrire(string nom, string? valeur);
+
+    /// <summary>Noms des secrets enregistrés (copiés avec les données quand elles vont dans Google Drive).</summary>
+    IEnumerable<string> Noms() => Array.Empty<string>();
 }
 
 public sealed class SecretsEnMemoire : ISecretsLocaux
@@ -25,4 +28,6 @@ public sealed class SecretsEnMemoire : ISecretsLocaux
         else
             _secrets[nom] = valeur;
     }
+
+    public IEnumerable<string> Noms() => _secrets.Keys.ToList();
 }

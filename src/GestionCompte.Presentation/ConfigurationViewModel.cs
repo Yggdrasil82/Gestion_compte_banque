@@ -23,6 +23,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     /// <summary>Recherche des nouvelles versions de l'application.</summary>
     public MisesAJourViewModel? MisesAJour { get; init; }
 
+    /// <summary>Stockage des données : sur ce PC ou dans Google Drive.</summary>
+    [ObservableProperty] private DonneesDriveViewModel? _donneesDrive;
+
     /// <param name="moisDuJour">Premier mois proposé dans la colonne « À partir de » des charges (par défaut, le premier mois).</param>
     /// <param name="comptes">Autres comptes vers lesquels une charge peut être un virement de chaque mois ; par défaut, aucun.</param>
     public ConfigurationViewModel(ConfigurationBudget configuration, bool premierMoisModifiable, Action modifiee,

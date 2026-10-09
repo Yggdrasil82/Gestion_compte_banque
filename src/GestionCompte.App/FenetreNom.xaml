@@ -6,7 +6,7 @@
         Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
         FontFamily="Segoe UI" FontSize="13">
     <StackPanel Margin="20">
-        <TextBlock x:Name="Message" Margin="0,0,0,6" />
+        <TextBlock x:Name="Message" Margin="0,0,0,6" TextWrapping="Wrap" />
         <TextBox x:Name="Saisie" Height="28" MaxLength="60" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="Annuler" IsCancel="True" Padding="16,7" />

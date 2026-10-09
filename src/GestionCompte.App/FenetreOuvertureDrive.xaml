@@ -1,0 +1,44 @@
+<Window x:Class="GestionCompte.App.FenetreOuvertureDrive"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mon Budget" Width="460" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Icon="pack://application:,,,/Ressources/icone.ico"
+        Background="{DynamicResource Fond}" Foreground="{DynamicResource Texte}"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="24,20,24,20">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+            <Image Source="/Ressources/icone.png" Width="40" Height="40" />
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Mon Budget" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="Vos données sont dans Google Drive, chiffrées." Style="{StaticResource Discret}" />
+            </StackPanel>
+        </StackPanel>
+
+        <TextBlock Text="Compte Google" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+        <DockPanel Margin="0,0,0,12">
+            <Button DockPanel.Dock="Right" Content="Se connecter à Google" Padding="12,5" Margin="8,0,0,0"
+                    Click="Connecter" IsEnabled="{Binding Libre}"
+                    Visibility="{Binding Google.Connecte, Converter={StaticResource MasqueSiVrai}}" />
+            <TextBlock Text="{Binding Google.Etat}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        </DockPanel>
+
+        <TextBlock Text="Mot de passe des données" Style="{StaticResource Discret}" Margin="0,0,0,3" />
+        <PasswordBox x:Name="MotDePasse" Height="30" Padding="4,3" VerticalContentAlignment="Center"
+                     Background="{DynamicResource Saisie}" Foreground="{DynamicResource Texte}" BorderBrush="{DynamicResource Bordure}" />
+        <TextBlock HorizontalAlignment="Right" Margin="0,4,0,0">
+            <Hyperlink Command="{Binding MotDePasseOublieCommand}">Mot de passe oublié ?</Hyperlink>
+        </TextBlock>
+
+        <CheckBox IsChecked="{Binding Confiance}" Margin="0,8,0,2" Content="C'est mon PC (PC de confiance)" />
+        <TextBlock Style="{StaticResource Aide}" Margin="22,0,0,0"
+                   Text="La connexion Google et une copie chiffrée des données restent sur ce PC : sans internet, vos données s'ouvrent en lecture seule. Sur un autre PC, laissez décoché : rien n'y reste à la fermeture." />
+
+        <TextBlock Text="{Binding Etat}" TextWrapping="Wrap" Margin="0,6,0,0" Foreground="{DynamicResource Accent1}" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Quitter" IsCancel="True" Padding="16,7" Click="Quitter" />
+            <Button Content="Ouvrir" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="20,7" Margin="8,0,0,0"
+                    Click="Ouvrir" IsEnabled="{Binding Libre}" />
+        </StackPanel>
+    </StackPanel>
+</Window>

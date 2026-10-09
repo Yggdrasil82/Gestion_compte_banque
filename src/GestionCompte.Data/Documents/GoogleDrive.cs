@@ -263,7 +263,10 @@ public sealed class ConnexionGoogle
         [property: JsonPropertyName("expires_in")] int ExpiresIn);
 }
 
-/// <summary>Coffre rangé dans un dossier « Gestion compte - Documents » du Google Drive de l'utilisateur (API Drive v3).</summary>
+/// <summary>
+/// Fichiers rangés dans un dossier du Google Drive de l'utilisateur (API Drive v3) : « Gestion compte - Documents » pour le
+/// coffre des documents, « Mon Budget - Données » pour les données de l'application.
+/// </summary>
 public sealed class StockageGoogleDrive : IStockageDocuments
 {
     public const string NomDossier = "Gestion compte - Documents";
@@ -272,16 +275,18 @@ public sealed class StockageGoogleDrive : IStockageDocuments
 
     private readonly HttpClient _http;
     private readonly Func<CancellationToken, Task<string>> _jeton;
+    private readonly string _nomDossier;
     private string? _dossier;
     private Dictionary<string, string>? _fichiers;
 
-    public StockageGoogleDrive(HttpClient http, Func<CancellationToken, Task<string>> jeton)
+    public StockageGoogleDrive(HttpClient http, Func<CancellationToken, Task<string>> jeton, string nomDossier = NomDossier)
     {
         _http = http;
         _jeton = jeton;
+        _nomDossier = nomDossier;
     }
 
-    public string Description => $"Google Drive, dossier « {NomDossier} »";
+    public string Description => $"Google Drive, dossier « {_nomDossier} »";
 
     public async Task<byte[]?> LireAsync(string nom, CancellationToken annulation = default)
     {
@@ -325,13 +330,13 @@ public sealed class StockageGoogleDrive : IStockageDocuments
     public async Task<IReadOnlyList<string>> ListerAsync(CancellationToken annulation = default) =>
         (await FichiersAsync(annulation)).Keys.ToList();
 
-    /// <summary>Dossier du coffre (créé au premier besoin).</summary>
+    /// <summary>Dossier des fichiers (créé au premier besoin).</summary>
     private async Task<string> DossierAsync(CancellationToken annulation)
     {
         if (_dossier is not null)
             return _dossier;
 
-        var recherche = $"name = '{NomDossier}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        var recherche = $"name = '{_nomDossier}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
         using (var reponse = await EnvoyerAsync(HttpMethod.Get, $"{Api}?q={Uri.EscapeDataString(recherche)}&fields=files(id,name)&spaces=drive", null, annulation))
         {
             var liste = await LireJsonAsync<ListeDrive>(reponse, annulation);
@@ -339,7 +344,7 @@ public sealed class StockageGoogleDrive : IStockageDocuments
                 return _dossier = liste.Files[0].Id;
         }
 
-        var description = JsonSerializer.Serialize(new { name = NomDossier, mimeType = "application/vnd.google-apps.folder" });
+        var description = JsonSerializer.Serialize(new { name = _nomDossier, mimeType = "application/vnd.google-apps.folder" });
         using var creation = await EnvoyerAsync(HttpMethod.Post, $"{Api}?fields=id",
             new StringContent(description, Encoding.UTF8, "application/json"), annulation);
         return _dossier = (await LireJsonAsync<FichierDrive>(creation, annulation)).Id;
