@@ -37,7 +37,7 @@ internal static class Captures
     private const double HauteurBilan = 1420;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
-    private const double HauteurConfiguration = 2480;
+    private const double HauteurConfiguration = 2900;
 
     /// <summary>Mail : rédaction, carnet d'adresses et historique.</summary>
     private const double HauteurMail = 960;
