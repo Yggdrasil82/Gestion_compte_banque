@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="images/logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.8.0</p>
+  <p class="sous">Manuel d'utilisation · version 2.9.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -67,6 +67,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li>Vue d'ensemble</li>
     <li>Configuration</li>
     <li>Compte Google et IA gratuites</li>
+    <li>Données dans Google Drive</li>
     <li>Sauvegarde et confidentialité</li>
     <li>Aide</li>
   </ol>
@@ -101,6 +102,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Apparence</b></td><td>Thème de couleurs (Océan, Pastel, Nuit…) et case « Mode sombre ».</td></tr>
     <tr><td><b>Données</b></td><td>Importer un relevé, Enregistrer une copie (sauvegarde), Restaurer une sauvegarde, Ouvrir le dossier des données, Réinitialiser (effacer les mois ou tout effacer).</td></tr>
   </table>
+  <p>Sur un petit écran, la barre défile avec la molette pour atteindre Apparence et Données.</p>
 </section>
 
 <section class="page">
@@ -268,6 +270,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <ul>
     <li>« + » ajoute un prêt : nom, montant emprunté, taux nominal (hors assurance) et mois de la 1re échéance, tels qu'ils figurent sur l'offre de prêt.</li>
     <li><b>Paliers</b> : nombre de mois et échéance hors assurance de chaque palier (un seul pour un prêt classique). 0 € pendant un différé : seule l'assurance est payée. « Calculer le dernier palier » trouve l'échéance qui solde le prêt à la date prévue.</li>
+    <li><b>Durée</b> : modifiable dans la liste des prêts (« 25 ans » ou « 300 » mois). Le dernier palier est allongé ou raccourci, et son échéance recalculée pour solder le prêt à la nouvelle date.</li>
     <li><b>Assurance</b> : taux sur le capital restant dû (elle baisse chaque mois), taux sur le montant emprunté, ou montant fixe par mois.</li>
     <li><b>Conditions de remboursement anticipé</b> : recopiez celles de l'offre. Par défaut, le maximum légal : 6 mois d'intérêts, plafonnés à 3 % du capital remboursé. Cochez « Aucune indemnité » pour un PTZ ; indiquez au bout de combien d'années l'indemnité disparaît (comptées depuis la signature), le minimum d'un remboursement partiel et la règle du dernier palier.</li>
   </ul>
@@ -337,6 +340,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Règles de classement</b></td><td>Mot-clé du libellé → enveloppe, utilisé à l'import des relevés.</td></tr>
     <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Crédits, Prêts, Bourse, Documents, Mail, Achats, Lettres, Assistant et l'animation du canard. Réglage propre au PC ; vos données restent conservées.</td></tr>
     <tr><td><b>Compte Google</b></td><td>État « Connecté : adresse » ou « Non connecté », boutons Connecter, Reconnecter et Déconnecter. Pendant la connexion, la carte affiche l'étape en cours.</td></tr>
+    <tr><td><b>Stockage des données</b></td><td>Sur ce PC, ou dans Google Drive, chiffrées : voir le chapitre 19.</td></tr>
     <tr><td><b>Intelligence artificielle</b></td><td>Case pour couper tout envoi aux IA, et clés Gemini et Groq.</td></tr>
     <tr><td><b>Mises à jour</b></td><td>Version installée et bouton « Rechercher une mise à jour ». L'application vérifie aussi au démarrage : si une nouvelle version existe, elle affiche ses nouveautés et demande avant d'installer. « Installer et redémarrer » remplace le programme ; vos données ne sont pas touchées.</td></tr>
   </table>
@@ -360,18 +364,48 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Gemini</b> (Google)</td><td>Google AI Studio : aistudio.google.com, « Get API key »</td><td>Gratuit sans carte bancaire. Modèle Flash-Lite par défaut (environ 500 demandes par jour). Pas de recherche internet avec une clé gratuite.</td></tr>
     <tr><td><b>Groq</b></td><td>console.groq.com/keys, « Create API Key »</td><td>Gratuit sans carte bancaire (environ 1 000 demandes par jour). Recherche internet possible (Achats, Taux du moment) ; si la clé la refuse, l'application le dit.</td></tr>
   </table>
-  <p>Collez la clé dans Configuration › Intelligence artificielle › « Saisir la clé… ». Elle est chiffrée par Windows et reste sur votre PC. Ne la communiquez à personne.</p>
+  <p>Collez la clé dans Configuration › Intelligence artificielle › « Saisir la clé… ». Elle est chiffrée par Windows et reste sur votre PC (ou voyage, chiffrée, avec vos données dans Google Drive). Ne la communiquez à personne.</p>
   <div class="encart"><p><b>Tout reste gratuit</b> tant qu'aucune carte bancaire ni compte de facturation n'est ajouté chez Google ou Groq. Si une limite du jour est atteinte, l'application le dit et indique quand réessayer.</p></div>
 
-  <h2 style="margin-top:8mm">19. Sauvegarde et confidentialité</h2>
+</section>
+
+<section class="page">
+  <h2>19. Données dans Google Drive</h2>
+  <p>Vos données peuvent vivre dans votre Google Drive plutôt que sur un seul PC : l'application les ouvre alors depuis n'importe quel ordinateur, même lancée depuis une clé USB.</p>
+  <h3>Mettre les données dans Google Drive</h3>
+  <ol>
+    <li>Configuration › Stockage des données › « Stocker mes données dans Google Drive… » (le compte Google se connecte s'il ne l'est pas).</li>
+    <li>Choisissez un mot de passe (au moins 8 caractères) : il sera demandé à chaque ouverture.</li>
+    <li>Notez la <b>clé de secours</b> affichée (copier, enregistrer ou imprimer) : elle seule permet de choisir un nouveau mot de passe en cas d'oubli.</li>
+    <li>L'application redémarre et ouvre vos données depuis Google Drive.</li>
+  </ol>
+  <p>Tout est chiffré (AES-256) sur le PC avant l'envoi : comptes, préférences, documents, clés des IA. Le dossier « Mon Budget - Données » de votre Drive ne contient que des fichiers illisibles sans votre mot de passe. Le dossier Documents\GestionCompte reste sur le PC : supprimez-le quand tout fonctionne.</p>
+  <h3>À chaque ouverture</h3>
   <ul>
-    <li>Les données sont dans <b>Documents\GestionCompte</b> (un fichier par compte). « Ouvrir le dossier » y mène directement.</li>
+    <li>Une fenêtre demande le compte Google (« Se connecter à Google » s'il ne l'est pas) et le mot de passe des données.</li>
+    <li><b>C'est mon PC (PC de confiance)</b> : la connexion Google et une copie chiffrée restent sur ce PC. Sans internet, vos données s'ouvrent alors en lecture seule (les modifications ne sont pas gardées).</li>
+    <li>Sur un autre PC, laissez la case décochée : les données déchiffrées sont effacées à la fermeture et la connexion n'est pas gardée. Pensez à vous déconnecter de Google dans le navigateur.</li>
+    <li>Si l'application est déjà ouverte sur un autre PC, elle le dit : « Lecture seule » pour consulter, ou « Ouvrir quand même » (l'autre PC passe alors en lecture seule).</li>
+  </ul>
+  <h3>Pendant l'utilisation</h3>
+  <p>Les modifications sont envoyées dans Google Drive au fil de la saisie et à la fermeture ; la carte Stockage des données indique l'heure du dernier envoi. Sans connexion, elles partent dès son retour ; si elles n'ont pas pu partir à la fermeture, l'application propose de réessayer.</p>
+  <table>
+    <tr><th style="width:32%">Bouton</th><th>Rôle</th></tr>
+    <tr><td><b>Changer le mot de passe…</b></td><td>Nouveau mot de passe ; la clé de secours reste la même.</td></tr>
+    <tr><td><b>Préparer une clé USB…</b></td><td>Copie l'application sur la clé : lancée sur n'importe quel PC, elle ouvre directement vos données de Google Drive.</td></tr>
+    <tr><td><b>Remettre les données sur ce PC…</b></td><td>Recopie les données dans Documents\GestionCompte (l'ancien contenu est renommé, pas effacé) ; la copie de Google Drive n'est pas supprimée.</td></tr>
+  </table>
+  <p>Mot de passe oublié : lien « Mot de passe oublié ? » de la fenêtre d'ouverture, puis la clé de secours.</p>
+
+  <h2 style="margin-top:8mm">20. Sauvegarde et confidentialité</h2>
+  <ul>
+    <li>Les données sont dans <b>Documents\GestionCompte</b> (un fichier par compte), ou dans Google Drive (chapitre 19). « Ouvrir le dossier » y mène directement.</li>
     <li><b>Enregistrer une copie…</b> crée une sauvegarde ; <b>Restaurer une sauvegarde…</b> la reprend. Gardez une copie sur une clé USB ou dans Google Drive.</li>
     <li><b>Réinitialiser…</b> efface les mois, ou tout, pour repartir de zéro (une confirmation est demandée).</li>
     <li>Il n'existe aucun serveur Mon Budget : rien n'est envoyé au développeur. Seul ce que vous demandez part vers Google ou les IA, comme décrit dans chaque onglet. Les règles complètes sont sur la page « Règles de confidentialité » du dépôt GitHub (docs/confidentialite.md).</li>
   </ul>
 
-  <h2 style="margin-top:8mm">20. Aide</h2>
+  <h2 style="margin-top:8mm">21. Aide</h2>
   <p>Ce manuel est aussi dans l'application : onglet <b>Aide</b>, en bas de la barre de gauche. Choisissez un chapitre dans la liste, ou tapez un mot dans « Rechercher » (sans vous soucier des accents) : seuls les chapitres qui le contiennent restent, et le mot est surligné.</p>
 </section>
 

@@ -16,7 +16,8 @@ chiffrées par Windows et ne quittent pas votre PC.
 Si vous connectez votre compte Google (facultatif), l'application l'utilise seulement pour ce que vous demandez :
 
 - **Google Drive** (`drive.file`) : enregistrer et relire les documents que vous déposez dans le coffre de
-  l'application. Elle n'a accès qu'aux fichiers qu'elle a créés, pas au reste de votre Drive.
+  l'application, et, si vous le choisissez, toutes vos données (chiffrées sur votre PC avec votre mot de passe avant
+  l'envoi, illisibles sans lui). Elle n'a accès qu'aux fichiers qu'elle a créés, pas au reste de votre Drive.
 - **Gmail** (`gmail.send`) : envoyer les mails que vous écrivez dans l'application. Elle ne lit pas vos mails.
 - **Contacts** (`contacts.readonly`, `contacts.other.readonly`) : proposer vos contacts comme destinataires.
   Elle ne les modifie pas.

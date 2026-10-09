@@ -452,6 +452,63 @@ public sealed class PretViewModel : ObservableObject
 
     public string DureeTexte => $"{Resultat.Count} mois" + (Resultat.Count % 12 == 0 && Resultat.Count > 0 ? $" ({Resultat.Count / 12} ans)" : "");
 
+    /// <summary>
+    /// Durée prévue (somme des paliers), modifiable dans la liste : « 25 ans », « 300 » ou « 300 mois ». Le dernier palier est
+    /// allongé ou raccourci et son échéance recalculée pour solder le prêt à la nouvelle date.
+    /// </summary>
+    public string Duree
+    {
+        get => FormaterDuree(Modele.DureeMois);
+        set
+        {
+            if (LireDuree(value) is { } mois)
+                ChangerDuree(mois);
+            OnPropertyChanged();
+        }
+    }
+
+    public static string FormaterDuree(int mois) =>
+        $"{mois} mois" + (mois % 12 == 0 && mois > 0 ? $" ({mois / 12} ans)" : "");
+
+    /// <summary>« 25 ans », « 25a », « 300 », « 300 mois » → nombre de mois ; null si illisible.</summary>
+    public static int? LireDuree(string? texte)
+    {
+        var correspondance = System.Text.RegularExpressions.Regex.Match((texte ?? "").Trim().ToLowerInvariant(),
+            @"^(\d+(?:[.,]\d+)?)\s*(ans?|a|années?|annees?|mois|m)?\b");
+        if (!correspondance.Success
+            || !decimal.TryParse(correspondance.Groups[1].Value.Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out var nombre))
+            return null;
+        var unite = correspondance.Groups[2].Value;
+        var mois = unite.StartsWith('a') ? (int)Math.Round(nombre * 12m) : (int)Math.Round(nombre);
+        return mois is > 0 and <= CalculPret.DureeMaximale ? mois : null;
+    }
+
+    /// <summary>Nouvelle durée totale : le dernier palier change de longueur (puis les précédents s'il faut raccourcir davantage).</summary>
+    internal void ChangerDuree(int mois)
+    {
+        var ecart = mois - Modele.DureeMois;
+        if (ecart == 0 || Modele.Paliers.Count == 0)
+            return;
+        var dernier = Modele.Paliers.Count - 1;
+        if (ecart > 0)
+            Modele.Paliers[dernier] = Modele.Paliers[dernier] with { NombreMois = Math.Max(0, Modele.Paliers[dernier].NombreMois) + ecart };
+        else
+        {
+            var aRetirer = -ecart;
+            for (var i = dernier; i >= 0 && aRetirer > 0; i--)
+            {
+                var minimum = i == dernier ? 1 : 0;
+                var retrait = Math.Min(aRetirer, Math.Max(0, Modele.Paliers[i].NombreMois - minimum));
+                Modele.Paliers[i] = Modele.Paliers[i] with { NombreMois = Modele.Paliers[i].NombreMois - retrait };
+                aRetirer -= retrait;
+            }
+        }
+        if (CalculPret.MensualiteDernierPalier(Modele) is { } mensualite)
+            Modele.Paliers[dernier] = Modele.Paliers[dernier] with { Mensualite = mensualite };
+        Rafraichir();
+        _modifie(this);
+    }
+
     public string NomCharge => Credit.EstUnCredit(Nom) ? Nom.Trim() : $"Prêt {Nom.Trim()}";
 
     public bool DansLesCharges => _parent.ChargeExiste(NomCharge);
@@ -551,7 +608,7 @@ public sealed class PretViewModel : ObservableObject
                  {
                      nameof(Resultat), nameof(Tableau), nameof(EcheanceCourante), nameof(EcheanceDuMois), nameof(ProchaineEcheance),
                      nameof(CapitalRestant), nameof(InteretsRestants), nameof(AssuranceRestante), nameof(EcheancesRestantes),
-                     nameof(CoutInterets), nameof(CoutAssurance), nameof(CoutTotal), nameof(Fin), nameof(DureeTexte), nameof(Avertissement),
+                     nameof(CoutInterets), nameof(CoutAssurance), nameof(CoutTotal), nameof(Fin), nameof(DureeTexte), nameof(Duree), nameof(Avertissement),
                      nameof(ExplicationEcheanceDuMois), nameof(ExplicationCapitalRestant), nameof(ExplicationInteretsRestants),
                      nameof(ExplicationCout), nameof(ExplicationAssurance), nameof(NomCharge), nameof(DansLesCharges), nameof(TexteBoutonCharges),
                  })

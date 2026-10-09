@@ -86,8 +86,12 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Durée" Width="120" IsReadOnly="True" Binding="{Binding DureeTexte, Mode=OneWay}"
-                                                    ElementStyle="{StaticResource CelluleTexte}" />
+                                <DataGridTextColumn Width="120" Binding="{Binding Duree}"
+                                                    ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="Durée" ToolTip="Modifiable : « 25 ans » ou « 300 » (mois). Le dernier palier est allongé ou raccourci et son échéance recalculée." />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Width="105" IsReadOnly="True"
                                                     Binding="{Binding EcheanceDuMois, Mode=OneWay, Converter={StaticResource Montant}}">
                                     <DataGridTextColumn.Header>

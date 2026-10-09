@@ -287,6 +287,55 @@ public sealed class PretsViewModelTests : IDisposable
         Assert.Equal(vm.Selection.EcheanceDuMois, compte.Configuration.Charges.Single(c => c.Nom == "Prêt Maison").Debit);
     }
 
+    [Theory]
+    [InlineData("25 ans", 300)]
+    [InlineData("25a", 300)]
+    [InlineData("300", 300)]
+    [InlineData("300 mois", 300)]
+    [InlineData("300 mois (25 ans)", 300)]
+    [InlineData("12,5 ans", 150)]
+    [InlineData("abc", null)]
+    [InlineData("0", null)]
+    [InlineData("1000", null)]
+    public void Duree_LueEnAnsOuEnMois(string texte, int? attendu) => Assert.Equal(attendu, PretViewModel.LireDuree(texte));
+
+    [Fact]
+    public void ViewModel_ChangerLaDureeAllongeLeDernierPalierEtRecalculeSonEcheance()
+    {
+        var enregistrements = 0;
+        var vm = new PretsViewModel(CompteAvecPret(), new PeriodeMois(2026, 11), new Dialogues(), () => enregistrements++, () => { });
+        var pret = vm.Selection!;
+        var avant = pret.Modele.Paliers.Select(p => p.NombreMois).ToList();
+        var echeanceAvant = pret.Modele.Paliers[^1].Mensualite;
+
+        pret.Duree = "30 ans";
+
+        Assert.Equal(360, pret.Modele.DureeMois);
+        Assert.Equal("360 mois (30 ans)", pret.Duree);
+        Assert.Equal(avant[..^1], pret.Modele.Paliers.Select(p => p.NombreMois).ToList()[..^1]);
+        Assert.True(pret.Modele.Paliers[^1].Mensualite < echeanceAvant);
+        Assert.Equal(0m, pret.Resultat[^1].CapitalRestant);
+        Assert.Equal(360, pret.Resultat.Count);
+        Assert.Equal("", pret.Avertissement);
+        Assert.Equal(1, enregistrements);
+
+        pret.Duree = "pas une durée";
+        Assert.Equal(360, pret.Modele.DureeMois);
+    }
+
+    [Fact]
+    public void ViewModel_RaccourcirAuDelaDuDernierPalierReduitLesPrecedents()
+    {
+        var vm = new PretsViewModel(CompteAvecPret(), new PeriodeMois(2026, 11), new Dialogues(), () => { }, () => { });
+        var pret = vm.Selection!;
+        var autres = pret.Modele.DureeMois - pret.Modele.Paliers[^1].NombreMois;
+
+        pret.Duree = (autres - 5).ToString();
+
+        Assert.Equal(autres - 5, pret.Modele.DureeMois);
+        Assert.Equal(1, pret.Modele.Paliers[^1].NombreMois);
+    }
+
     [Fact]
     public void ExportExcel_PretEtSimulation()
     {
