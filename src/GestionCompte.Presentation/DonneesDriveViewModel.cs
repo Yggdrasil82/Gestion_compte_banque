@@ -63,7 +63,16 @@ public sealed partial class DonneesDriveViewModel : ObservableObject
 
     public bool Inactif => !Actif;
 
-    public string Etat => Session?.Etat ?? $"Les données sont sur ce PC, dans {_dossierLocal}.";
+    public string Etat => _etape ?? Session?.Etat ?? $"Les données sont sur ce PC, dans {_dossierLocal}.";
+
+    /// <summary>Étape en cours (connexion, envoi…), affichée à la place de l'état.</summary>
+    private string? _etape;
+
+    private void Etape(string? etape)
+    {
+        _etape = etape;
+        OnPropertyChanged(nameof(Etat));
+    }
 
     /// <summary>PC de confiance : connexion Google gardée et copie chiffrée pour une ouverture hors connexion.</summary>
     [ObservableProperty] private bool _confiance;
@@ -86,8 +95,21 @@ public sealed partial class DonneesDriveViewModel : ObservableObject
     [RelayCommand]
     private async Task Activer()
     {
+        try
+        {
+            await ActiverAsync();
+        }
+        finally
+        {
+            Etape(null);
+        }
+    }
+
+    private async Task ActiverAsync()
+    {
         if (!_google.Connecte)
         {
+            Etape("Terminez la connexion à Google dans votre navigateur (la page vient de s'ouvrir)…");
             try
             {
                 if (!await _google.ConnecterAsync())
@@ -103,6 +125,7 @@ public sealed partial class DonneesDriveViewModel : ObservableObject
 
         try
         {
+            Etape("Recherche de données dans Google Drive…");
             var coffre = new CoffreDonnees(_distant(), _iterations);
             if (await coffre.ExisteAsync())
             {
@@ -135,6 +158,7 @@ public sealed partial class DonneesDriveViewModel : ObservableObject
                 var secrets = new SecretsFichier(preparation);
                 foreach (var nom in _secretsPC.Noms().Where(n => !SecretsCombines.EstConnexionGoogle(n)))
                     secrets.Ecrire(nom, _secretsPC.Lire(nom));
+                Etape("Chiffrement et envoi des données dans Google Drive…");
                 secours = await coffre.CreerAsync(preparation, motDePasse);
             }
             finally
