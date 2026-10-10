@@ -99,6 +99,11 @@ public sealed partial class DonneesDriveViewModel : ObservableObject
         {
             await ActiverAsync();
         }
+        catch (Exception e)
+        {
+            // Rien ne doit échouer en silence : l'erreur exacte est affichée.
+            _dialogues.Erreur($"La mise des données dans Google Drive a échoué :\n\n{e.GetType().Name} : {e.Message}");
+        }
         finally
         {
             Etape(null);
