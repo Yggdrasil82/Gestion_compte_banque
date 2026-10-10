@@ -15,6 +15,8 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (!e.Args.Contains("--captures"))
+            JournalDemarrage.Commencer();
 
         // Infobulles affichées tant que la souris reste dessus (les explications des calculs sont longues à lire).
         ToolTipService.ShowDurationProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(int.MaxValue));
@@ -36,27 +38,47 @@ public partial class App : Application
         }
 
         DispatcherUnhandledException += ErreurNonPrevue;
+        try
+        {
+            Demarrer();
+        }
+        catch (Exception ex)
+        {
+            // Démarrage interrompu : l'erreur est montrée au lieu d'un processus qui tourne sans fenêtre.
+            JournalDemarrage.Noter($"Échec du démarrage : {ex}");
+            MessageBox.Show($"Mon Budget n'a pas pu démarrer :\n\n{ex.Message}\n\nDétails : {JournalDemarrage.Chemin}",
+                "Gestion Compte", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
+    }
 
+    private void Demarrer()
+    {
         // Données dans Google Drive (réglage de ce PC, ou fichier posé à côté de l'exe sur une clé USB).
+        JournalDemarrage.Noter("Lecture du réglage Google Drive");
         var demarrage = new DemarrageDrive(DossierPC, Path.GetDirectoryName(Environment.ProcessPath));
         if (demarrage.Drive)
         {
+            JournalDemarrage.Noter("Données dans Google Drive : fenêtre d'ouverture");
             OuvrirDepuisDrive(demarrage);
             return;
         }
 
         // Apparence mémorisée à côté des données (Documents\GestionCompte\preferences.json).
+        JournalDemarrage.Noter($"Lecture des préférences dans {DossierLocal}");
         var apparence = new ApparenceViewModel(Path.Combine(DossierLocal, "preferences.json"));
         Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
         apparence.Changee += (_, _) => Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
 
         // Identifiants (connexion Google, clés des IA…) : chiffrés par Windows, propres à ce PC.
+        JournalDemarrage.Noter("Lecture des identifiants de ce PC");
         var secretsPC = new SecretsWindows(Path.Combine(DossierPC, "secrets"));
         void Lancer() => Ouvrir(apparence, RegistreComptes.Charger(DossierLocal), secretsPC, secretsPC, secretsPC, demarrage, null);
 
         // Animation du canard (réglable dans Configuration › Modules), puis ouverture de l'application.
         if (apparence.AnimationDemarrage)
         {
+            JournalDemarrage.Noter("Animation du canard");
             var accueil = new FenetreAccueil();
             accueil.Terminee += (_, _) => Lancer();
             accueil.Show();
@@ -130,6 +152,8 @@ public partial class App : Application
             ShutdownMode = ShutdownMode.OnMainWindowClose;
         };
         fenetre.Show();
+        JournalDemarrage.Noter("Fenêtre d'ouverture Google Drive affichée");
+        fenetre.ContentRendered += (_, _) => JournalDemarrage.Terminer("Fenêtre d'ouverture Google Drive dessinée");
     }
 
     private static bool ProcessusActif(int numero)
@@ -153,12 +177,14 @@ public partial class App : Application
         ISecretsLocaux connexion, DemarrageDrive demarrage, SessionDrive? session)
     {
         MainViewModel vm;
+        JournalDemarrage.Noter($"Chargement des données depuis {registre.Chemin(registre.Actif)}");
         try
         {
             vm = new MainViewModel(registre, new Dialogues(), DateTime.Today, apparence, secrets);
         }
         catch (Exception ex)
         {
+            JournalDemarrage.Noter($"Données illisibles : {ex}");
             MessageBox.Show(
                 $"Les données n'ont pas pu être chargées depuis :\n{registre.Chemin(registre.Actif)}\n\n{ex.Message}\n\n" +
                 "Le fichier n'a pas été modifié.",
@@ -169,6 +195,7 @@ public partial class App : Application
         vm.DonneesDrive = new DonneesDriveViewModel(vm.Google, new Dialogues(), demarrage, session, registre.Dossier, DossierLocal,
             secretsPC, connexion, Environment.ProcessPath);
 
+        JournalDemarrage.Noter("Création de la fenêtre principale");
         var fenetre = new MainWindow { DataContext = vm };
         fenetre.SourceInitialized += (_, _) => Themes.BarreDeTitreSombre(fenetre, apparence.Sombre);
         MainWindow = fenetre;
@@ -201,7 +228,9 @@ public partial class App : Application
                 session.Demarrer(TimeSpan.FromSeconds(10));
             };
         }
+        fenetre.ContentRendered += (_, _) => JournalDemarrage.Terminer("Fenêtre principale dessinée");
         fenetre.Show();
+        JournalDemarrage.Noter("Fenêtre principale affichée");
 
         vm.DonneesDrive.RedemarrageDemande += async (_, _) => await RedemarrerAsync(fenetre, Environment.ProcessPath);
 
@@ -261,6 +290,7 @@ public partial class App : Application
 
     private void ErreurNonPrevue(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        JournalDemarrage.Noter($"Erreur inattendue : {e.Exception}");
         MessageBox.Show($"Une erreur inattendue s'est produite :\n\n{e.Exception.Message}",
             "Gestion Compte", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
