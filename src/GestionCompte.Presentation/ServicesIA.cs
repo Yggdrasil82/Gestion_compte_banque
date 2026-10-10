@@ -36,7 +36,7 @@ public sealed partial class ServicesIA : ObservableObject
         _secrets = secrets;
         _dialogues = dialogues;
         _assistantsTest = assistantsTest;
-        Http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
+        Http = http ?? Data.Reseau.Client(TimeSpan.FromMinutes(2));
         foreach (var ancien in AnciensSecrets)
             if (_secrets.Lire(ancien) is not null)
                 _secrets.Ecrire(ancien, null);

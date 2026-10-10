@@ -20,7 +20,7 @@ public class ServiceCoursBourse
 
     public ServiceCoursBourse(HttpClient? http = null)
     {
-        _http = http ?? new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        _http = http ?? Data.Reseau.Client(TimeSpan.FromSeconds(20));
     }
 
     /// <summary>Dernier cours du titre ; <paramref name="symbole"/> (« CW8.PA ») évite la recherche par ISIN.</summary>

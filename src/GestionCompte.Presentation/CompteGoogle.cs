@@ -28,7 +28,7 @@ public sealed partial class CompteGoogle : ObservableObject
         _secrets = secrets;
         _dialogues = dialogues;
         _integres = integres ?? GoogleIntegre.Identifiants;
-        Http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
+        Http = http ?? Data.Reseau.Client(TimeSpan.FromMinutes(2));
         if (Identifiants() is { } identifiants && _secrets.Lire(SecretJeton) is { Length: > 0 } jeton)
             Connexion = new ConnexionGoogle(Http, identifiants, jeton);
         MettreAJour();

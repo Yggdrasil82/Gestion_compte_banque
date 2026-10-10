@@ -27,7 +27,7 @@ public sealed class ServiceMisesAJour
 
     public ServiceMisesAJour(HttpClient? http = null)
     {
-        _http = http ?? new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
+        _http = http ?? Data.Reseau.Client(TimeSpan.FromMinutes(5));
     }
 
     /// <summary>Version à trois chiffres (2.8.0), pour comparer la version de l'exe (2.8.0.0) et celle de GitHub.</summary>
