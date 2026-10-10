@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 
@@ -37,6 +38,16 @@ internal static class JournalDemarrage
 
         var version = Assembly.GetEntryAssembly()?.GetName().Version;
         Noter($"Lancement de la version {version} depuis {Environment.ProcessPath} (Windows {Environment.OSVersion.Version})");
+        try
+        {
+            // Temps passé avant la première ligne de l'application : lecture de l'exe (clé USB…) et analyse par l'antivirus.
+            using var processus = System.Diagnostics.Process.GetCurrentProcess();
+            Noter($"Processus démarré à {processus.StartTime:HH:mm:ss.fff}, soit {(DateTime.Now - processus.StartTime).TotalSeconds:0.0} s avant l'application");
+        }
+        catch (Exception e) when (e is InvalidOperationException or NotSupportedException or Win32Exception)
+        {
+            // Heure de démarrage illisible : le journal continue sans elle.
+        }
         AppDomain.CurrentDomain.UnhandledException += (_, e) => Noter($"Erreur fatale : {e.ExceptionObject}");
         TaskScheduler.UnobservedTaskException += (_, e) => Noter($"Erreur en tâche de fond : {e.Exception}");
 
@@ -73,6 +84,19 @@ internal static class JournalDemarrage
                 // Journal facultatif : le démarrage continue.
             }
         }
+    }
+
+    /// <summary>Note chaque nouvel état affiché (connexion Google, ouverture des données…) avec son heure.</summary>
+    public static void Suivre(INotifyPropertyChanged source, string propriete, Func<string?> lire, string nom)
+    {
+        var precedent = "";
+        source.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != propriete || lire() is not { Length: > 0 } etat || etat == precedent)
+                return;
+            precedent = etat;
+            Noter($"{nom} : {etat}");
+        };
     }
 
     /// <summary>Fenêtre affichée : fin de la surveillance.</summary>

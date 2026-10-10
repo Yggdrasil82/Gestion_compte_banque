@@ -112,6 +112,8 @@ public partial class App : Application
             DemarrageDrive.DossierSession(Path.GetTempPath(), Environment.ProcessId), Environment.MachineName);
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        JournalDemarrage.Suivre(ouverture, nameof(OuvertureDriveViewModel.Etat), () => ouverture.Etat, "Ouverture");
+        JournalDemarrage.Suivre(google, nameof(CompteGoogle.Etat), () => google.Etat, "Google");
         var fenetre = new FenetreOuvertureDrive(ouverture);
         SessionDrive? ouverte = null;
         fenetre.Ouverte += (_, session) => ouverte = session;
@@ -195,6 +197,8 @@ public partial class App : Application
         vm.DonneesDrive = new DonneesDriveViewModel(vm.Google, new Dialogues(), demarrage, session, registre.Dossier, DossierLocal,
             secretsPC, connexion, Environment.ProcessPath);
 
+        JournalDemarrage.Suivre(vm.Google, nameof(CompteGoogle.Etat), () => vm.Google.Etat, "Google");
+        JournalDemarrage.Suivre(vm.DonneesDrive, nameof(DonneesDriveViewModel.Etat), () => vm.DonneesDrive.Etat, "Stockage des données");
         JournalDemarrage.Noter("Création de la fenêtre principale");
         var fenetre = new MainWindow { DataContext = vm };
         fenetre.SourceInitialized += (_, _) => Themes.BarreDeTitreSombre(fenetre, apparence.Sombre);
