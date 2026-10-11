@@ -137,9 +137,100 @@ public class ImportReleveTests
     [InlineData("CB  COFIDIS AMAZON   30/08/26", "CB COFIDIS AMAZON")]
     [InlineData("CB CARREFOUR 14/10", "CB CARREFOUR")]
     [InlineData("PRLV SEPA FREE MOBILE", "PRLV SEPA FREE MOBILE")]
+    [InlineData("CARTE 09/10 BOULANGERIE DU PORT", "CARTE BOULANGERIE DU PORT")]
+    [InlineData("CARTE 30/09 CAFE   *EN LIGNE", "CARTE CAFE *EN LIGNE")]
+    [InlineData("VIR FACTURE 12/2026", "VIR FACTURE 12/2026")]
     public void NettoyerLibelle(string brut, string attendu)
     {
         Assert.Equal(attendu, ReleveOfx.NettoyerLibelle(brut));
+    }
+
+    // ---- QIF ----
+
+    private const string QifExemple = "!Type:Bank\r\nD11/10/2026\r\nT21.75\r\nPVIR INST M DUPONT\r\n^\r\n" +
+                                      "D05/10/2026\r\nT-12.00\r\nPCARTE 03/10 BOULANGERIE DU PORT\r\n^\r\n" +
+                                      "D05/10/2026\r\nT-12.00\r\nPCARTE 03/10 BOULANGERIE DU PORT\r\n^\r\n" +
+                                      "D29/09/2026\r\nT-1,234.50\r\nPPRLV SEPA ASSURANCE\r\nMCONTRAT 42\r\n^\r\n";
+
+    [Fact]
+    public void Qif_OperationsLues()
+    {
+        var releve = ReleveQif.LireTexte(QifExemple);
+
+        Assert.Equal(4, releve.Operations.Count);
+        Assert.Null(releve.Solde);
+        Assert.Null(releve.Compte);
+        var virement = releve.Operations[0];
+        Assert.Equal(new DateOnly(2026, 10, 11), virement.Date);
+        Assert.Equal(21.75m, virement.Montant);
+        Assert.Equal("VIR INST M DUPONT", virement.Libelle);
+        Assert.Equal("CARTE BOULANGERIE DU PORT", releve.Operations[1].Libelle);
+        Assert.Equal(-1234.50m, releve.Operations[3].Montant);
+        Assert.Equal("PRLV SEPA ASSURANCE CONTRAT 42", releve.Operations[3].Libelle);
+    }
+
+    [Fact]
+    public void Qif_OperationsIdentiquesDuMemeJour_GardeesEtIdentifiantsStables()
+    {
+        var premier = ReleveQif.LireTexte(QifExemple).Operations;
+        // Export suivant : une opération en plus, les identifiants des autres ne changent pas (doublons reconnus).
+        var suivant = ReleveQif.LireTexte("!Type:Bank\nD12/10/2026\nT-5.00\nPCARTE 11/10 CAFE\n^\n" + QifExemple.Replace("!Type:Bank\r\n", "")).Operations;
+
+        Assert.NotEqual(premier[1].Identifiant, premier[2].Identifiant);
+        Assert.Equal(premier.Select(o => o.Identifiant), suivant.Skip(1).Select(o => o.Identifiant));
+    }
+
+    [Fact]
+    public void Qif_DatesMoisJour_Reconnues()
+    {
+        var releve = ReleveQif.LireTexte("!Type:Bank\nD10/25/2026\nT-3.00\nPCAFE\n^\nD10/05/26\nT-4.00\nPTHE\n^\n");
+
+        Assert.Equal(new DateOnly(2026, 10, 25), releve.Operations[0].Date);
+        Assert.Equal(new DateOnly(2026, 10, 5), releve.Operations[1].Date);
+    }
+
+    [Fact]
+    public void Qif_DescriptionDuCompte_Ignoree()
+    {
+        var releve = ReleveQif.LireTexte("!Account\nNCompte joint\nTBank\n^\n!Type:Bank\nD02/10/2026\nT-9.90\nPMUSIQUE\n^\n");
+
+        var operation = Assert.Single(releve.Operations);
+        Assert.Equal("MUSIQUE", operation.Libelle);
+    }
+
+    [Fact]
+    public void Qif_Windows1252_AccentsConserves()
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        var octets = Encoding.GetEncoding(1252).GetBytes("!Type:Bank\nD02/10/2026\nT-9.90\nPCB PÂTISSERIE DÉLICES\n^\n");
+
+        Assert.Equal("CB PÂTISSERIE DÉLICES", ReleveQif.LireTexte(ReleveQif.Decoder(octets)).Operations[0].Libelle);
+    }
+
+    [Fact]
+    public void Qif_PasUnQif_EstRefuse()
+    {
+        Assert.Throws<FormatException>(() => ReleveQif.LireTexte("Date;Libellé;Montant"));
+    }
+
+    [Fact]
+    public void Releves_ReconnaitLeFormat()
+    {
+        var dossier = Directory.CreateTempSubdirectory();
+        try
+        {
+            var qif = Path.Combine(dossier.FullName, "releve.txt");
+            File.WriteAllText(qif, QifExemple);
+            var ofx = Path.Combine(dossier.FullName, "releve.dat");
+            File.WriteAllText(ofx, Ofx(Ligne("DEBIT", "20261005", "-12.00", "E1", "CAFE")));
+
+            Assert.Equal(4, Releves.Lire(qif).Operations.Count);
+            Assert.Equal("E1", Assert.Single(Releves.Lire(ofx).Operations).Identifiant);
+        }
+        finally
+        {
+            dossier.Delete(recursive: true);
+        }
     }
 
     // ---- Rapprochement ----

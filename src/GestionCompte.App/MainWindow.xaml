@@ -202,7 +202,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <Button Style="{StaticResource BoutonEntete}" Command="{Binding ImporterReleveCommand}"
-                                        ToolTip="Importer un relevé bancaire (OFX) et pointer les opérations">
+                                        ToolTip="Importer un relevé bancaire (OFX ou QIF) et pointer les opérations">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource Icone}" Text="&#xE8B5;" Margin="0,0,8,0" />
                                         <TextBlock Text="Relevé" />

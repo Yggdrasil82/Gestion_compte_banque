@@ -98,7 +98,7 @@ public sealed class Dialogues : IDialogues
         var dialogue = new OpenFileDialog
         {
             Title = "Importer un relevé bancaire",
-            Filter = "Relevé bancaire OFX (*.ofx;*.qfx)|*.ofx;*.qfx",
+            Filter = "Relevé bancaire OFX ou QIF (*.ofx;*.qfx;*.qif)|*.ofx;*.qfx;*.qif",
             CheckFileExists = true,
         };
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;

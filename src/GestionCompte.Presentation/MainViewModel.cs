@@ -806,17 +806,17 @@ public sealed partial class MainViewModel : ObservableObject
             OuvrirImport(chemin);
     }
 
-    /// <summary>Lit un relevé OFX et affiche l'aperçu de l'import (rien n'est modifié avant validation).</summary>
+    /// <summary>Lit un relevé OFX ou QIF et affiche l'aperçu de l'import (rien n'est modifié avant validation).</summary>
     public void OuvrirImport(string chemin)
     {
         ReleveBancaire releve;
         try
         {
-            releve = ReleveOfx.Lire(chemin);
+            releve = Releves.Lire(chemin);
         }
         catch (Exception e)
         {
-            _dialogues.Erreur($"Ce relevé n'a pas pu être lu. Vérifiez qu'il s'agit bien d'un fichier OFX (« Money »).\n\n{e.Message}");
+            _dialogues.Erreur($"Ce relevé n'a pas pu être lu. Vérifiez qu'il s'agit bien d'un fichier OFX (« Money ») ou QIF (« Quicken »).\n\n{e.Message}");
             return;
         }
 

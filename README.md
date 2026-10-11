@@ -28,10 +28,10 @@ du classeur Excel d'origine.
   (catégories Essentiel / Confort / Épargne), suivi réel des enveloppes sur les derniers mois terminés,
   simulateur « Et si… ? », objectifs d'épargne (mensualité et faisabilité selon l'excédent prévu) et alertes.
   Tous les calculs sont faits sur le PC, sans service extérieur.
-- **Import des relevés (OFX)** : le fichier est lu sur le PC uniquement. Chaque opération bancaire est rapprochée
+- **Import des relevés (OFX ou QIF)** : le fichier est lu sur le PC uniquement. Chaque opération bancaire est rapprochée
   d'une opération prévue du mois (même montant ou libellé proche, montant corrigé si besoin) ou d'un revenu,
   puis pointée ; les autres sont ajoutées, rangées dans une enveloppe grâce aux règles de classement
-  (mot-clé du libellé → enveloppe). Les opérations déjà importées (identifiant FITID) sont ignorées, les mois
+  (mot-clé du libellé → enveloppe). Les opérations déjà importées (identifiant FITID, ou date, montant et libellé pour le QIF) sont ignorées, les mois
   manquants sont créés après confirmation, et le solde de la banque est comparé au solde pointé.
   **Ne jamais ajouter de vrai relevé dans ce dépôt (public).**
 
@@ -78,6 +78,7 @@ du classeur Excel d'origine.
 - **2.9.0** : données dans Google Drive (Configuration › Stockage des données) : tout est chiffré (AES-256) avec votre mot de passe, avec une clé de secours, puis rangé dans le dossier « Mon Budget - Données » ; à l'ouverture, connexion Google et mot de passe, puis envoi à chaque modification et à la fermeture ; prévient si l'application est déjà ouverte sur un autre PC ; PC de confiance : connexion gardée et lecture seule sans internet ; sur un autre PC, rien ne reste à la fermeture ; « Préparer une clé USB » pour lancer l'application de n'importe où ; les clés des IA voyagent avec les données ; prêts : durée modifiable (« 25 ans » ou 300 mois), le dernier palier est allongé et son échéance recalculée ; petits écrans : la barre de gauche défile.
 - **2.9.1** : connexions internet plus sûres (adresse IPv4 essayée d'abord : plus d'attente de 2 minutes sur certains réseaux) ; carte Stockage des données : étape en cours affichée et cause exacte de toute erreur.
 - **2.9.2** : démarrage noté dans un journal (%LOCALAPPDATA%\GestionCompte\demarrage.log) pour comprendre une fenêtre qui ne s'ouvre pas ; temps de lancement (clé USB, antivirus) et étapes de la connexion Google et de l'ouverture des données notés avec leur heure ; erreur affichée au lieu d'un démarrage silencieux ; l'application s'ouvre même si l'animation du canard reste bloquée.
+- **2.10.0** : import des relevés au format QIF (Fortuneo…) en plus de l'OFX, avec le même aperçu et la même protection contre les doublons ; date d'achat retirée des libellés (« CARTE 09/10 BOULANGERIE » devient « CARTE BOULANGERIE »).
 
 ## Prochainement
 

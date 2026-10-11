@@ -75,7 +75,7 @@ public interface IDialogues
     /// <summary>Mois, libellé et montant d'un achat à ajouter au prévisionnel ; null si annulé.</summary>
     AchatPrevu? DemanderAchatPrevu(string libelle, decimal montant, IReadOnlyList<ChoixPeriode> periodes) => null;
 
-    /// <summary>Demande quel relevé bancaire (.ofx) importer ; null si l'utilisateur annule.</summary>
+    /// <summary>Demande quel relevé bancaire (.ofx ou .qif) importer ; null si l'utilisateur annule.</summary>
     string? ChoisirReleve();
 
     /// <summary>Demande quel export du courtier (.csv de Trade Republic) importer ; null si l'utilisateur annule.</summary>

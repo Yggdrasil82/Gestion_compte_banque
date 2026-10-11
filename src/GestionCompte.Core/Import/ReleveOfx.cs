@@ -26,6 +26,9 @@ public static class ReleveOfx
 {
     private static readonly Regex Balise = new(@"<(/?)([A-Za-z0-9.]+)>([^<]*)", RegexOptions.Compiled);
     private static readonly Regex DateCarte = new(@"\s+\d{2}/\d{2}(/\d{2,4})?\s*$", RegexOptions.Compiled);
+    // Date d'achat glissée dans le libellé (« CARTE 09/10 BOULANGERIE ») : jour et mois plausibles seulement.
+    private static readonly Regex DateDansLibelle = new(@"(?<=^|\s)(0[1-9]|[12]\d|3[01])/(0[1-9]|1[0-2])(/(\d{2}|\d{4}))?(?=\s|$)",
+        RegexOptions.Compiled);
     private static readonly Regex Espaces = new(@"\s+", RegexOptions.Compiled);
 
     public static ReleveBancaire Lire(string chemin)
@@ -120,10 +123,12 @@ public static class ReleveOfx
         return DateOnly.ParseExact(texte[..8], "yyyyMMdd", CultureInfo.InvariantCulture);
     }
 
+    /// <summary>Libellé sans espaces en trop ni date d'achat carte (en fin de libellé comme au milieu) : il reste le même d'un mois à l'autre.</summary>
     public static string NettoyerLibelle(string libelle)
     {
         var texte = Espaces.Replace(libelle.Trim(), " ");
         texte = DateCarte.Replace(texte, "");
-        return texte.Trim();
+        texte = DateDansLibelle.Replace(texte, "");
+        return Espaces.Replace(texte, " ").Trim();
     }
 }
