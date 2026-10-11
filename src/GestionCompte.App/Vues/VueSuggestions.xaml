@@ -1,0 +1,52 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueSuggestions"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <!-- Bandeau : suggestions reçues par le formulaire Google. -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource BoutonEntete}" Command="{Binding ActualiserCommand}" Margin="0"
+                        VerticalAlignment="Center" ToolTip="Relire les réponses du formulaire">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE72C;" Margin="0,0,8,0" />
+                        <TextBlock Text="Actualiser" />
+                    </StackPanel>
+                </Button>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Icone}" Text="&#xE8F2;" Foreground="{DynamicResource EnteteTexte}" FontSize="18" Margin="0,0,10,0" />
+                    <TextBlock Text="Suggestions reçues" Foreground="{DynamicResource EnteteTexte}" FontSize="16" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Margin="0,0,18,0" />
+                    <TextBlock Text="{Binding Etat}" Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12"
+                               VerticalAlignment="Center" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Style="{StaticResource Carte}">
+            <Grid>
+                <TextBlock Style="{StaticResource Aide}" Visibility="{Binding Vide, Converter={StaticResource Visible}}"
+                           Text="Aucune suggestion à afficher. Elles apparaissent ici dès qu'une personne remplit le formulaire « Suggérer une amélioration »." />
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding Liste}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource Bordure}" BorderThickness="0,0,0,1" Padding="4,10">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <Border Background="{DynamicResource Accent3}" CornerRadius="6" Padding="6,1" Margin="0,0,8,0"
+                                                    Visibility="{Binding Nouvelle, Converter={StaticResource Visible}}">
+                                                <TextBlock Text="Nouvelle" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+                                            </Border>
+                                            <TextBlock Text="{Binding Entete}" Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Texte}" TextWrapping="Wrap" FontSize="14" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </DockPanel>
+</UserControl>

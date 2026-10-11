@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="images/logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.10.0</p>
+  <p class="sous">Manuel d'utilisation · version 2.11.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -98,7 +98,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <table>
     <tr><th style="width:28%">Zone</th><th>Rôle</th></tr>
     <tr><td><b>Compte</b></td><td>Choisit le compte affiché (compte principal, compte joint, livret…). « Nouveau » crée un compte ; le crayon le renomme ; la corbeille le supprime. Chaque compte a son propre fichier et sa propre configuration, qu'on peut copier depuis un autre compte.</td></tr>
-    <tr><td><b>Onglets</b></td><td>Mois, Prévisionnel, Aide au budget, Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts, Bourse, Vue d'ensemble, Configuration, et Aide (ce manuel). Les modules non utilisés se masquent dans Configuration › Modules.</td></tr>
+    <tr><td><b>Onglets</b></td><td>Mois, Prévisionnel, Aide au budget, Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts, Bourse, Vue d'ensemble, Configuration, et Aide (ce manuel). Chaque compte a ses modules : masquez ceux qui ne servent pas et rangez-les avec les flèches ↑ ↓ dans Configuration › Modules. « Suggérer une amélioration » ouvre un court formulaire en ligne, sans compte à créer.</td></tr>
     <tr><td><b>Apparence</b></td><td>Thème de couleurs (Océan, Pastel, Nuit…) et case « Mode sombre ».</td></tr>
     <tr><td><b>Données</b></td><td>Importer un relevé, Enregistrer une copie (sauvegarde), Restaurer une sauvegarde, Ouvrir le dossier des données, Réinitialiser (effacer les mois ou tout effacer).</td></tr>
   </table>
@@ -339,7 +339,8 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Comptes cumulés</b></td><td>Épargne, remboursements… avec un objectif facultatif.</td></tr>
     <tr><td><b>Enveloppes</b></td><td>Budgets de dépenses (courses, carburant) et leur catégorie.</td></tr>
     <tr><td><b>Règles de classement</b></td><td>Mot-clé du libellé → enveloppe, utilisé à l'import des relevés.</td></tr>
-    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Crédits, Prêts, Bourse, Documents, Mail, Achats, Lettres, Assistant et l'animation du canard. Réglage propre au PC ; vos données restent conservées.</td></tr>
+    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts et Bourse, et changer leur ordre dans la barre de gauche avec les flèches ↑ ↓. Réglage propre au compte ouvert : un nouveau compte reprend celui du compte ouvert au moment de sa création. Vos données restent conservées même si un module est masqué. La case du canard règle l'animation d'ouverture.</td></tr>
+    <tr><td><b>Suggestions</b></td><td>« Suggérer une amélioration » ouvre le formulaire en ligne (la version de l'application est déjà remplie). Le lien des réponses ne concerne que l'auteur de l'application : il affiche l'onglet « Suggestions » avec les suggestions reçues, lues à chaque ouverture.</td></tr>
     <tr><td><b>Compte Google</b></td><td>État « Connecté : adresse » ou « Non connecté », boutons Connecter, Reconnecter et Déconnecter. Pendant la connexion, la carte affiche l'étape en cours.</td></tr>
     <tr><td><b>Stockage des données</b></td><td>Sur ce PC, ou dans Google Drive, chiffrées : voir le chapitre 19.</td></tr>
     <tr><td><b>Intelligence artificielle</b></td><td>Case pour couper tout envoi aux IA, et clés Gemini et Groq.</td></tr>
@@ -347,7 +348,10 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   </table>
   <p>Les montants de Configuration servent pour chaque nouveau mois. Pour un mois déjà créé, utilisez « Appliquer la configuration » dans l'onglet Mois.</p>
 
-  <h2 style="margin-top:8mm">18. Compte Google et IA gratuites</h2>
+</section>
+
+<section class="page">
+  <h2>18. Compte Google et IA gratuites</h2>
   <h3>Connecter le compte Google</h3>
   <ol>
     <li>Configuration › Compte Google › « Connecter… ». La page de Google s'ouvre directement dans le navigateur.</li>
@@ -356,9 +360,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <li>La page « Connexion réussie » s'affiche : revenez dans l'application, la carte indique « Connecté ».</li>
   </ol>
   <p>Chaque PC se connecte une fois ; la connexion est gardée ensuite. L'application ne voit dans votre Drive que les fichiers qu'elle a créés, et ne lit pas vos mails.</p>
-</section>
 
-<section class="page">
   <h3>Clés d'IA gratuites</h3>
   <table>
     <tr><th style="width:18%">IA</th><th style="width:36%">Où créer la clé</th><th>À savoir</th></tr>

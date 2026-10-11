@@ -559,6 +559,10 @@
             <vues:VueBourse />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:SuggestionsViewModel}">
+            <vues:VueSuggestions />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:ManuelViewModel}">
             <vues:VueManuel />
         </DataTemplate>

@@ -92,6 +92,12 @@ public sealed class PreferencesAffichage
     /// </summary>
     public Dictionary<string, ModulesCompte> ModulesParCompte { get; set; } = new();
 
+    /// <summary>Lien CSV de la feuille des réponses au formulaire de suggestions (seulement chez l'auteur de l'application).</summary>
+    public string? LienReponsesSuggestions { get; set; }
+
+    /// <summary>Date de la dernière suggestion déjà vue (les suivantes sont signalées comme nouvelles).</summary>
+    public DateTime? SuggestionsVuesJusquA { get; set; }
+
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
     {
@@ -424,6 +430,28 @@ public sealed class ApparenceViewModel : ObservableObject
         set
         {
             if (SetProperty(_preferences.ModeEnvoiMail, value, _preferences, (p, v) => p.ModeEnvoiMail = v))
+                Enregistrer();
+        }
+    }
+
+    /// <summary>Lien CSV des réponses au formulaire de suggestions ; vide = pas d'onglet Suggestions.</summary>
+    public string LienReponsesSuggestions
+    {
+        get => _preferences.LienReponsesSuggestions ?? "";
+        set
+        {
+            var lien = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            if (SetProperty(_preferences.LienReponsesSuggestions, lien, _preferences, (p, v) => p.LienReponsesSuggestions = v))
+                Enregistrer();
+        }
+    }
+
+    public DateTime? SuggestionsVuesJusquA
+    {
+        get => _preferences.SuggestionsVuesJusquA;
+        set
+        {
+            if (SetProperty(_preferences.SuggestionsVuesJusquA, value, _preferences, (p, v) => p.SuggestionsVuesJusquA = v))
                 Enregistrer();
         }
     }

@@ -121,6 +121,19 @@
                                  Tag="&#xE897;" Background="{DynamicResource Accent4}"
                                  ToolTip="Manuel d'utilisation, avec une recherche"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=14}" />
+                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="{Binding Suggestions.TitreNavigation}"
+                                 Tag="&#xE8F2;" Background="{DynamicResource Accent2}"
+                                 ToolTip="Suggestions envoyées par les utilisateurs (formulaire Google)"
+                                 Visibility="{Binding Suggestions.OngletDisponible, Converter={StaticResource Visible}}"
+                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=16}" />
+                    <Button Style="{StaticResource BoutonBarre}" Command="{Binding Suggestions.SuggererCommand}" Margin="0,4,0,0"
+                            ToolTip="Proposer une amélioration de l'application (formulaire en ligne, sans compte)"
+                            Visibility="{Binding Suggestions.FormulaireDisponible, Converter={StaticResource Visible}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE82F;" Margin="0,0,8,0" />
+                            <TextBlock Text="Suggérer une amélioration" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom">
@@ -297,6 +310,10 @@
                 <!-- Module Bourse -->
                 <ContentControl Content="{Binding Bourse}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=15}" />
+
+                <!-- Suggestions reçues -->
+                <ContentControl Content="{Binding Suggestions}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=16}" />
 
                 <!-- Écran Configuration -->
                 <ContentControl Content="{Binding Configuration}"

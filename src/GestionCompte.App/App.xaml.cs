@@ -244,6 +244,8 @@ public partial class App : Application
             ServiceMisesAJour.NettoyerAncienneVersion(exe);
         vm.MisesAJour.RedemarrageDemande += async (_, chemin) => await RedemarrerAsync(fenetre, chemin);
         fenetre.ContentRendered += async (_, _) => await vm.MisesAJour.VerifierAuDemarrageAsync();
+        // Suggestions reçues : lues à chaque ouverture, seulement quand le lien des réponses est réglé.
+        fenetre.ContentRendered += async (_, _) => await vm.Suggestions.ActualiserAsync();
     }
 
     /// <summary>Envoie les dernières modifications dans Google Drive et lève le verrou ; false si l'utilisateur annule la fermeture.</summary>

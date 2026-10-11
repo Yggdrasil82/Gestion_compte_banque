@@ -53,6 +53,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Module « Bourse » (masquable dans la configuration).</summary>
     public const int OngletBourse = 15;
 
+    /// <summary>Suggestions reçues (seulement quand le lien des réponses est réglé).</summary>
+    public const int OngletSuggestions = 16;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -110,8 +113,9 @@ public sealed partial class MainViewModel : ObservableObject
         };
         // Mises à jour : seulement depuis l'exe publié (pas pendant les tests).
         var exe = Environment.ProcessPath;
-        MisesAJour = new MisesAJourViewModel(new ServiceMisesAJour(), dialogues,
-            Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0),
+        var version = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0);
+        Suggestions = new SuggestionsViewModel(Apparence, dialogues, version.ToString(3));
+        MisesAJour = new MisesAJourViewModel(new ServiceMisesAJour(), dialogues, version,
             exe is not null && string.Equals(Path.GetFileName(exe), ServiceMisesAJour.NomExe, StringComparison.OrdinalIgnoreCase) ? exe : null);
         Assistant = new AssistantViewModel(IA, () => _compte is null ? "" : ResumeBudget.Construire(_compte, _moisDuJour));
         Documents.EnvoiParMailDemande += async (_, fiche) =>
@@ -264,6 +268,8 @@ public sealed partial class MainViewModel : ObservableObject
             Ensemble = CalculerEnsemble();
         else if (value == OngletAssistant)
             Assistant.ActualiserResume();
+        else if (value == OngletSuggestions)
+            Suggestions.MarquerVues();
     }
 
     private void NotifierComptes()
@@ -413,6 +419,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Recherche et installation des nouvelles versions (carte de la Configuration).</summary>
     public MisesAJourViewModel MisesAJour { get; }
+
+    /// <summary>« Suggérer une amélioration » et suggestions reçues.</summary>
+    public SuggestionsViewModel Suggestions { get; }
 
     /// <summary>Manuel d'utilisation (rubrique « Aide »), lu à la première ouverture.</summary>
     public ManuelViewModel ManuelUtilisation => _manuel ??= new ManuelViewModel(Manuel.Charger());
@@ -944,7 +953,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Configuration = new ConfigurationViewModel(_compte.Configuration, premierMoisModifiable: AucunMois, ConfigurationModifiee, _moisDuJour,
                 AutresComptes())
-            { Apparence = Apparence, Google = Google, IA = IA, MisesAJour = MisesAJour, DonneesDrive = DonneesDrive };
+            { Apparence = Apparence, Google = Google, IA = IA, MisesAJour = MisesAJour, DonneesDrive = DonneesDrive, Suggestions = Suggestions };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
     }

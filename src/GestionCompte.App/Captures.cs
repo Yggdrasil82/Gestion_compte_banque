@@ -37,7 +37,7 @@ internal static class Captures
     private const double HauteurBilan = 1420;
 
     /// <summary>La configuration aussi : toutes ses cartes sur une seule image.</summary>
-    private const double HauteurConfiguration = 2900;
+    private const double HauteurConfiguration = 3250;
 
     /// <summary>Mail : rédaction, carnet d'adresses et historique.</summary>
     private const double HauteurMail = 960;
@@ -350,6 +350,23 @@ internal static class Captures
             vm.DonneesDrive = new DonneesDriveViewModel(vm.Google, new Dialogues(), demarrageDemo, sessionDemo,
                 dossierDemo, DossierLocalDemo, secrets, connexionDemo, null) { Confiance = true };
             await Capturer(("43-configuration-drive-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false));
+
+            // Modules propres au compte : Bourse remontée en tête, Assistant masqué.
+            for (var i = 0; i < 8; i++)
+                vm.Apparence.Deplacer("Bourse", -1);
+            vm.Apparence.ModuleAssistant = false;
+            await Capturer(("44-configuration-modules-ocean", Ambiance.Ocean, false, MainViewModel.OngletConfiguration, false));
+            vm.Apparence.Reinitialiser();
+
+            // Suggestions reçues (exemples inventés) : onglet visible seulement chez l'auteur de l'application.
+            vm.Apparence.LienReponsesSuggestions = "https://docs.google.com/spreadsheets/d/e/EXEMPLE/pub?output=csv";
+            vm.Apparence.SuggestionsVuesJusquA = new DateTime(2026, 11, 10);
+            vm.Suggestions.AfficherReponses(
+                "Horodateur,Votre suggestion,Version\n" +
+                "14/11/2026 20:12:45,\"Pouvoir joindre une photo du ticket de caisse à une opération du mois.\",2.11.0\n" +
+                "12/11/2026 08:03:10,Un graphique des dépenses par catégorie sur l'année dans le Bilan.,2.11.0\n" +
+                "03/11/2026 18:47:00,\"Rappel par mail la veille d'un prélèvement important, avec le montant.\",2.10.0\n");
+            await Capturer(("45-suggestions-ocean", Ambiance.Ocean, false, MainViewModel.OngletSuggestions, false));
 
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);

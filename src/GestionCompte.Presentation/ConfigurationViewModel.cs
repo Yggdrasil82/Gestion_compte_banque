@@ -23,6 +23,9 @@ public sealed partial class ConfigurationViewModel : ObservableObject
     /// <summary>Recherche des nouvelles versions de l'application.</summary>
     public MisesAJourViewModel? MisesAJour { get; init; }
 
+    /// <summary>Lien du formulaire de suggestions et lien des réponses (auteur de l'application).</summary>
+    public SuggestionsViewModel? Suggestions { get; init; }
+
     /// <summary>Stockage des données : sur ce PC ou dans Google Drive.</summary>
     [ObservableProperty] private DonneesDriveViewModel? _donneesDrive;
 

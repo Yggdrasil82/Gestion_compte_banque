@@ -11,7 +11,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContextChanged += (_, _) => Suivre((DataContext as MainViewModel)?.Apparence);
+        // Suivi sur la barre elle-même : elle reçoit aussi le contexte quand son contenu est rendu ailleurs (captures).
+        BarreModules.DataContextChanged += (_, _) => Suivre((BarreModules.DataContext as MainViewModel)?.Apparence);
     }
 
     /// <summary>Range les modules de la barre de gauche dans l'ordre choisi pour le compte ouvert.</summary>
