@@ -103,7 +103,8 @@ public sealed partial class BourseViewModel : ObservableObject
 
     public string TexteFlatTax => Bilan.FlatTax == 0 ? "0,00 €" : $"−{Montants.Formater(Bilan.FlatTax)} €";
 
-    public string TexteTaxesSurRevenus => $"−{Montants.Formater(Bilan.TaxesSurRevenus + Bilan.AutresFrais)} €";
+    public string TexteTaxesSurRevenus => Bilan.TaxesSurRevenus + Bilan.AutresFrais == 0 ? "0,00 €"
+        : $"−{Montants.Formater(Bilan.TaxesSurRevenus + Bilan.AutresFrais)} €";
 
     public string DetailImpot =>
         $"Flat tax : 30 % (12,8 % d'impôt et 17,2 % de prélèvements sociaux) des plus-values {Bilan.AnneeImpot} des ventes du compte-titres " +

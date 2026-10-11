@@ -125,10 +125,9 @@
                                 </DockPanel>
                                 <Border Height="1" Background="{DynamicResource Bordure}" Margin="0,5" />
                                 <DockPanel ToolTip="{Binding DetailGainNet}" Cursor="Help">
-                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGainRealiseNet}" FontSize="16">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGainRealiseNet}" FontSize="16" FontWeight="Bold">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="FontWeight" Value="Bold" />
                                                 <Setter Property="Foreground" Value="{DynamicResource Positif}" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding GainRealisePositif}" Value="False">
@@ -200,10 +199,9 @@
                                 <TextBlock Style="{StaticResource LibelleTuile}"
                                            Text="{Binding Bilan.PrixRevient, Converter={StaticResource Euros}, StringFormat='Prix de revient {0}'}" />
                                 <DockPanel ToolTip="{Binding DetailVerse}" Cursor="Help" Margin="0,6,0,0">
-                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGain}">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGain}" FontWeight="SemiBold">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="FontWeight" Value="SemiBold" />
                                                 <Setter Property="Foreground" Value="{DynamicResource Accent4}" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding GainPositif}" Value="False">
