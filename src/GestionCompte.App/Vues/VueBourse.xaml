@@ -8,11 +8,11 @@
         </Style>
         <Style x:Key="LibelleTuile" TargetType="TextBlock" BasedOn="{StaticResource Discret}">
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
         <Style x:Key="ValeurTuile" TargetType="TextBlock">
             <Setter Property="FontSize" Value="21" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
         <Style x:Key="Etape" TargetType="TextBlock">
@@ -112,7 +112,7 @@
                                 <Grid ToolTip="{Binding DetailRealise}" Cursor="Help" Margin="0,2,0,0">
 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding Bilan.PlusValuesRealisees, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Plus-values des ventes" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="Plus-values des ventes" TextWrapping="Wrap" />
                                 </Grid>
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteHorsFraisAchat}" TextAlignment="Right" TextWrapping="Wrap"
                                            ToolTip="{Binding DetailRealise}" Cursor="Help"
@@ -120,12 +120,12 @@
                                 <Grid>
 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding Bilan.Dividendes, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Dividendes et intérêts (bruts)" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="Dividendes et intérêts (bruts)" TextWrapping="Wrap" />
                                 </Grid>
                                 <Grid>
 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding TexteTaxesSurRevenus}" />
-                                    <TextBlock Text="Taxes retenues sur les revenus" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="Taxes retenues sur les revenus" Margin="0,0,12,0" TextWrapping="Wrap" />
                                 </Grid>
                                 <Border Height="1" Background="{DynamicResource Bordure}" Margin="0,5" />
                                 <Grid ToolTip="{Binding DetailGainNet}" Cursor="Help">
@@ -142,7 +142,7 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="Gain réalisé net" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="Gain réalisé net" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" />
                                 </Grid>
                                 <TextBlock Style="{StaticResource LibelleTuile}" Margin="0,2,0,0"
                                            Text="{Binding Bilan.FraisEtTaxes, Converter={StaticResource Euros}, StringFormat='Frais et taxes payés au total {0} (déjà déduits)'}" />
@@ -167,14 +167,14 @@
                                 <Grid>
 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding TexteGainRealiseNet}" />
-                                    <TextBlock Text="Gain net" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="Gain net" TextWrapping="Wrap" />
                                 </Grid>
                                 <Grid>
 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding TexteFlatTax}" />
-                                    <TextBlock Text="{Binding LibelleFlatTax}" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                                    <TextBlock Text="{Binding LibelleFlatTax}" TextWrapping="Wrap" Margin="0,0,8,0" />
                                 </Grid>
-                                <TextBlock Style="{StaticResource LibelleTuile}" Margin="0,4,0,0" TextWrapping="Wrap" TextTrimming="None"
+                                <TextBlock Style="{StaticResource LibelleTuile}" Margin="0,4,0,0" TextWrapping="Wrap"
                                            Text="PEA : pas d'impôt tant qu'il n'y a pas de retrait." />
                             </StackPanel>
                         </Border>
@@ -218,7 +218,7 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="Prévision de gain" Margin="0,0,8,0" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="Prévision de gain" Margin="0,0,8,0" TextWrapping="Wrap" />
                                 </Grid>
                             </StackPanel>
                         </Border>
