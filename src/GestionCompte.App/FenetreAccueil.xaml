@@ -6,5 +6,22 @@
         Background="Transparent" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Topmost="True"
         Icon="pack://application:,,,/Ressources/icone.ico" Cursor="Hand"
         ToolTip="Cliquer pour passer">
-    <local:LogoAnime x:Name="Animation" />
+    <Grid>
+        <!-- Vidéo d'ouverture (sans le son), aux coins arrondis. -->
+        <Grid x:Name="Video" Width="400" Height="600">
+            <Grid.Clip>
+                <RectangleGeometry Rect="0,0,400,600" RadiusX="28" RadiusY="28" />
+            </Grid.Clip>
+            <Rectangle Fill="#15161B" />
+            <MediaElement x:Name="Lecteur" LoadedBehavior="Manual" UnloadedBehavior="Close" IsMuted="True" Stretch="UniformToFill" />
+            <TextBlock x:Name="TexteVersion" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,14"
+                       Foreground="#F2E2B0" FontFamily="Segoe UI" FontSize="13">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.9" />
+                </TextBlock.Effect>
+            </TextBlock>
+        </Grid>
+        <!-- Animation de secours si Windows ne sait pas lire la vidéo. -->
+        <local:LogoAnime x:Name="Animation" Visibility="Collapsed" />
+    </Grid>
 </Window>

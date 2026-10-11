@@ -243,7 +243,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <CheckBox Content="Animation du canard à l'ouverture de l'application"
+                        <CheckBox Content="Vidéo du canard à l'ouverture de l'application"
                                   IsChecked="{Binding Apparence.AnimationDemarrage}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets du compte ouvert, et règle leur ordre dans la barre de gauche avec les flèches. Chaque compte a ses propres modules ; les données sont conservées même si un module est masqué." />

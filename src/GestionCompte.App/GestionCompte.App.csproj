@@ -17,6 +17,9 @@
   <ItemGroup>
     <Resource Include="Ressources\icone.ico" />
     <Resource Include="Ressources\icone.png" />
+    <Resource Include="Ressources\personnage.png" />
+    <!-- Vidéo d'ouverture (copiée dans %LOCALAPPDATA% au démarrage : le lecteur de Windows lit un fichier). -->
+    <EmbeddedResource Include="Ressources\ouverture.mp4" LogicalName="ouverture.mp4" />
   </ItemGroup>
 
   <ItemGroup>
