@@ -46,7 +46,7 @@ internal static class Captures
     private const double HauteurPrets = 2000;
 
     /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
-    private const double HauteurBourse = 1320;
+    private const double HauteurBourse = 1620;
 
     /// <summary>Mois en entier (virements liés : toutes les opérations visibles).</summary>
     private const double HauteurMoisComplet = 1500;

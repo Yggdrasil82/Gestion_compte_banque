@@ -2,6 +2,7 @@ using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GestionCompte.Core;
+using GestionCompte.Core.Bourse;
 using GestionCompte.Core.Import;
 using GestionCompte.Core.Lettres;
 using GestionCompte.Core.Modeles;
@@ -117,7 +118,9 @@ public sealed partial class MainViewModel : ObservableObject
         Suggestions = new SuggestionsViewModel(Apparence, dialogues, version.ToString(3));
         MisesAJour = new MisesAJourViewModel(new ServiceMisesAJour(), dialogues, version,
             exe is not null && string.Equals(Path.GetFileName(exe), ServiceMisesAJour.NomExe, StringComparison.OrdinalIgnoreCase) ? exe : null);
-        Assistant = new AssistantViewModel(IA, () => _compte is null ? "" : ResumeBudget.Construire(_compte, _moisDuJour));
+        Assistant = new AssistantViewModel(IA, () => _compte is null ? ""
+            : string.Join(Environment.NewLine, new[] { ResumeBudget.Construire(_compte, _moisDuJour), AideDecisionBourse.Resume(_compte.Portefeuille, _aujourdhui) }
+                .Where(t => t.Length > 0)));
         Documents.EnvoiParMailDemande += async (_, fiche) =>
         {
             if (await Mail.JoindreDocumentAsync(fiche))
@@ -969,7 +972,10 @@ public sealed partial class MainViewModel : ObservableObject
         Prets = new PretsViewModel(_compte, _moisDuJour, _dialogues, Enregistrer, PretAjouteAuxCharges, pretSelectionne);
         // Le portefeuille ne dépend pas de la configuration : l'écran (filtre, message) est gardé tant que le compte ne change pas.
         if (Bourse is null || !ReferenceEquals(Bourse.Compte, _compte))
+        {
             Bourse = new BourseViewModel(_compte, _dialogues, Enregistrer, _coursBourse, _aujourdhui);
+            Bourse.AnalyseDemandee += (_, question) => AnalyserPortefeuille(question);
+        }
         Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues) { EnvoiParMailPossible = Apparence.ModuleMail };
         Bilan.EnvoiParMailDemande += (_, _) =>
         {
@@ -978,6 +984,18 @@ public sealed partial class MainViewModel : ObservableObject
         };
         Documents?.ChargesModifiees();
         Assistant?.ActualiserResume();
+    }
+
+    /// <summary>« Analyser avec l'Assistant » du module Bourse : ouvre l'Assistant et lui pose la question.</summary>
+    private void AnalyserPortefeuille(string question)
+    {
+        if (!Apparence.ModuleAssistant)
+        {
+            _dialogues.Erreur("Le module Assistant est masqué : affichez-le dans Configuration › Modules.");
+            return;
+        }
+        OngletSelectionne = OngletAssistant;
+        Assistant.PoserCommand.Execute(question);
     }
 
     /// <summary>Échéances d'un crédit ajoutées ou retirées depuis le module Crédits.</summary>

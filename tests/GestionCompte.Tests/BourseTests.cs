@@ -171,6 +171,37 @@ public sealed class BourseTests : IDisposable
     }
 
     [Fact]
+    public void AideDecision_IndicateursDuPortefeuille()
+    {
+        var portefeuille = new Portefeuille();
+        portefeuille.Ajouter(ImportTradeRepublic.Lire(Entete +
+            "2026-01-10T10:00:00Z,DEFAULT,TRANSFER_INSTANT_INBOUND,,,,,1000,,,v1\n" +
+            "2026-01-12T10:00:00Z,DEFAULT,BUY,Exemple FR,FR0000000001,10,50,-500.00,-1.00,,a1\n" +
+            "2026-01-13T10:00:00Z,DEFAULT,BUY,Exemple US,US0000000001,1,20,-20.00,-1.00,,a2\n" +
+            "2026-02-01T10:00:00Z,DEFAULT,SELL,Exemple US,US0000000001,-1,40,40.00,-1.00,,a3\n" +
+            "2026-05-13T10:00:00Z,PEA,TRANSFER_IN,,,,,300,,,p1\n" +
+            "2026-05-13T10:00:00Z,DEFAULT,TRANSFER_OUT,,,,,-300,,,p2\n" +
+            "2026-05-14T10:00:00Z,PEA,BUY,Monde,FR0000000002,30,10,-300.00,,,p3\n").Operations);
+        portefeuille.Cours["FR0000000001"] = new CoursTitre(40m, null, true, null);
+        portefeuille.Cours["FR0000000002"] = new CoursTitre(10m, null, true, null);
+        portefeuille.Ajouter(new[]
+        {
+            new OperationBourse("c1", new DateTime(2026, 5, 14), EnveloppeBourse.Pea, TypeOperationBourse.Achat, "Monde", "FR0000000002", "FUND", 0, 0, 0, 0, 0, ""),
+        });
+
+        var indicateurs = AideDecisionBourse.Calculer(portefeuille, new DateTime(2026, 10, 11)).ToDictionary(i => i.Titre);
+
+        Assert.Equal(NiveauIndicateur.Attention, indicateurs["Poids des frais"].Niveau);              // 1 € sur 20 € = 5 %
+        Assert.Contains("5,0 %", indicateurs["Poids des frais"].Texte);
+        Assert.Equal(NiveauIndicateur.Attention, indicateurs["Concentration"].Niveau);                // Exemple FR : 400 € sur 700 €
+        Assert.Contains("13/05/2031", indicateurs["PEA ou compte-titres"].Texte);
+        Assert.Contains("Exemple FR est une action européenne", indicateurs["PEA ou compte-titres"].Texte);
+        Assert.Contains("compenseraient 18,00 €", indicateurs["Fiscalité 2026"].Texte);              // +18 de plus-values, −101 latents
+        Assert.Contains("100,00 € par mois depuis janvier 2026", indicateurs["Rythme et espèces"].Texte); // 1 000 € en 10 mois, virement PEA exclu
+        Assert.Contains("Exemple FR (compte-titres, autres)", AideDecisionBourse.Resume(portefeuille, new DateTime(2026, 10, 11)));
+    }
+
+    [Fact]
     public void Calcul_PrixMoyenPondere_EtPlusValues()
     {
         var bilan = CalculBourse.Calculer(Demo());

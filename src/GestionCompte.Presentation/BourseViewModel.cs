@@ -61,6 +61,18 @@ public sealed partial class BourseViewModel : ObservableObject
 
     public ObservableCollection<OperationBourseViewModel> Historique { get; } = new();
 
+    /// <summary>Aide à la décision : indicateurs calculés sur tout le portefeuille.</summary>
+    public IReadOnlyList<IndicateurBourse> Indicateurs { get; private set; } = Array.Empty<IndicateurBourse>();
+
+    /// <summary>« Analyser avec l'Assistant » : l'application ouvre l'Assistant et lui pose la question.</summary>
+    public event EventHandler<string>? AnalyseDemandee;
+
+    public const string QuestionAnalyse =
+        "Analyse mon portefeuille en bourse (répartition, frais, PEA et compte-titres, fiscalité) : quels points de vigilance vois-tu ?";
+
+    [RelayCommand]
+    private void Analyser() => AnalyseDemandee?.Invoke(this, QuestionAnalyse);
+
     public bool Vide => Portefeuille.Vide;
 
     public bool AEnveloppes => Portefeuille.Operations.Select(o => o.Enveloppe).Distinct().Count() > 1;
@@ -149,6 +161,8 @@ public sealed partial class BourseViewModel : ObservableObject
     private void CalculerBilan()
     {
         Bilan = CalculBourse.Calculer(Portefeuille, Enveloppe, _aujourdhui.Year);
+        Indicateurs = AideDecisionBourse.Calculer(Portefeuille, _aujourdhui);
+        OnPropertyChanged(nameof(Indicateurs));
         OnPropertyChanged(nameof(Vide));
         OnPropertyChanged(nameof(AEnveloppes));
         OnPropertyChanged(nameof(PlusValuePositive));

@@ -172,7 +172,7 @@ public static class CalculBourse
     /// Virements d'une enveloppe à l'autre (compte-titres vers PEA) : un retrait et un versement du même montant le même
     /// jour. Pour tout le portefeuille, ce n'est ni de l'argent versé ni de l'argent retiré.
     /// </summary>
-    private static HashSet<OperationBourse> VirementsInternes(IEnumerable<OperationBourse> operations)
+    internal static HashSet<OperationBourse> VirementsInternes(IEnumerable<OperationBourse> operations)
     {
         var internes = new HashSet<OperationBourse>(ReferenceEqualityComparer.Instance);
         var retraits = operations.Where(o => o.Type == TypeOperationBourse.Retrait).ToList();

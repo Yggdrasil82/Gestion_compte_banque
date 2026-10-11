@@ -219,6 +219,51 @@
                         </Border>
                     </Grid>
 
+                    <!-- Aide à la décision : constats chiffrés sur tout le portefeuille. -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Command="{Binding AnalyserCommand}" VerticalAlignment="Center"
+                                        ToolTip="Ouvre l'Assistant et lui envoie un résumé du portefeuille (sans ISIN ni numéro de compte) avec ces indicateurs">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE8BD;" Margin="0,0,8,0" />
+                                        <TextBlock Text="Analyser avec l'Assistant" />
+                                    </StackPanel>
+                                </Button>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                                    <TextBlock Text="Aide à la décision" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Aide}"
+                                       Text="Constats calculés sur tout le portefeuille à partir de vos opérations : ce ne sont pas des conseils d'achat ou de vente." />
+                            <ItemsControl ItemsSource="{Binding Indicateurs}" Margin="0,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,4">
+                                            <Border Width="10" Height="10" CornerRadius="5" Margin="2,5,10,0" VerticalAlignment="Top" DockPanel.Dock="Left">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="{DynamicResource Accent1}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Niveau}" Value="Bon">
+                                                                <Setter Property="Background" Value="{DynamicResource Positif}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Niveau}" Value="Attention">
+                                                                <Setter Property="Background" Value="{DynamicResource Avertissement}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
+                                            <TextBlock TextWrapping="Wrap"><Run Text="{Binding Titre, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" : " /><Run Text="{Binding Texte, Mode=OneWay}" /></TextBlock>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Positions -->
                     <Border Style="{StaticResource Carte}">
                         <StackPanel>
