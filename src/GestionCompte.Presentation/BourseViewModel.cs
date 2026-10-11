@@ -166,7 +166,7 @@ public sealed partial class BourseViewModel : ObservableObject
         Importer(chemin);
     }
 
-    /// <summary>Importe l'export de Trade Republic ; les opérations déjà importées sont ignorées.</summary>
+    /// <summary>Importe l'export de Trade Republic ; les opérations déjà importées sont ignorées, ou corrigées si elles ont changé.</summary>
     public void Importer(string chemin)
     {
         LectureReleveBourse lecture;
@@ -180,13 +180,14 @@ public sealed partial class BourseViewModel : ObservableObject
             return;
         }
 
-        var ajoutees = Portefeuille.Ajouter(lecture.Operations);
-        var deja = lecture.Operations.Count - ajoutees;
+        var (ajoutees, corrigees) = Portefeuille.Importer(lecture.Operations);
+        var deja = lecture.Operations.Count - ajoutees - corrigees;
         Statut = $"{ajoutees} opération{(ajoutees > 1 ? "s" : "")} importée{(ajoutees > 1 ? "s" : "")}"
+                 + (corrigees > 0 ? $", {corrigees} corrigée{(corrigees > 1 ? "s" : "")}" : "")
                  + (deja > 0 ? $", {deja} déjà présente{(deja > 1 ? "s" : "")}" : "")
                  + (lecture.Ignorees > 0 ? $", {lecture.Ignorees} ligne{(lecture.Ignorees > 1 ? "s" : "")} illisible{(lecture.Ignorees > 1 ? "s" : "")}" : "")
                  + ".";
-        if (ajoutees > 0)
+        if (ajoutees + corrigees > 0)
             _donneesModifiees();
         Recalculer();
     }

@@ -62,12 +62,16 @@ public static class CalculBourse
         var lignes = new Dictionary<(EnveloppeBourse, string), Ligne>();
         decimal versements = 0, retraits = 0, especes = 0, realisees = 0, dividendes = 0, frais = 0;
 
+        var internes = enveloppe is null ? VirementsInternes(portefeuille.Operations) : new HashSet<OperationBourse>();
+
         foreach (var o in portefeuille.Operations.Where(o => enveloppe is null || o.Enveloppe == enveloppe).OrderBy(o => o.Date))
         {
             especes += o.Net;
             frais -= o.Frais + o.Taxes;
             switch (o.Type)
             {
+                case TypeOperationBourse.Versement or TypeOperationBourse.Retrait when internes.Contains(o):
+                    break;
                 case TypeOperationBourse.Versement:
                     versements += o.Montant;
                     break;
@@ -118,6 +122,27 @@ public static class CalculBourse
 
         return new BilanBourse(positions, versements, retraits, especes, realisees, dividendes, frais,
             positions.Count(p => p.Cours is null));
+    }
+
+    /// <summary>
+    /// Virements d'une enveloppe à l'autre (compte-titres vers PEA) : un retrait et un versement du même montant le même
+    /// jour. Pour tout le portefeuille, ce n'est ni de l'argent versé ni de l'argent retiré.
+    /// </summary>
+    private static HashSet<OperationBourse> VirementsInternes(IEnumerable<OperationBourse> operations)
+    {
+        var internes = new HashSet<OperationBourse>(ReferenceEqualityComparer.Instance);
+        var retraits = operations.Where(o => o.Type == TypeOperationBourse.Retrait).ToList();
+        foreach (var versement in operations.Where(o => o.Type == TypeOperationBourse.Versement))
+        {
+            var retrait = retraits.FirstOrDefault(r => r.Enveloppe != versement.Enveloppe && r.Date.Date == versement.Date.Date
+                                                       && r.Net == -versement.Net);
+            if (retrait is null)
+                continue;
+            retraits.Remove(retrait);
+            internes.Add(versement);
+            internes.Add(retrait);
+        }
+        return internes;
     }
 
     private sealed class Ligne

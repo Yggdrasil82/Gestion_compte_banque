@@ -63,16 +63,11 @@ public static class ImportTradeRepublic
         return new LectureReleveBourse(operations, ignorees);
     }
 
-    /// <summary>Type d'opération d'après le type Trade Republic, et sinon d'après les titres et le sens du montant.</summary>
+    /// <summary>Type d'opération d'après le type Trade Republic, puis d'après les titres et le sens du montant.</summary>
     public static TypeOperationBourse Classer(string type, string? isin, decimal quantite, decimal montant)
     {
         var t = type.ToUpperInvariant();
-        if (isin is not null && quantite != 0)
-            return quantite > 0 ? TypeOperationBourse.Achat : TypeOperationBourse.Vente;
-        if (t is "BUY" or "SAVINGS_PLAN" && isin is not null)
-            return TypeOperationBourse.Achat;
-        if (t == "SELL" && isin is not null)
-            return TypeOperationBourse.Vente;
+        // Le type passe avant les titres : un dividende indique aussi le nombre de titres détenus (colonne shares).
         if (t.Contains("DIVIDEND") || t.Contains("DISTRIBUTION"))
             return TypeOperationBourse.Dividende;
         if (t.Contains("INTEREST"))
@@ -81,6 +76,12 @@ public static class ImportTradeRepublic
             return TypeOperationBourse.Impot;
         if (t.Contains("FEE"))
             return TypeOperationBourse.Frais;
+        if (isin is not null && quantite != 0)
+            return quantite > 0 ? TypeOperationBourse.Achat : TypeOperationBourse.Vente;
+        if (t is "BUY" or "SAVINGS_PLAN" && isin is not null)
+            return TypeOperationBourse.Achat;
+        if (t == "SELL" && isin is not null)
+            return TypeOperationBourse.Vente;
         if (t.Contains("TRANSFER") || t.Contains("DEPOSIT") || t.Contains("WITHDRAW") || t.Contains("PAYMENT") || t.Contains("CARD"))
             return montant >= 0 ? TypeOperationBourse.Versement : TypeOperationBourse.Retrait;
         return TypeOperationBourse.Autre;

@@ -55,18 +55,35 @@ public sealed class Portefeuille
     public bool Vide => Operations.Count == 0;
 
     /// <summary>Ajoute les opérations pas encore connues (même identifiant) ; renvoie le nombre d'ajouts.</summary>
-    public int Ajouter(IEnumerable<OperationBourse> operations)
+    public int Ajouter(IEnumerable<OperationBourse> operations) => Importer(operations).Ajoutees;
+
+    /// <summary>
+    /// Ajoute les opérations pas encore connues et remplace celles qui ont changé (même identifiant, lues autrement :
+    /// correction de l'import), de sorte qu'importer à nouveau le même export corrige le portefeuille.
+    /// </summary>
+    public (int Ajoutees, int Corrigees) Importer(IEnumerable<OperationBourse> operations)
     {
-        var connues = Operations.Select(o => o.Identifiant).ToHashSet(StringComparer.Ordinal);
+        var connues = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < Operations.Count; i++)
+            connues.TryAdd(Operations[i].Identifiant, i);
         var ajoutees = 0;
+        var corrigees = 0;
         foreach (var operation in operations)
         {
-            if (!connues.Add(operation.Identifiant))
+            if (connues.TryGetValue(operation.Identifiant, out var index))
+            {
+                if (Operations[index] != operation)
+                {
+                    Operations[index] = operation;
+                    corrigees++;
+                }
                 continue;
+            }
+            connues[operation.Identifiant] = Operations.Count;
             Operations.Add(operation);
             ajoutees++;
         }
         Operations.Sort((a, b) => a.Date.CompareTo(b.Date));
-        return ajoutees;
+        return (ajoutees, corrigees);
     }
 }

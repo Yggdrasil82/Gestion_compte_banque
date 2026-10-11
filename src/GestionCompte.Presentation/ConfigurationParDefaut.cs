@@ -193,12 +193,12 @@ public static class ConfigurationParDefaut
         "2025-01-10T11:05:00Z,2025-01-10,PEA,TRADING,BUY,FUND,Amundi PEA S&P 500,FR0011871128,60,40.25,-2415.00,-1.00,,EUR,,,,Achat,demo-04,,,,\n" +
         "2025-03-03T15:41:00Z,2025-03-03,PEA,TRADING,BUY,STOCK,TotalEnergies,FR0000120271,25,58.40,-1460.00,-1.00,,EUR,,,,Achat,demo-05,,,,\n" +
         "2025-06-02T09:20:00Z,2025-06-02,DEFAULT,TRADING,BUY,STOCK,Air Liquide,FR0000120073,4,175.50,-702.00,-1.00,-2.11,EUR,,,,Achat,demo-06,,,,\n" +
-        "2025-06-20T06:00:00Z,2025-06-20,PEA,TRADING,DIVIDEND,STOCK,TotalEnergies,FR0000120271,,,19.75,,,EUR,,,,Dividende,demo-07,,,,\n" +
+        "2025-06-20T06:00:00Z,2025-06-20,PEA,TRADING,DIVIDEND,STOCK,TotalEnergies,FR0000120271,25,,19.75,,,EUR,,,,Dividende,demo-07,,,,\n" +
         "2025-09-01T08:00:00Z,2025-09-01,DEFAULT,TRADING,SAVINGS_PLAN,FUND,iShares Core MSCI World,IE00B4L5Y983,1.5371,97.58,-150.00,,,EUR,,,,Plan d'investissement,demo-08,,,,\n" +
         "2025-12-01T08:00:00Z,2025-12-01,DEFAULT,TRADING,SAVINGS_PLAN,FUND,iShares Core MSCI World,IE00B4L5Y983,1.4482,103.58,-150.00,,,EUR,,,,Plan d'investissement,demo-09,,,,\n" +
         "2026-02-16T13:10:00Z,2026-02-16,PEA,TRADING,SELL,STOCK,TotalEnergies,FR0000120271,-10,62.10,621.00,-1.00,,EUR,,,,Vente,demo-10,,,,\n" +
         "2026-03-02T05:00:00Z,2026-03-02,DEFAULT,CASH,INTEREST_PAYMENT,,,,,,4.12,,,EUR,,,,Intérêts,demo-11,,,,\n" +
-        "2026-05-20T06:00:00Z,2026-05-20,DEFAULT,TRADING,DIVIDEND,STOCK,Air Liquide,FR0000120073,,,13.20,,-3.96,EUR,,,,Dividende,demo-12,,,,\n" +
+        "2026-05-20T06:00:00Z,2026-05-20,DEFAULT,TRADING,DIVIDEND,STOCK,Air Liquide,FR0000120073,4,,13.20,,-3.96,EUR,,,,Dividende,demo-12,,,,\n" +
         "2026-06-01T09:00:00Z,2026-06-01,DEFAULT,CASH,TRANSFER_INSTANT_OUTBOUND,,,,,,-200.00,,,EUR,,,,Virement,demo-13,,,,\n";
 
     /// <summary>Compte d'exemple avec deux mois remplis, pour les captures d'écran.</summary>

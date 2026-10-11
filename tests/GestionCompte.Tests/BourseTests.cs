@@ -71,6 +71,53 @@ public sealed class BourseTests : IDisposable
         Assert.Equal(13, portefeuille.Operations.Count);
     }
 
+    private const string Entete = "datetime,account_type,type,name,symbol,shares,price,amount,fee,tax,transaction_id\n";
+
+    [Fact]
+    public void Import_DividendeAvecNombreDeTitres_ResteUnDividende()
+    {
+        // Trade Republic indique sur la ligne du dividende le nombre de titres détenus.
+        var lecture = ImportTradeRepublic.Lire(Entete +
+            "2026-07-02T10:00:00Z,DEFAULT,DIVIDEND,Exemple,XX0000000001,1.303225,,1.11,,-0.35,d1\n" +
+            "2026-07-03T10:00:00Z,DEFAULT,INTEREST_PAYMENT,,,,,0.42,,,d2\n");
+
+        Assert.Equal(new[] { TypeOperationBourse.Dividende, TypeOperationBourse.Interets }, lecture.Operations.Select(o => o.Type));
+    }
+
+    [Fact]
+    public void Importer_DeNouveau_CorrigeLesOperationsMalLues()
+    {
+        var portefeuille = new Portefeuille();
+        var dividende = ImportTradeRepublic.Lire(Entete + "2026-07-02T10:00:00Z,DEFAULT,DIVIDEND,Exemple,XX0000000001,2,,1.11,,-0.35,d1\n")
+            .Operations.Single();
+        portefeuille.Ajouter(new[]
+        {
+            dividende with { Type = TypeOperationBourse.Achat }, // lu par une version précédente
+        });
+
+        var (ajoutees, corrigees) = portefeuille.Importer(new[] { dividende });
+
+        Assert.Equal((0, 1), (ajoutees, corrigees));
+        Assert.Equal(TypeOperationBourse.Dividende, Assert.Single(portefeuille.Operations).Type);
+        Assert.Empty(CalculBourse.Calculer(portefeuille).Positions);
+        Assert.Equal((0, 0), portefeuille.Importer(new[] { dividende }));
+    }
+
+    [Fact]
+    public void Calcul_VirementVersLePea_NiVerseNiRetireSurLeTout()
+    {
+        var portefeuille = new Portefeuille();
+        portefeuille.Ajouter(ImportTradeRepublic.Lire(Entete +
+            "2026-05-13T06:00:00Z,DEFAULT,TRANSFER_INSTANT_INBOUND,,,,,200,,,v1\n" +
+            "2026-05-19T16:19:45Z,PEA,TRANSFER_IN,,,,,99.70,,,v2\n" +
+            "2026-05-19T16:19:45Z,DEFAULT,TRANSFER_OUT,,,,,-99.70,,,v3\n").Operations);
+
+        var tout = CalculBourse.Calculer(portefeuille);
+        Assert.Equal((200m, 0m, 200m), (tout.Versements, tout.Retraits, tout.Especes));
+        Assert.Equal(99.70m, CalculBourse.Calculer(portefeuille, EnveloppeBourse.Pea).Versements);
+        Assert.Equal(99.70m, CalculBourse.Calculer(portefeuille, EnveloppeBourse.CompteTitres).Retraits);
+    }
+
     [Fact]
     public void Calcul_PrixMoyenPondere_EtPlusValues()
     {
