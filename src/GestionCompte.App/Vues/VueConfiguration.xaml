@@ -215,35 +215,38 @@
                     </DockPanel>
                 </Border>
 
-                <!-- Modules (réglage propre à ce PC) -->
+                <!-- Modules (propres au compte ouvert) -->
                 <Border Style="{StaticResource Carte}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
                             <TextBlock Text="Modules" Style="{StaticResource TitreCarte}" />
                         </StackPanel>
-                        <CheckBox Content="Bilan : bilan annuel, pistes d'économie, exports Excel et PDF"
-                                  IsChecked="{Binding Apparence.ModuleBilan}" Margin="0,0,0,6" />
-                        <CheckBox Content="Crédits : simulation et comparaison de crédits"
-                                  IsChecked="{Binding Apparence.ModuleCredits}" Margin="0,0,0,6" />
-                        <CheckBox Content="Prêts : prêts en cours, tableau d'amortissement, remboursement anticipé"
-                                  IsChecked="{Binding Apparence.ModulePrets}" Margin="0,0,0,6" />
-                        <CheckBox Content="Bourse : placements Trade Republic, positions, plus-values, cours"
-                                  IsChecked="{Binding Apparence.ModuleBourse}" Margin="0,0,0,6" />
-                        <CheckBox Content="Documents : documents importants, échéances, Google Drive"
-                                  IsChecked="{Binding Apparence.ModuleDocuments}" Margin="0,0,0,6" />
-                        <CheckBox Content="Mail : envoi de mails (Gmail ou autre messagerie), carnet d'adresses"
-                                  IsChecked="{Binding Apparence.ModuleMail}" Margin="0,0,0,6" />
-                        <CheckBox Content="Achats : meilleur prix avec Gemini, sites marchands, prix suivis"
-                                  IsChecked="{Binding Apparence.ModuleAchats}" Margin="0,0,0,6" />
-                        <CheckBox Content="Lettres : lettres types rédigées par Gemini et Groq, PDF, Word ou mail"
-                                  IsChecked="{Binding Apparence.ModuleLettres}" Margin="0,0,0,6" />
-                        <CheckBox Content="Assistant : questions sur votre budget à Gemini et Groq (ne modifie rien)"
-                                  IsChecked="{Binding Apparence.ModuleAssistant}" Margin="0,0,0,6" />
+                        <ItemsControl ItemsSource="{Binding Apparence.Modules}" Margin="0,0,0,6">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <Button DockPanel.Dock="Right" Command="{Binding DescendreCommand}" ToolTip="Descendre dans la barre de gauche"
+                                                Padding="6,1" Margin="4,0,0,0">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70D;" FontSize="11" />
+                                        </Button>
+                                        <Button DockPanel.Dock="Right" Command="{Binding MonterCommand}" ToolTip="Monter dans la barre de gauche"
+                                                Padding="6,1" Margin="8,0,0,0">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70E;" FontSize="11" />
+                                        </Button>
+                                        <CheckBox IsChecked="{Binding Affiche}" VerticalAlignment="Center">
+                                            <TextBlock TextWrapping="Wrap">
+                                                <Run Text="{Binding Nom, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" : " /><Run Text="{Binding Description, Mode=OneWay}" />
+                                            </TextBlock>
+                                        </CheckBox>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                         <CheckBox Content="Animation du canard à l'ouverture de l'application"
                                   IsChecked="{Binding Apparence.AnimationDemarrage}" />
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
-                                   Text="Affiche ou masque les onglets dans la barre de gauche. Réglage propre à ce PC : vos données sont conservées même si un module est masqué." />
+                                   Text="Affiche ou masque les onglets du compte ouvert, et règle leur ordre dans la barre de gauche avec les flèches. Chaque compte a ses propres modules ; les données sont conservées même si un module est masqué." />
                     </StackPanel>
                 </Border>
 

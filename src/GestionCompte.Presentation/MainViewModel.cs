@@ -146,6 +146,8 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var compte = depot.Charger(_moisDuJour);
         _depot = depot;
+        // Modules affichés et leur ordre : propres à chaque compte.
+        Apparence.ChoisirCompte(_registre?.Actif.Fichier ?? Path.GetFileName(depot.CheminFichier));
         Import = null;
         if (compte is null)
         {
@@ -373,6 +375,7 @@ public sealed partial class MainViewModel : ObservableObject
         try
         {
             _registre.Supprimer(actif);
+            Apparence.OublierCompte(actif.Fichier);
         }
         catch (Exception e)
         {

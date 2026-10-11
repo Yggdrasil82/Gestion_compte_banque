@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace GestionCompte.Presentation;
 
@@ -84,6 +86,12 @@ public sealed class PreferencesAffichage
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ModeEnvoiMail ModeEnvoiMail { get; set; } = ModeEnvoiMail.Gmail;
 
+    /// <summary>
+    /// Modules affichés et leur ordre, pour chaque compte (clé : fichier du compte). Les réglages « Module… » ci-dessus,
+    /// d'avant la version 2.11, servent de point de départ au premier compte ouvert.
+    /// </summary>
+    public Dictionary<string, ModulesCompte> ModulesParCompte { get; set; } = new();
+
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
     {
@@ -107,6 +115,50 @@ public sealed class PreferencesAffichage
     }
 }
 
+/// <summary>Modules masqués et ordre des modules dans la barre de gauche, pour un compte.</summary>
+public sealed class ModulesCompte
+{
+    public List<string> Masques { get; set; } = new();
+
+    public List<string> Ordre { get; set; } = new();
+
+    public ModulesCompte Copier() => new() { Masques = new List<string>(Masques), Ordre = new List<string>(Ordre) };
+}
+
+/// <summary>Un module dans la liste de la Configuration (case à cocher et flèches d'ordre).</summary>
+public sealed partial class ModuleAffiche : ObservableObject
+{
+    private readonly ApparenceViewModel _apparence;
+
+    internal ModuleAffiche(ApparenceViewModel apparence, string id, string nom, string description)
+    {
+        _apparence = apparence;
+        Id = id;
+        Nom = nom;
+        Description = description;
+    }
+
+    public string Id { get; }
+
+    public string Nom { get; }
+
+    public string Description { get; }
+
+    public bool Affiche
+    {
+        get => _apparence.Affiche(Id);
+        set => _apparence.Afficher(Id, value);
+    }
+
+    internal void Rafraichir() => OnPropertyChanged(nameof(Affiche));
+
+    [RelayCommand]
+    private void Monter() => _apparence.Deplacer(Id, -1);
+
+    [RelayCommand]
+    private void Descendre() => _apparence.Deplacer(Id, 1);
+}
+
 /// <summary>Choix de l'ambiance de couleurs, du mode sombre et des modules affichés (réglages propres au PC).</summary>
 public sealed class ApparenceViewModel : ObservableObject
 {
@@ -118,6 +170,130 @@ public sealed class ApparenceViewModel : ObservableObject
     {
         _chemin = chemin;
         _preferences = PreferencesAffichage.Charger(chemin);
+        _modules = ModulesAnciens();
+        Modules = new ObservableCollection<ModuleAffiche>(OrdreModules.Select(id => Liste.First(m => m.Id == id)));
+    }
+
+    /// <summary>Les modules de la barre de gauche, dans leur ordre par défaut.</summary>
+    private static readonly (string Id, string Nom, string Description)[] ListeModules =
+    {
+        ("Bilan", "Bilan", "bilan annuel, pistes d'économie, exports Excel et PDF"),
+        ("Documents", "Documents", "documents importants, échéances, Google Drive"),
+        ("Mail", "Mail", "envoi de mails (Gmail ou autre messagerie), carnet d'adresses"),
+        ("Achats", "Achats", "meilleur prix avec Gemini, sites marchands, prix suivis"),
+        ("Lettres", "Lettres", "lettres types rédigées par Gemini et Groq, PDF, Word ou mail"),
+        ("Assistant", "Assistant", "questions sur votre budget à Gemini et Groq (ne modifie rien)"),
+        ("Credits", "Crédits", "simulation et comparaison de crédits"),
+        ("Prets", "Prêts", "prêts en cours, tableau d'amortissement, remboursement anticipé"),
+        ("Bourse", "Bourse", "placements Trade Republic, positions, plus-values, cours"),
+    };
+
+    private ModulesCompte _modules;
+    private string? _compte;
+    private IReadOnlyList<ModuleAffiche>? _liste;
+
+    private IReadOnlyList<ModuleAffiche> Liste =>
+        _liste ??= ListeModules.Select(m => new ModuleAffiche(this, m.Id, m.Nom, m.Description)).ToList();
+
+    /// <summary>Modules du compte ouvert, dans l'ordre de la barre de gauche (liste de la Configuration).</summary>
+    public ObservableCollection<ModuleAffiche> Modules { get; }
+
+    /// <summary>Identifiants des modules du compte ouvert, dans l'ordre de la barre de gauche.</summary>
+    public IReadOnlyList<string> OrdreModules =>
+        _modules.Ordre.Where(id => ListeModules.Any(m => m.Id == id)).Distinct()
+            .Concat(ListeModules.Select(m => m.Id).Where(id => !_modules.Ordre.Contains(id)))
+            .ToList();
+
+    /// <summary>Réglages d'avant la version 2.11 (communs à tous les comptes) : point de départ du premier compte.</summary>
+    private ModulesCompte ModulesAnciens()
+    {
+        var p = _preferences;
+        var affiches = new Dictionary<string, bool>
+        {
+            ["Bilan"] = p.ModuleBilan, ["Documents"] = p.ModuleDocuments, ["Mail"] = p.ModuleMail, ["Achats"] = p.ModuleAchats,
+            ["Lettres"] = p.ModuleLettres, ["Assistant"] = p.ModuleAssistant, ["Credits"] = p.ModuleCredits,
+            ["Prets"] = p.ModulePrets, ["Bourse"] = p.ModuleBourse,
+        };
+        return new ModulesCompte
+        {
+            Masques = affiches.Where(a => !a.Value).Select(a => a.Key).ToList(),
+            Ordre = ListeModules.Select(m => m.Id).ToList(),
+        };
+    }
+
+    /// <summary>
+    /// Modules du compte ouvert (clé : son fichier). Un compte qui n'a pas encore de réglage reprend les modules du compte
+    /// ouvert jusque-là.
+    /// </summary>
+    public void ChoisirCompte(string compte)
+    {
+        if (compte == _compte)
+            return;
+        _compte = compte;
+        if (!_preferences.ModulesParCompte.TryGetValue(compte, out var modules))
+        {
+            modules = _modules.Copier();
+            _preferences.ModulesParCompte[compte] = modules;
+            Enregistrer();
+        }
+        _modules = modules;
+        ModulesModifies(ordre: true);
+    }
+
+    /// <summary>Compte supprimé : ses modules sont oubliés (un futur compte du même fichier repart du compte ouvert).</summary>
+    public void OublierCompte(string compte)
+    {
+        if (_preferences.ModulesParCompte.Remove(compte))
+            Enregistrer();
+    }
+
+    public bool Affiche(string id) => !_modules.Masques.Contains(id);
+
+    public void Afficher(string id, bool affiche)
+    {
+        if (Affiche(id) == affiche)
+            return;
+        if (affiche)
+            _modules.Masques.Remove(id);
+        else
+            _modules.Masques.Add(id);
+        Enregistrer();
+        ModulesModifies(ordre: false);
+    }
+
+    /// <summary>Monte (sens -1) ou descend (sens +1) un module dans la barre de gauche.</summary>
+    public void Deplacer(string id, int sens)
+    {
+        var ordre = OrdreModules.ToList();
+        var index = ordre.IndexOf(id);
+        var cible = index + sens;
+        if (index < 0 || cible < 0 || cible >= ordre.Count)
+            return;
+        (ordre[index], ordre[cible]) = (ordre[cible], ordre[index]);
+        _modules.Ordre = ordre;
+        Enregistrer();
+        ModulesModifies(ordre: true);
+    }
+
+    private void ModulesModifies(bool ordre)
+    {
+        foreach (var m in ListeModules)
+            OnPropertyChanged("Module" + m.Id);
+        if (ordre)
+        {
+            var ids = OrdreModules;
+            for (var i = 0; i < ids.Count; i++)
+            {
+                var module = Liste.First(m => m.Id == ids[i]);
+                var actuel = Modules.IndexOf(module);
+                if (actuel != i)
+                    Modules.Move(actuel, i);
+            }
+            OnPropertyChanged(nameof(OrdreModules));
+        }
+        foreach (var module in Liste)
+            module.Rafraichir();
+        ModulesChanges?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Levé quand l'apparence à afficher change.</summary>
@@ -159,118 +335,64 @@ public sealed class ApparenceViewModel : ObservableObject
     /// <summary>Module « Crédits » affiché (simulations conservées même s'il est masqué).</summary>
     public bool ModuleCredits
     {
-        get => _preferences.ModuleCredits;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleCredits, value, _preferences, (p, v) => p.ModuleCredits = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Credits");
+        set => Afficher("Credits", value);
     }
 
     /// <summary>Module « Bilan » affiché.</summary>
     public bool ModuleBilan
     {
-        get => _preferences.ModuleBilan;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleBilan, value, _preferences, (p, v) => p.ModuleBilan = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Bilan");
+        set => Afficher("Bilan", value);
     }
 
     /// <summary>Module « Documents » affiché.</summary>
     public bool ModuleDocuments
     {
-        get => _preferences.ModuleDocuments;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleDocuments, value, _preferences, (p, v) => p.ModuleDocuments = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Documents");
+        set => Afficher("Documents", value);
     }
 
     /// <summary>Module « Mail » affiché.</summary>
     public bool ModuleMail
     {
-        get => _preferences.ModuleMail;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleMail, value, _preferences, (p, v) => p.ModuleMail = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Mail");
+        set => Afficher("Mail", value);
     }
 
     /// <summary>Module « Achats » affiché.</summary>
     public bool ModuleAchats
     {
-        get => _preferences.ModuleAchats;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleAchats, value, _preferences, (p, v) => p.ModuleAchats = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Achats");
+        set => Afficher("Achats", value);
     }
 
     /// <summary>Module « Lettres » affiché.</summary>
     public bool ModuleLettres
     {
-        get => _preferences.ModuleLettres;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleLettres, value, _preferences, (p, v) => p.ModuleLettres = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Lettres");
+        set => Afficher("Lettres", value);
     }
 
     /// <summary>Module « Prêts » affiché (prêts conservés même s'il est masqué).</summary>
     public bool ModulePrets
     {
-        get => _preferences.ModulePrets;
-        set
-        {
-            if (!SetProperty(_preferences.ModulePrets, value, _preferences, (p, v) => p.ModulePrets = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Prets");
+        set => Afficher("Prets", value);
     }
 
     /// <summary>Module « Bourse » affiché (portefeuille conservé même s'il est masqué).</summary>
     public bool ModuleBourse
     {
-        get => _preferences.ModuleBourse;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleBourse, value, _preferences, (p, v) => p.ModuleBourse = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Bourse");
+        set => Afficher("Bourse", value);
     }
 
     /// <summary>Module « Assistant » affiché.</summary>
     public bool ModuleAssistant
     {
-        get => _preferences.ModuleAssistant;
-        set
-        {
-            if (!SetProperty(_preferences.ModuleAssistant, value, _preferences, (p, v) => p.ModuleAssistant = v))
-                return;
-            Enregistrer();
-            ModulesChanges?.Invoke(this, EventArgs.Empty);
-        }
+        get => Affiche("Assistant");
+        set => Afficher("Assistant", value);
     }
 
     /// <summary>Animation du canard à l'ouverture de l'application (réglage propre au PC).</summary>
@@ -323,18 +445,16 @@ public sealed class ApparenceViewModel : ObservableObject
     /// <summary>Levé quand un module est affiché ou masqué.</summary>
     public event EventHandler? ModulesChanges;
 
-    /// <summary>Revient à l'apparence par défaut (Océan, clair, tous les modules affichés).</summary>
+    /// <summary>Revient à l'apparence par défaut (Océan, clair, tous les modules affichés dans leur ordre d'origine).</summary>
     public void Reinitialiser()
     {
-        ModuleCredits = true;
-        ModuleBilan = true;
-        ModuleDocuments = true;
-        ModuleMail = true;
-        ModuleAchats = true;
-        ModuleLettres = true;
-        ModuleAssistant = true;
-        ModulePrets = true;
-        ModuleBourse = true;
+        _modules.Masques.Clear();
+        _modules.Ordre = ListeModules.Select(m => m.Id).ToList();
+        _preferences.ModulesParCompte.Clear();
+        if (_compte is not null)
+            _preferences.ModulesParCompte[_compte] = _modules;
+        Enregistrer();
+        ModulesModifies(ordre: true);
         AnimationDemarrage = true;
         ModeSombre = false;
         Ambiance = Ambiance.Ocean;
