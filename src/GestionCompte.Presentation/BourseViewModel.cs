@@ -92,7 +92,14 @@ public sealed partial class BourseViewModel : ObservableObject
         "Le prix de revient est le prix moyen pondéré des achats, frais et taxes compris.";
 
     public string DetailRealise =>
-        "Ventes : montant reçu net de frais − prix de revient moyen des titres vendus.";
+        "Ventes : montant reçu net de frais − prix de revient moyen des titres vendus (frais et taxes d'achat compris, comme pour les impôts). " +
+        "Trade Republic, lui, ne compte pas les frais et taxes d'achat.";
+
+    /// <summary>Plus-values calculées comme Trade Republic (sans les frais et taxes d'achat), vide s'il n'y a pas d'écart.</summary>
+    public string TexteHorsFraisAchat => AfficherHorsFraisAchat
+        ? $"{Montants.Formater(Bilan.PlusValuesHorsFraisAchat)} € hors frais d'achat (calcul Trade Republic)" : "";
+
+    public bool AfficherHorsFraisAchat => Bilan.PlusValuesHorsFraisAchat != Bilan.PlusValuesRealisees;
 
     private static string Signe(decimal valeur) => (valeur > 0 ? "+" : "") + Montants.Formater(valeur);
 
@@ -126,6 +133,8 @@ public sealed partial class BourseViewModel : ObservableObject
         OnPropertyChanged(nameof(TexteSansCours));
         OnPropertyChanged(nameof(DetailVerse));
         OnPropertyChanged(nameof(DetailPlusValue));
+        OnPropertyChanged(nameof(TexteHorsFraisAchat));
+        OnPropertyChanged(nameof(AfficherHorsFraisAchat));
         ViderCommand.NotifyCanExecuteChanged();
         ActualiserCoursCommand.NotifyCanExecuteChanged();
     }

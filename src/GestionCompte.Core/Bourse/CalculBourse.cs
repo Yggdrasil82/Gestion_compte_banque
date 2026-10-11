@@ -26,9 +26,12 @@ public sealed record PositionBourse(
 /// <param name="Dividendes">Dividendes et intérêts reçus.</param>
 /// <param name="FraisEtTaxes">Frais de courtage et taxes payés (positif).</param>
 /// <param name="SansCours">Nombre de lignes sans cours (estimées à leur prix de revient).</param>
+/// <param name="PlusValuesHorsFraisAchat">
+/// Gains des ventes sans compter les frais et taxes d'achat dans le prix de revient (calcul affiché par Trade Republic).
+/// </param>
 public sealed record BilanBourse(
     IReadOnlyList<PositionBourse> Positions, decimal Versements, decimal Retraits, decimal Especes,
-    decimal PlusValuesRealisees, decimal Dividendes, decimal FraisEtTaxes, int SansCours)
+    decimal PlusValuesRealisees, decimal Dividendes, decimal FraisEtTaxes, int SansCours, decimal PlusValuesHorsFraisAchat = 0)
 {
     public decimal ValeurTitres => Positions.Sum(p => p.Valeur);
 
@@ -60,7 +63,7 @@ public static class CalculBourse
         ArgumentNullException.ThrowIfNull(portefeuille);
 
         var lignes = new Dictionary<(EnveloppeBourse, string), Ligne>();
-        decimal versements = 0, retraits = 0, especes = 0, realisees = 0, dividendes = 0, frais = 0;
+        decimal versements = 0, retraits = 0, especes = 0, realisees = 0, horsFraisAchat = 0, dividendes = 0, frais = 0;
 
         var internes = enveloppe is null ? VirementsInternes(portefeuille.Operations) : new HashSet<OperationBourse>();
 
@@ -91,6 +94,7 @@ public static class CalculBourse
                     var l = Trouver(lignes, o);
                     l.Quantite += Math.Abs(o.Quantite);
                     l.Cout -= o.Net;
+                    l.CoutHorsFrais -= o.Montant;
                     break;
                 }
                 case TypeOperationBourse.Vente when o.Isin is not null:
@@ -99,11 +103,14 @@ public static class CalculBourse
                     // Un export partiel peut contenir des ventes de titres achetés avant : on ne vend que ce qui est connu.
                     var vendue = Math.Min(Math.Abs(o.Quantite), l.Quantite);
                     var coutVendu = l.Quantite == 0 ? 0 : Math.Round(l.Cout * vendue / l.Quantite, 2);
+                    var coutVenduHorsFrais = l.Quantite == 0 ? 0 : Math.Round(l.CoutHorsFrais * vendue / l.Quantite, 2);
                     realisees += o.Net - coutVendu;
+                    horsFraisAchat += o.Net - coutVenduHorsFrais;
                     l.Quantite -= vendue;
                     l.Cout -= coutVendu;
+                    l.CoutHorsFrais -= coutVenduHorsFrais;
                     if (l.Quantite < Epsilon)
-                        (l.Quantite, l.Cout) = (0, 0);
+                        (l.Quantite, l.Cout, l.CoutHorsFrais) = (0, 0, 0);
                     break;
                 }
             }
@@ -121,7 +128,7 @@ public static class CalculBourse
             .ToList();
 
         return new BilanBourse(positions, versements, retraits, especes, realisees, dividendes, frais,
-            positions.Count(p => p.Cours is null));
+            positions.Count(p => p.Cours is null), horsFraisAchat);
     }
 
     /// <summary>
@@ -151,6 +158,7 @@ public static class CalculBourse
         public string? Classe;
         public decimal Quantite;
         public decimal Cout;
+        public decimal CoutHorsFrais;
     }
 
     private static Ligne Trouver(Dictionary<(EnveloppeBourse, string), Ligne> lignes, OperationBourse o)

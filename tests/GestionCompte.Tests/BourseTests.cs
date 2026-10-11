@@ -119,6 +119,20 @@ public sealed class BourseTests : IDisposable
     }
 
     [Fact]
+    public void Calcul_PlusValue_AvecEtSansFraisDAchat()
+    {
+        var portefeuille = new Portefeuille();
+        portefeuille.Ajouter(ImportTradeRepublic.Lire(Entete +
+            "2026-04-14T11:00:00Z,DEFAULT,BUY,Exemple,XX0000000001,0.651621,314.60,-205.00,-1.00,-0.82,a1\n" +
+            "2026-07-13T11:00:00Z,DEFAULT,SELL,Exemple,XX0000000001,-0.651621,332.70,216.79,-1.00,,a2\n").Operations);
+
+        var bilan = CalculBourse.Calculer(portefeuille);
+
+        Assert.Equal(8.97m, bilan.PlusValuesRealisees);       // 215,79 − 206,82 (frais et taxe d'achat compris)
+        Assert.Equal(10.79m, bilan.PlusValuesHorsFraisAchat); // 215,79 − 205,00, comme Trade Republic
+    }
+
+    [Fact]
     public void Calcul_PrixMoyenPondere_EtPlusValues()
     {
         var bilan = CalculBourse.Calculer(Demo());
@@ -128,6 +142,7 @@ public sealed class BourseTests : IDisposable
         Assert.Equal(2168.00m, bilan.Especes);
         // TotalEnergies : 25 titres pour 1 461 € (frais compris), 10 vendus 620 € net → 620 − 584,40.
         Assert.Equal(35.60m, bilan.PlusValuesRealisees);
+        Assert.Equal(36.00m, bilan.PlusValuesHorsFraisAchat); // 620 − 1 460 × 10 / 25
         Assert.Equal(37.07m, bilan.Dividendes);
         Assert.Equal(11.07m, bilan.FraisEtTaxes);
 

@@ -146,6 +146,9 @@
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.PlusValuesRealisees, Converter={StaticResource Euros}}" />
                                     <TextBlock Text="Plus-values des ventes" />
                                 </DockPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteHorsFraisAchat}" Margin="0,0,0,2"
+                                           ToolTip="{Binding DetailRealise}" Cursor="Help"
+                                           Visibility="{Binding AfficherHorsFraisAchat, Converter={StaticResource Visible}}" />
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.Dividendes, Converter={StaticResource Euros}}" />
                                     <TextBlock Text="Dividendes et intérêts" />
