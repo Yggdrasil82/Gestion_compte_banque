@@ -83,7 +83,9 @@ du classeur Excel d'origine.
 
 ## Prochainement
 
-- Rien pour l'instant.
+- Mistral de retour dans Configuration › IA (offre gratuite « Experiment ») pour l'Assistant et les Lettres ; recherche des achats par Mistral si sa recherche internet est incluse dans l'offre gratuite.
+- Module Achats : choisir les IA utilisées pour la recherche (une case par IA réglée, mémorisée).
+- Recherche des achats : Groq « Compound » (recherche internet intégrée, même clé Groq) en deuxième choix.
 
 ## Télécharger l'application
 
