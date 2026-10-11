@@ -12,6 +12,7 @@
         </Style>
         <Style x:Key="ValeurTuile" TargetType="TextBlock">
             <Setter Property="FontSize" Value="21" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
         <Style x:Key="Etape" TargetType="TextBlock">
@@ -100,7 +101,7 @@
                     <!-- Chiffres clés : le réalisé d'abord (le plus important), puis l'impôt, la valeur et le latent. -->
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.35*" />
+                            <ColumnDefinition Width="1.45*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
@@ -110,18 +111,18 @@
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="Réalisé, revenus et frais" />
                                 <DockPanel ToolTip="{Binding DetailRealise}" Cursor="Help" Margin="0,2,0,0">
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.PlusValuesRealisees, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Plus-values des ventes" />
+                                    <TextBlock Text="Plus-values des ventes" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
-                                <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteHorsFraisAchat}" TextAlignment="Right"
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteHorsFraisAchat}" TextAlignment="Right" TextWrapping="Wrap"
                                            ToolTip="{Binding DetailRealise}" Cursor="Help"
                                            Visibility="{Binding AfficherHorsFraisAchat, Converter={StaticResource Visible}}" />
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.Dividendes, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Dividendes et intérêts (bruts)" />
+                                    <TextBlock Text="Dividendes et intérêts (bruts)" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding TexteTaxesSurRevenus}" />
-                                    <TextBlock Text="Taxes retenues sur les revenus" Margin="0,0,12,0" />
+                                    <TextBlock Text="Taxes retenues sur les revenus" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                                 <Border Height="1" Background="{DynamicResource Bordure}" Margin="0,5" />
                                 <DockPanel ToolTip="{Binding DetailGainNet}" Cursor="Help">
@@ -137,7 +138,7 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="Gain réalisé net" FontWeight="Bold" FontSize="16" />
+                                    <TextBlock Text="Gain réalisé net" FontWeight="Bold" FontSize="16" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                                 <TextBlock Style="{StaticResource LibelleTuile}" Margin="0,2,0,0"
                                            Text="{Binding Bilan.FraisEtTaxes, Converter={StaticResource Euros}, StringFormat='Frais et taxes payés au total {0} (déjà déduits)'}" />
@@ -161,7 +162,7 @@
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="Net après impôt" Margin="0,0,0,4" />
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding TexteGainRealiseNet}" />
-                                    <TextBlock Text="Gain net" />
+                                    <TextBlock Text="Gain net" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding TexteFlatTax}" />
@@ -184,7 +185,7 @@
                         <Border Grid.Column="3" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}" ToolTip="{Binding DetailPlusValue}" Cursor="Help">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="Plus-value latente" />
-                                <TextBlock Text="{Binding TextePlusValue}">
+                                <TextBlock Text="{Binding TexteMontantPlusValue}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock" BasedOn="{StaticResource ValeurTuile}">
                                             <Setter Property="Foreground" Value="{DynamicResource Positif}" />
@@ -196,8 +197,7 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock Style="{StaticResource LibelleTuile}"
-                                           Text="{Binding Bilan.PrixRevient, Converter={StaticResource Euros}, StringFormat='Prix de revient {0}'}" />
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding DetailLatent}" />
                                 <DockPanel ToolTip="{Binding DetailVerse}" Cursor="Help" Margin="0,6,0,0">
                                     <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGain}" FontWeight="SemiBold">
                                         <TextBlock.Style>
@@ -211,7 +211,7 @@
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                    <TextBlock Text="Prévision de gain" Margin="0,0,8,0" />
+                                    <TextBlock Text="Prévision de gain" Margin="0,0,8,0" TextTrimming="CharacterEllipsis" />
                                 </DockPanel>
                             </StackPanel>
                         </Border>

@@ -91,6 +91,12 @@ public sealed partial class BourseViewModel : ObservableObject
 
     public string TexteGain => $"{Signe(Bilan.Gain)} €";
 
+    /// <summary>Plus-value latente en euros (tuile) ; le pourcentage est sur la ligne du prix de revient.</summary>
+    public string TexteMontantPlusValue => $"{Signe(Bilan.PlusValueLatente)} €";
+
+    public string DetailLatent => (Bilan.PlusValueLatentePourcent is { } pourcent ? $"{Signe(pourcent)} % · " : "")
+                                  + $"prix de revient {Montants.Formater(Bilan.PrixRevient)} €";
+
     public string TexteGainRealiseNet => $"{Signe(Bilan.GainRealiseNet)} €";
 
     public bool GainRealisePositif => Bilan.GainRealiseNet >= 0;
@@ -169,6 +175,8 @@ public sealed partial class BourseViewModel : ObservableObject
         OnPropertyChanged(nameof(PlusValuePositive));
         OnPropertyChanged(nameof(GainPositif));
         OnPropertyChanged(nameof(TextePlusValue));
+        OnPropertyChanged(nameof(TexteMontantPlusValue));
+        OnPropertyChanged(nameof(DetailLatent));
         OnPropertyChanged(nameof(TexteGain));
         OnPropertyChanged(nameof(TexteSansCours));
         OnPropertyChanged(nameof(DetailVerse));
