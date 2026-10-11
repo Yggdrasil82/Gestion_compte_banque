@@ -46,7 +46,7 @@ internal static class Captures
     private const double HauteurPrets = 2000;
 
     /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
-    private const double HauteurBourse = 1180;
+    private const double HauteurBourse = 1320;
 
     /// <summary>Mois en entier (virements liés : toutes les opérations visibles).</summary>
     private const double HauteurMoisComplet = 1500;
@@ -221,9 +221,16 @@ internal static class Captures
 
             // Bourse : l'écran vide (comment faire l'export), puis un compte « Trade Republic » d'exemple (export et cours inventés).
             await Capturer(("38-bourse-vide-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
-            new DepotSqlite(registre.Chemin(registre.Ajouter("Trade Republic"))).Enregistrer(ConfigurationParDefaut.CreerDemoBourse());
+            // Une vente sur le compte-titres dans l'année, pour montrer la flat tax prévue.
+            var demoBourse = ConfigurationParDefaut.CreerDemoBourse();
+            demoBourse.Portefeuille.Ajouter(new[]
+            {
+                new Core.Bourse.OperationBourse("demo-14", new DateTime(2026, 9, 15, 10, 0, 0), Core.Bourse.EnveloppeBourse.CompteTitres,
+                    Core.Bourse.TypeOperationBourse.Vente, "iShares Core MSCI World", "IE00B4L5Y983", "FUND", -5, 106m, 530m, -1m, 0m, "Vente"),
+            });
+            new DepotSqlite(registre.Chemin(registre.Ajouter("Trade Republic"))).Enregistrer(demoBourse);
             vm.CompteActif = "Trade Republic";
-            vm.Bourse.Statut = "13 opérations importées.";
+            vm.Bourse.Statut = "14 opérations importées.";
             await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 2;
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));

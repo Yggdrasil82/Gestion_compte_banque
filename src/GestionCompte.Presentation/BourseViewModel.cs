@@ -79,6 +79,29 @@ public sealed partial class BourseViewModel : ObservableObject
 
     public string TexteGain => $"{Signe(Bilan.Gain)} €";
 
+    public string TexteGainRealiseNet => $"{Signe(Bilan.GainRealiseNet)} €";
+
+    public bool GainRealisePositif => Bilan.GainRealiseNet >= 0;
+
+    public string TexteNetApresImpot => $"{Signe(Bilan.NetApresImpot)} €";
+
+    public bool NetApresImpotPositif => Bilan.NetApresImpot >= 0;
+
+    public string LibelleFlatTax => $"Flat tax {Bilan.AnneeImpot} prévue (30 %)";
+
+    public string TexteFlatTax => Bilan.FlatTax == 0 ? "0,00 €" : $"−{Montants.Formater(Bilan.FlatTax)} €";
+
+    public string TexteTaxesSurRevenus => $"−{Montants.Formater(Bilan.TaxesSurRevenus + Bilan.AutresFrais)} €";
+
+    public string DetailImpot =>
+        $"Flat tax : 30 % (12,8 % d'impôt et 17,2 % de prélèvements sociaux) des plus-values {Bilan.AnneeImpot} des ventes du compte-titres " +
+        $"({Signe(Bilan.PlusValuesImposables)} €), 0 en cas de perte. Les dividendes sont déjà taxés par Trade Republic. " +
+        "Le PEA n'est imposé qu'en cas de retrait. Prévision indicative : seul l'imprimé fiscal fait foi.";
+
+    public string DetailGainNet =>
+        $"Plus-values des ventes ({Signe(Bilan.PlusValuesRealisees)} €) + dividendes et intérêts ({Montants.Formater(Bilan.Dividendes)} €) " +
+        $"− taxes retenues ({Montants.Formater(Bilan.TaxesSurRevenus + Bilan.AutresFrais)} €). Les frais d'achat et de vente sont déjà dans les plus-values.";
+
     public string TexteSansCours => Bilan.SansCours == 0 ? ""
         : $"{Bilan.SansCours} ligne{(Bilan.SansCours > 1 ? "s" : "")} sans cours : estimée{(Bilan.SansCours > 1 ? "s" : "")} à son prix d'achat. " +
           "Cliquez sur « Actualiser les cours » ou saisissez le cours dans le tableau.";
@@ -114,8 +137,10 @@ public sealed partial class BourseViewModel : ObservableObject
     {
         var total = Bilan.ValeurTitres;
         Positions.Clear();
-        foreach (var position in Bilan.Positions)
-            Positions.Add(new PositionViewModel(this, position, total));
+        // Compte-titres puis PEA (bandeaux du tableau), les plus grosses lignes d'abord.
+        var totaux = Bilan.Positions.GroupBy(p => p.Enveloppe).ToDictionary(g => g.Key, g => g.Sum(p => p.Valeur));
+        foreach (var position in Bilan.Positions.OrderBy(p => p.Enveloppe).ThenByDescending(p => p.Valeur))
+            Positions.Add(new PositionViewModel(this, position, total, totaux[position.Enveloppe]));
         Historique.Clear();
         foreach (var operation in Portefeuille.Operations.Where(o => Enveloppe is null || o.Enveloppe == Enveloppe).OrderByDescending(o => o.Date))
             Historique.Add(new OperationBourseViewModel(operation));
@@ -123,7 +148,7 @@ public sealed partial class BourseViewModel : ObservableObject
 
     private void CalculerBilan()
     {
-        Bilan = CalculBourse.Calculer(Portefeuille, Enveloppe);
+        Bilan = CalculBourse.Calculer(Portefeuille, Enveloppe, _aujourdhui.Year);
         OnPropertyChanged(nameof(Vide));
         OnPropertyChanged(nameof(AEnveloppes));
         OnPropertyChanged(nameof(PlusValuePositive));
@@ -134,6 +159,15 @@ public sealed partial class BourseViewModel : ObservableObject
         OnPropertyChanged(nameof(DetailVerse));
         OnPropertyChanged(nameof(DetailPlusValue));
         OnPropertyChanged(nameof(TexteHorsFraisAchat));
+        OnPropertyChanged(nameof(TexteGainRealiseNet));
+        OnPropertyChanged(nameof(GainRealisePositif));
+        OnPropertyChanged(nameof(TexteNetApresImpot));
+        OnPropertyChanged(nameof(NetApresImpotPositif));
+        OnPropertyChanged(nameof(LibelleFlatTax));
+        OnPropertyChanged(nameof(TexteFlatTax));
+        OnPropertyChanged(nameof(TexteTaxesSurRevenus));
+        OnPropertyChanged(nameof(DetailImpot));
+        OnPropertyChanged(nameof(DetailGainNet));
         OnPropertyChanged(nameof(AfficherHorsFraisAchat));
         ViderCommand.NotifyCanExecuteChanged();
         ActualiserCoursCommand.NotifyCanExecuteChanged();
@@ -271,9 +305,10 @@ public sealed class PositionViewModel : ObservableObject
 {
     private readonly BourseViewModel _parent;
 
-    internal PositionViewModel(BourseViewModel parent, PositionBourse position, decimal totalTitres)
+    internal PositionViewModel(BourseViewModel parent, PositionBourse position, decimal totalTitres, decimal totalEnveloppe = 0)
     {
         _parent = parent;
+        TotalEnveloppe = totalEnveloppe;
         Position = position;
         Part = totalTitres == 0 ? 0 : Math.Round(position.Valeur / totalTitres * 100, 1);
         Symbole = parent.Portefeuille.Cours.GetValueOrDefault(position.Isin)?.Symbole;
@@ -286,6 +321,9 @@ public sealed class PositionViewModel : ObservableObject
     public string Isin => Position.Isin;
 
     public string Enveloppe => Position.Enveloppe == EnveloppeBourse.Pea ? "PEA" : "Compte-titres";
+
+    /// <summary>Valeur des titres de la même enveloppe (bandeau du tableau).</summary>
+    public decimal TotalEnveloppe { get; }
 
     public decimal Quantite => Position.Quantite;
 

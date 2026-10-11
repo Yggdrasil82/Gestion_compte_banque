@@ -49,6 +49,30 @@ public sealed record BilanBourse(
 
     /// <summary>Gain total depuis le début : ce que vaut le portefeuille moins ce qui y a été mis.</summary>
     public decimal Gain => ValeurTotale - VerseNet;
+
+    /// <summary>Taxes et frais retenus sur les dividendes et intérêts (positif).</summary>
+    public decimal TaxesSurRevenus { get; init; }
+
+    /// <summary>Frais et impôts prélevés à part, hors achats, ventes et revenus (positif).</summary>
+    public decimal AutresFrais { get; init; }
+
+    /// <summary>Gain réellement encaissé : plus-values des ventes (frais compris) et revenus, moins les taxes retenues.</summary>
+    public decimal GainRealiseNet => PlusValuesRealisees + Dividendes - TaxesSurRevenus - AutresFrais;
+
+    /// <summary>Année de la prévision d'impôt.</summary>
+    public int AnneeImpot { get; init; }
+
+    /// <summary>Plus-values des ventes du compte-titres pendant <see cref="AnneeImpot"/> (le PEA n'est imposé qu'au retrait).</summary>
+    public decimal PlusValuesImposables { get; init; }
+
+    /// <summary>Taux de la flat tax (prélèvement forfaitaire unique) : 12,8 % d'impôt et 17,2 % de prélèvements sociaux.</summary>
+    public const decimal TauxFlatTax = 0.30m;
+
+    /// <summary>Flat tax prévisionnelle sur les plus-values de l'année (0 en cas de perte).</summary>
+    public decimal FlatTax => Math.Round(Math.Max(0, PlusValuesImposables) * TauxFlatTax, 2);
+
+    /// <summary>Gain réalisé net, une fois la flat tax payée.</summary>
+    public decimal NetApresImpot => GainRealiseNet - FlatTax;
 }
 
 /// <summary>Calcul des positions par la méthode du prix moyen pondéré (celle de l'administration fiscale).</summary>
@@ -58,12 +82,15 @@ public static class CalculBourse
     private const decimal Epsilon = 0.000001m;
 
     /// <param name="enveloppe">Une seule enveloppe, ou null pour tout le portefeuille.</param>
-    public static BilanBourse Calculer(Portefeuille portefeuille, EnveloppeBourse? enveloppe = null)
+    /// <param name="anneeImpot">Année de la prévision d'impôt (par défaut celle de la dernière opération).</param>
+    public static BilanBourse Calculer(Portefeuille portefeuille, EnveloppeBourse? enveloppe = null, int? anneeImpot = null)
     {
         ArgumentNullException.ThrowIfNull(portefeuille);
 
         var lignes = new Dictionary<(EnveloppeBourse, string), Ligne>();
         decimal versements = 0, retraits = 0, especes = 0, realisees = 0, horsFraisAchat = 0, dividendes = 0, frais = 0;
+        decimal taxesRevenus = 0, autresFrais = 0, imposables = 0;
+        var annee = anneeImpot ?? (portefeuille.Operations.Count > 0 ? portefeuille.Operations.Max(o => o.Date).Year : 0);
 
         var internes = enveloppe is null ? VirementsInternes(portefeuille.Operations) : new HashSet<OperationBourse>();
 
@@ -84,10 +111,12 @@ public static class CalculBourse
                 case TypeOperationBourse.Dividende:
                 case TypeOperationBourse.Interets:
                     dividendes += o.Montant;
+                    taxesRevenus -= o.Frais + o.Taxes;
                     break;
                 case TypeOperationBourse.Frais:
                 case TypeOperationBourse.Impot:
                     frais -= o.Montant;
+                    autresFrais -= o.Net;
                     break;
                 case TypeOperationBourse.Achat when o.Isin is not null:
                 {
@@ -105,6 +134,8 @@ public static class CalculBourse
                     var coutVendu = l.Quantite == 0 ? 0 : Math.Round(l.Cout * vendue / l.Quantite, 2);
                     var coutVenduHorsFrais = l.Quantite == 0 ? 0 : Math.Round(l.CoutHorsFrais * vendue / l.Quantite, 2);
                     realisees += o.Net - coutVendu;
+                    if (o.Enveloppe == EnveloppeBourse.CompteTitres && o.Date.Year == annee)
+                        imposables += o.Net - coutVendu;
                     horsFraisAchat += o.Net - coutVenduHorsFrais;
                     l.Quantite -= vendue;
                     l.Cout -= coutVendu;
@@ -128,7 +159,13 @@ public static class CalculBourse
             .ToList();
 
         return new BilanBourse(positions, versements, retraits, especes, realisees, dividendes, frais,
-            positions.Count(p => p.Cours is null), horsFraisAchat);
+            positions.Count(p => p.Cours is null), horsFraisAchat)
+        {
+            TaxesSurRevenus = taxesRevenus,
+            AutresFrais = autresFrais,
+            AnneeImpot = annee,
+            PlusValuesImposables = imposables,
+        };
     }
 
     /// <summary>

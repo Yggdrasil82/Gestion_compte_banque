@@ -18,6 +18,12 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Margin" Value="0,0,0,4" />
         </Style>
+        <!-- Titres rangés par enveloppe : compte-titres puis PEA. -->
+        <CollectionViewSource x:Key="PositionsParEnveloppe" Source="{Binding Positions}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Enveloppe" />
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
     </UserControl.Resources>
 
     <DockPanel>
@@ -91,17 +97,92 @@
 
             <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding Vide, Converter={StaticResource MasqueSiVrai}}">
                 <StackPanel>
-                    <!-- Chiffres clés -->
-                    <UniformGrid Rows="1">
-                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}">
+                    <!-- Chiffres clés : le réalisé d'abord (le plus important), puis l'impôt, la valeur et le latent. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.35*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent3}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Réalisé, revenus et frais" />
+                                <DockPanel ToolTip="{Binding DetailRealise}" Cursor="Help" Margin="0,2,0,0">
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.PlusValuesRealisees, Converter={StaticResource Euros}}" />
+                                    <TextBlock Text="Plus-values des ventes" />
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteHorsFraisAchat}" TextAlignment="Right"
+                                           ToolTip="{Binding DetailRealise}" Cursor="Help"
+                                           Visibility="{Binding AfficherHorsFraisAchat, Converter={StaticResource Visible}}" />
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.Dividendes, Converter={StaticResource Euros}}" />
+                                    <TextBlock Text="Dividendes et intérêts (bruts)" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding TexteTaxesSurRevenus}" />
+                                    <TextBlock Text="Taxes retenues sur les revenus" Margin="0,0,12,0" />
+                                </DockPanel>
+                                <Border Height="1" Background="{DynamicResource Bordure}" Margin="0,5" />
+                                <DockPanel ToolTip="{Binding DetailGainNet}" Cursor="Help">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGainRealiseNet}" FontSize="16">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontWeight" Value="Bold" />
+                                                <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GainRealisePositif}" Value="False">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="Gain réalisé net" FontWeight="Bold" FontSize="16" />
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Margin="0,2,0,0"
+                                           Text="{Binding Bilan.FraisEtTaxes, Converter={StaticResource Euros}, StringFormat='Frais et taxes payés au total {0} (déjà déduits)'}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent4}" ToolTip="{Binding DetailImpot}" Cursor="Help">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Gain net et impôt" />
+                                <TextBlock Text="{Binding TexteNetApresImpot}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource ValeurTuile}">
+                                            <Setter Property="Foreground" Value="{DynamicResource Accent4}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding NetApresImpotPositif}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Net après impôt" Margin="0,0,0,4" />
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding TexteGainRealiseNet}" />
+                                    <TextBlock Text="Gain net" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding TexteFlatTax}" />
+                                    <TextBlock Text="{Binding LibelleFlatTax}" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource LibelleTuile}" Margin="0,4,0,0" TextWrapping="Wrap" TextTrimming="None"
+                                           Text="PEA : pas d'impôt tant qu'il n'y a pas de retrait." />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="Valeur du portefeuille" />
                                 <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent1}"
                                            Text="{Binding Bilan.ValeurTotale, Converter={StaticResource Euros}}" />
                                 <TextBlock Style="{StaticResource LibelleTuile}"><Run Text="Titres " /><Run Text="{Binding Bilan.ValeurTitres, Mode=OneWay, Converter={StaticResource Euros}}" /><Run Text=", espèces " /><Run Text="{Binding Bilan.Especes, Mode=OneWay, Converter={StaticResource Euros}}" /></TextBlock>
+                                <TextBlock Style="{StaticResource LibelleTuile}" ToolTip="{Binding DetailVerse}" Cursor="Help"
+                                           Text="{Binding Bilan.VerseNet, Converter={StaticResource Euros}, StringFormat='Argent versé {0}'}" />
                             </StackPanel>
                         </Border>
-                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}" ToolTip="{Binding DetailPlusValue}" Cursor="Help">
+                        <Border Grid.Column="3" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}" ToolTip="{Binding DetailPlusValue}" Cursor="Help">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource LibelleTuile}" Text="Plus-value latente" />
                                 <TextBlock Text="{Binding TextePlusValue}">
@@ -118,48 +199,25 @@
                                 </TextBlock>
                                 <TextBlock Style="{StaticResource LibelleTuile}"
                                            Text="{Binding Bilan.PrixRevient, Converter={StaticResource Euros}, StringFormat='Prix de revient {0}'}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent4}" ToolTip="{Binding DetailVerse}" Cursor="Help">
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Gain depuis le début" />
-                                <TextBlock Text="{Binding TexteGain}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource ValeurTuile}">
-                                            <Setter Property="Foreground" Value="{DynamicResource Accent4}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding GainPositif}" Value="False">
-                                                    <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBlock Style="{StaticResource LibelleTuile}"
-                                           Text="{Binding Bilan.VerseNet, Converter={StaticResource Euros}, StringFormat='Argent versé {0}'}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent3}">
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource LibelleTuile}" Text="Réalisé, revenus et frais" />
-                                <DockPanel ToolTip="{Binding DetailRealise}" Cursor="Help" Margin="0,2,0,0">
-                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.PlusValuesRealisees, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Plus-values des ventes" />
-                                </DockPanel>
-                                <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteHorsFraisAchat}" Margin="0,0,0,2"
-                                           ToolTip="{Binding DetailRealise}" Cursor="Help"
-                                           Visibility="{Binding AfficherHorsFraisAchat, Converter={StaticResource Visible}}" />
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.Dividendes, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Dividendes et intérêts" />
-                                </DockPanel>
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Text="{Binding Bilan.FraisEtTaxes, Converter={StaticResource Euros}}" />
-                                    <TextBlock Text="Frais et taxes" Margin="0,0,12,0" />
+                                <DockPanel ToolTip="{Binding DetailVerse}" Cursor="Help" Margin="0,6,0,0">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding TexteGain}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                <Setter Property="Foreground" Value="{DynamicResource Accent4}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GainPositif}" Value="False">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="Prévision de gain" Margin="0,0,8,0" />
                                 </DockPanel>
                             </StackPanel>
                         </Border>
-                    </UniformGrid>
+                    </Grid>
 
                     <!-- Positions -->
                     <Border Style="{StaticResource Carte}">
@@ -177,7 +235,24 @@
                             </DockPanel>
                             <TextBlock Style="{StaticResource Aide}"
                                        Text="Le cours et le symbole Yahoo se corrigent dans le tableau (double-clic). Survolez un chiffre pour voir son calcul." />
-                            <DataGrid ItemsSource="{Binding Positions}" Margin="0,6,0,0" RowHeight="44">
+                            <DataGrid ItemsSource="{Binding Source={StaticResource PositionsParEnveloppe}}" Margin="0,6,0,0" RowHeight="44">
+                                <DataGrid.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,8,0,2" Padding="10,4" CornerRadius="6" Background="{DynamicResource LigneAlternee}">
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" FontWeight="SemiBold" Margin="0,0,8,0"
+                                                                   Text="{Binding Items[0].TotalEnveloppe, Converter={StaticResource Euros}}" />
+                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding ItemCount, StringFormat=' · {0} titre(s)'}" Style="{StaticResource Discret}"
+                                                                   VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </DataGrid.GroupStyle>
                                 <DataGrid.Columns>
                                     <DataGridTemplateColumn Header="Titre" Width="*" MinWidth="200" IsReadOnly="True">
                                         <DataGridTemplateColumn.CellTemplate>

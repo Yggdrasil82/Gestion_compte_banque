@@ -133,6 +133,44 @@ public sealed class BourseTests : IDisposable
     }
 
     [Fact]
+    public void Calcul_GainNet_EtFlatTaxDuCompteTitres()
+    {
+        var portefeuille = new Portefeuille();
+        portefeuille.Ajouter(ImportTradeRepublic.Lire(Entete +
+            "2025-03-01T10:00:00Z,DEFAULT,BUY,A,XX0000000001,2,50,-100.00,-1.00,,a1\n" +
+            "2025-06-01T10:00:00Z,DEFAULT,SELL,A,XX0000000001,-1,80,80.00,-1.00,,a2\n" +   // 2025 : +28,50, pas dans l'année
+            "2026-02-01T10:00:00Z,DEFAULT,SELL,A,XX0000000001,-1,90,90.00,-1.00,,a3\n" +   // 2026 : +38,50
+            "2026-03-01T10:00:00Z,PEA,BUY,B,XX0000000002,10,10,-100.00,-1.00,,b1\n" +
+            "2026-04-01T10:00:00Z,PEA,SELL,B,XX0000000002,-10,15,150.00,-1.00,,b2\n" +   // PEA : +48, non imposé
+            "2026-05-01T10:00:00Z,DEFAULT,DIVIDEND,A,XX0000000001,1,,10.00,,-3.00,d1\n").Operations);
+
+        var bilan = CalculBourse.Calculer(portefeuille, null, 2026);
+
+        Assert.Equal(115.00m, bilan.PlusValuesRealisees);
+        Assert.Equal(3.00m, bilan.TaxesSurRevenus);
+        Assert.Equal(122.00m, bilan.GainRealiseNet);      // 115 + 10 − 3
+        Assert.Equal(38.50m, bilan.PlusValuesImposables);
+        Assert.Equal(11.55m, bilan.FlatTax);              // 30 % de 38,50
+        Assert.Equal(110.45m, bilan.NetApresImpot);
+        Assert.Equal(0m, CalculBourse.Calculer(portefeuille, EnveloppeBourse.Pea, 2026).FlatTax);
+    }
+
+    [Fact]
+    public void Calcul_FlatTax_NulleEnCasDePerte()
+    {
+        var portefeuille = new Portefeuille();
+        portefeuille.Ajouter(ImportTradeRepublic.Lire(Entete +
+            "2026-01-01T10:00:00Z,DEFAULT,BUY,A,XX0000000001,1,100,-100.00,-1.00,,a1\n" +
+            "2026-02-01T10:00:00Z,DEFAULT,SELL,A,XX0000000001,-1,80,80.00,-1.00,,a2\n").Operations);
+
+        var bilan = CalculBourse.Calculer(portefeuille, null, 2026);
+
+        Assert.Equal(-22.00m, bilan.PlusValuesImposables);
+        Assert.Equal(0m, bilan.FlatTax);
+        Assert.Equal(-22.00m, bilan.NetApresImpot);
+    }
+
+    [Fact]
     public void Calcul_PrixMoyenPondere_EtPlusValues()
     {
         var bilan = CalculBourse.Calculer(Demo());

@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="images/logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.11.1</p>
+  <p class="sous">Manuel d'utilisation · version 2.12.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -290,6 +290,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <h2>15. Bourse</h2>
   <p>Vos placements chez Trade Republic (PEA et compte-titres) : titres détenus, prix de revient, plus-values et dernier cours connu. Ils vont avec un compte de l'application : créez par exemple un compte « Trade Republic » avec la liste des comptes, ouvrez-le, puis importez l'export.</p>
   <figure><img src="images/39-bourse-ocean.png" alt="Bourse" style="width:78%;margin:0 auto"></figure>
+  <div class="encart"><p>Chiffres indicatifs, calculés à partir de l'export : seuls les relevés et l'imprimé fiscal de Trade Republic font foi. La valeur du portefeuille s'ajoute aussi à la Vue d'ensemble.</p></div>
 </section>
 
 <section class="page">
@@ -304,14 +305,14 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <ul>
     <li><b>Valeur du portefeuille</b> : titres au dernier cours connu, plus les espèces non investies.</li>
     <li><b>Prix de revient</b> : prix moyen pondéré des achats, frais et taxes compris (la méthode des impôts). Une vente garde ce prix moyen pour les titres restants.</li>
-    <li><b>Plus-value latente</b> : valeur des titres − prix de revient. <b>Gain depuis le début</b> : valeur du portefeuille − argent versé (versements moins retraits).</li>
-    <li><b>Plus-values des ventes</b>, <b>dividendes et intérêts</b>, <b>frais et taxes</b> : depuis le premier export. La plus-value compte les frais et taxes d'achat dans le prix de revient (comme les impôts) ; le chiffre « hors frais d'achat » en dessous est celui affiché par Trade Republic.</li>
-    <li>« Afficher » limite l'écran au PEA ou au compte-titres. La colonne <b>Part</b> montre la répartition entre les titres.</li>
+    <li><b>Plus-value latente</b> : valeur des titres − prix de revient. <b>Prévision de gain</b> : valeur du portefeuille − argent versé (versements moins retraits).</li>
+    <li><b>Réalisé, revenus et frais</b> (première tuile) : plus-values des ventes, frais et taxes d'achat compris dans le prix de revient comme pour les impôts (le chiffre « hors frais d'achat » en dessous est celui de Trade Republic), dividendes et intérêts bruts, taxes retenues, et le <b>gain réalisé net</b>.</li>
+    <li><b>Gain net et impôt</b> : gain réalisé net, <b>flat tax prévue</b> (30 % des plus-values de l'année des ventes du compte-titres, 0 en cas de perte ; les dividendes sont déjà taxés par Trade Republic, le PEA n'est imposé qu'au retrait) et net après impôt. Prévision indicative.</li>
+    <li><b>Mes titres</b> est rangé en deux parties, compte-titres puis PEA, chacune avec sa valeur totale. « Afficher » limite l'écran au PEA ou au compte-titres. La colonne <b>Part</b> montre la répartition entre les titres.</li>
   </ul>
   <h3>Les cours</h3>
   <p><b>Actualiser les cours</b> cherche le dernier cours de chaque titre sur Yahoo Finance (gratuit, sans compte), de préférence sur une place en euros, et le convertit en euros si besoin. Seuls les codes ISIN des titres sont envoyés. Si un cours est introuvable ou faux, double-cliquez sur la case <b>Cours</b> pour le saisir, ou corrigez le code <b>Yahoo</b> (ex. CW8.PA). Sans cours, une ligne est estimée à son prix d'achat.</p>
   <figure><img src="images/40-bourse-pea-nuit-sombre.png" alt="Bourse, PEA seul" style="width:58%;margin:0 auto"></figure>
-  <div class="encart"><p>Chiffres indicatifs, calculés à partir de l'export : seuls les relevés et l'imprimé fiscal de Trade Republic font foi. La valeur du portefeuille s'ajoute aussi à la Vue d'ensemble.</p></div>
 </section>
 
 <section class="page">
