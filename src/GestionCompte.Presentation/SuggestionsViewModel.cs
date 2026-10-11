@@ -19,7 +19,8 @@ public sealed record Suggestion(DateTime? Date, string DateTexte, string Version
 public sealed partial class SuggestionsViewModel : ObservableObject
 {
     /// <summary>Lien prérempli du formulaire ; « 0.0.0 » y est remplacé par la version de l'application. Vide = pas de lien.</summary>
-    public const string FormulaireParDefaut = "";
+    public const string FormulaireParDefaut =
+        "https://docs.google.com/forms/d/e/1FAIpQLSfj2SpvczgseZ6e38JCpYITLnATG1omMMemjvcm5k1xm2iuhg/viewform?usp=pp_url&entry.256020164=0.0.0";
 
     private const string VersionModele = "0.0.0";
 
