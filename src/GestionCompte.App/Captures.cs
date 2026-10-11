@@ -394,14 +394,16 @@ internal static class Captures
         TextElement.SetFontFamily(hote, new FontFamily("Segoe UI"));
         TextElement.SetFontSize(hote, 13);
         var hauteur = 0.0;
+        // La mise en page passe en dernier : un texte modifié pendant l'attente
+        // serait sinon dessiné dans l'ancienne largeur (montants coupés à droite).
         for (var passe = 0; passe < 3; passe++)
         {
+            await Task.Delay(250);
+            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
             hote.Measure(new Size(fenetre.Width, double.PositiveInfinity));
             hauteur = Math.Ceiling(hote.DesiredSize.Height);
             hote.Arrange(new Rect(0, 0, fenetre.Width, hauteur));
             hote.UpdateLayout();
-            await Task.Delay(250);
-            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         }
         var image = new RenderTargetBitmap((int)fenetre.Width, (int)hauteur, 96, 96, PixelFormats.Pbgra32);
         image.Render(hote);
@@ -540,13 +542,14 @@ internal static class Captures
 
     private static async Task MettreEnPage(FrameworkElement element, double hauteur)
     {
+        // La mise en page passe en dernier, juste avant la capture (voir CapturerFenetre).
         for (var passe = 0; passe < 3; passe++)
         {
+            await Task.Delay(250);
+            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
             element.Measure(new Size(Largeur, hauteur));
             element.Arrange(new Rect(0, 0, Largeur, hauteur));
             element.UpdateLayout();
-            await Task.Delay(250);
-            await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         }
     }
 
