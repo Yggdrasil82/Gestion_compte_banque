@@ -59,14 +59,26 @@ public partial class App : Application
         var demarrage = new DemarrageDrive(DossierPC, Path.GetDirectoryName(Environment.ProcessPath));
         if (demarrage.Drive)
         {
-            JournalDemarrage.Noter("Données dans Google Drive : fenêtre d'ouverture");
-            OuvrirDepuisDrive(demarrage);
+            // Les préférences sont chiffrées dans Drive : le choix de la vidéo est relu sur ce PC.
+            if (File.Exists(FichierSansVideo))
+            {
+                JournalDemarrage.Noter("Données dans Google Drive : fenêtre d'ouverture");
+                OuvrirDepuisDrive(demarrage);
+                return;
+            }
+            JournalDemarrage.Noter("Animation du canard, puis fenêtre d'ouverture Google Drive");
+            var defaut = new ApparenceViewModel(null);
+            Themes.Appliquer(this, defaut.Ambiance, defaut.Sombre);
+            var accueilDrive = new FenetreAccueil();
+            accueilDrive.Terminee += (_, _) => OuvrirDepuisDrive(demarrage);
+            accueilDrive.Show();
             return;
         }
 
         // Apparence mémorisée à côté des données (Documents\GestionCompte\preferences.json).
         JournalDemarrage.Noter($"Lecture des préférences dans {DossierLocal}");
         var apparence = new ApparenceViewModel(Path.Combine(DossierLocal, "preferences.json"));
+        MemoriserVideo(apparence);
         Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
         apparence.Changee += (_, _) => Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
 
@@ -85,6 +97,37 @@ public partial class App : Application
         }
         else
             Lancer();
+    }
+
+    /// <summary>Présent sur ce PC quand la vidéo d'ouverture est désactivée (lu avant le mot de passe Google Drive).</summary>
+    private static string FichierSansVideo => Path.Combine(DossierPC, "sans-video");
+
+    /// <summary>Recopie le réglage de la vidéo sur ce PC, maintenant et à chaque changement.</summary>
+    private static void MemoriserVideo(ApparenceViewModel apparence)
+    {
+        void Copier()
+        {
+            try
+            {
+                if (apparence.AnimationDemarrage)
+                    File.Delete(FichierSansVideo);
+                else
+                {
+                    Directory.CreateDirectory(DossierPC);
+                    File.WriteAllText(FichierSansVideo, "");
+                }
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                JournalDemarrage.Noter($"Réglage de la vidéo non recopié sur ce PC : {e.Message}");
+            }
+        }
+        Copier();
+        apparence.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ApparenceViewModel.AnimationDemarrage))
+                Copier();
+        };
     }
 
     /// <summary>Dossier habituel des données sur ce PC : Documents\GestionCompte.</summary>
@@ -146,6 +189,7 @@ public partial class App : Application
 
             _session = ouverte;
             var apparence = new ApparenceViewModel(Path.Combine(ouverte.Dossier, "preferences.json"));
+            MemoriserVideo(apparence);
             Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
             apparence.Changee += (_, _) => Themes.Appliquer(this, apparence.Ambiance, apparence.Sombre);
             var secrets = new SecretsCombines(connexionSession, new SecretsFichier(ouverte.Dossier));
