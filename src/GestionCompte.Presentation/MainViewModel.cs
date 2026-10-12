@@ -637,6 +637,98 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>Dossier des données : tous les comptes, leur liste, les préférences, achats, lettres et mails.</summary>
+    private string DossierDonnees => _registre?.Dossier ?? Path.GetDirectoryName(Path.GetFullPath(_depot.CheminFichier))!;
+
+    /// <summary>Levé après une restauration globale : l'application redémarre pour relire toutes les données.</summary>
+    public event EventHandler? RedemarrageDemande;
+
+    // Après une restauration globale, plus rien n'est enregistré : les données en mémoire écraseraient celles restaurées.
+    private bool _donneesRemplacees;
+
+    /// <summary>Tous les comptes et le coffre de Documents dans un seul .zip (sans les clés ni mots de passe).</summary>
+    [RelayCommand]
+    private async Task SauvegarderTout()
+    {
+        var destination = _dialogues.ChoisirSauvegardeGlobale($"Mon Budget sauvegarde {DateTime.Now:yyyy-MM-dd}.zip");
+        if (destination is null)
+            return;
+
+        try
+        {
+            Statut = "Sauvegarde de tous les comptes…";
+            Enregistrer();
+            var coffre = await Documents.CoffrePourSauvegardeAsync();
+            var manifeste = await SauvegardeGlobale.CreerAsync(DossierDonnees, destination, coffre, DateTime.Now);
+            Statut = $"Sauvegarde enregistrée ({manifeste.Comptes.Count} compte(s), {manifeste.Documents} document(s)) : {destination}";
+        }
+        catch (Exception e)
+        {
+            Statut = "";
+            _dialogues.Erreur($"La sauvegarde n'a pas pu être enregistrée.\n\n{e.Message}");
+        }
+    }
+
+    /// <summary>Remplace tous les comptes et le coffre par une sauvegarde globale, puis redémarre l'application.</summary>
+    [RelayCommand]
+    private async Task RestaurerTout()
+    {
+        var source = _dialogues.ChoisirSauvegardeGlobaleARestaurer();
+        if (source is null)
+            return;
+
+        if (SauvegardeGlobale.LireManifeste(source) is not { } manifeste)
+        {
+            _dialogues.Erreur("Ce fichier n'est pas une sauvegarde globale de Mon Budget (fichier .zip créé par « Enregistrer une copie de tout… »).");
+            return;
+        }
+
+        var comptes = string.Join("\n", manifeste.Comptes.Select(c => $"• {c}"));
+        if (!_dialogues.Confirmer("Restaurer une copie de tout",
+                $"Remplacer tous les comptes et le coffre de Documents par la sauvegarde du {manifeste.Date:dd/MM/yyyy à HH:mm} ?\n\n" +
+                $"{comptes}\n• {manifeste.Documents} document(s)\n\n" +
+                "Une copie de sécurité des données actuelles est d'abord enregistrée dans le dossier des données. " +
+                "L'application redémarre ensuite."))
+            return;
+
+        var dossier = DossierDonnees;
+        try
+        {
+            Statut = "Copie de sécurité des données actuelles…";
+            Enregistrer();
+            // Une seule copie de sécurité gardée : la plus récente.
+            foreach (var ancienne in Directory.EnumerateFiles(dossier, SauvegardeGlobale.PrefixeCopieSecurite + "*.zip"))
+                File.Delete(ancienne);
+            var coffre = await Documents.CoffrePourSauvegardeAsync();
+            await SauvegardeGlobale.CreerAsync(dossier,
+                Path.Combine(dossier, $"{SauvegardeGlobale.PrefixeCopieSecurite}{DateTime.Now:yyyy-MM-dd-HHmmss}.zip"), coffre, DateTime.Now);
+        }
+        catch (Exception e)
+        {
+            Statut = "";
+            _dialogues.Erreur($"La copie de sécurité n'a pas pu être faite ; restauration annulée.\n\n{e.Message}");
+            return;
+        }
+
+        _donneesRemplacees = true;
+        try
+        {
+            Statut = "Restauration de tous les comptes…";
+            await SauvegardeGlobale.RestaurerAsync(source, dossier, Documents.StockagePourRestauration);
+        }
+        catch (Exception e)
+        {
+            _dialogues.Erreur($"La restauration n'est pas allée au bout.\n\n{e.Message}\n\n" +
+                              $"Les données d'avant sont dans le dossier des données ({SauvegardeGlobale.PrefixeCopieSecurite}….zip). " +
+                              "L'application redémarre.");
+            RedemarrageDemande?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        _dialogues.Information("Restaurer une copie de tout", "Sauvegarde restaurée. L'application redémarre pour ouvrir les données.");
+        RedemarrageDemande?.Invoke(this, EventArgs.Empty);
+    }
+
     [RelayCommand]
     private void Restaurer()
     {
@@ -1066,6 +1158,8 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void Enregistrer()
     {
+        if (_donneesRemplacees)
+            return;
         try
         {
             _depot.Enregistrer(_compte);

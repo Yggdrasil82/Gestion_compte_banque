@@ -55,6 +55,23 @@ public sealed partial class DocumentsViewModel : ObservableObject
     /// <summary>Premier chargement du coffre (lancé à la création).</summary>
     public Task Chargement { get; private set; }
 
+    /// <summary>Coffre ouvert, pour la sauvegarde globale ; null s'il n'a pas pu être lu.</summary>
+    internal async Task<CoffreDocuments?> CoffrePourSauvegardeAsync()
+    {
+        try
+        {
+            await Chargement;
+        }
+        catch (Exception)
+        {
+            // Coffre illisible : la sauvegarde globale se fait sans lui.
+        }
+        return _coffre;
+    }
+
+    /// <summary>Emplacement où la restauration globale réécrit le coffre.</summary>
+    internal IStockageDocuments StockagePourRestauration => _coffre?.Stockage ?? CreerStockage();
+
     public static IReadOnlyList<string> NomsCategories { get; } =
         Enum.GetValues<CategorieDocument>().Select(DocumentImportant.NomCategorie).ToList();
 

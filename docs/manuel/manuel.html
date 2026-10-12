@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="images/logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.12.0</p>
+  <p class="sous">Manuel d'utilisation · version 2.13.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -100,7 +100,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Compte</b></td><td>Choisit le compte affiché (compte principal, compte joint, livret…). « Nouveau » crée un compte ; le crayon le renomme ; la corbeille le supprime. Chaque compte a son propre fichier et sa propre configuration, qu'on peut copier depuis un autre compte.</td></tr>
     <tr><td><b>Onglets</b></td><td>Mois, Prévisionnel, Aide au budget, Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts, Bourse, Vue d'ensemble, Configuration, et Aide (ce manuel). Chaque compte a ses modules : masquez ceux qui ne servent pas et rangez-les avec les flèches ↑ ↓ dans Configuration › Modules. « Suggérer une amélioration » ouvre un court formulaire en ligne, sans compte à créer.</td></tr>
     <tr><td><b>Apparence</b></td><td>Thème de couleurs (Océan, Pastel, Nuit…) et case « Mode sombre ».</td></tr>
-    <tr><td><b>Données</b></td><td>Importer un relevé, Enregistrer une copie (sauvegarde), Restaurer une sauvegarde, Ouvrir le dossier des données, Réinitialiser (effacer les mois ou tout effacer).</td></tr>
+    <tr><td><b>Données</b></td><td>Importer un relevé, Enregistrer une copie (du compte ouvert) ou une copie de tout, Restaurer une sauvegarde ou une copie de tout, Ouvrir le dossier des données, Réinitialiser (effacer les mois ou tout effacer).</td></tr>
   </table>
   <p>Sur un petit écran, la barre défile avec la molette pour atteindre Apparence et Données.</p>
 </section>
@@ -407,7 +407,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
   <h2 style="margin-top:8mm">20. Sauvegarde et confidentialité</h2>
   <ul>
     <li>Les données sont dans <b>Documents\GestionCompte</b> (un fichier par compte), ou dans Google Drive (chapitre 19). « Ouvrir le dossier » y mène directement.</li>
-    <li><b>Enregistrer une copie…</b> crée une sauvegarde ; <b>Restaurer une sauvegarde…</b> la reprend. Gardez une copie sur une clé USB ou dans Google Drive.</li>
+    <li><b>Enregistrer une copie…</b> sauvegarde le compte ouvert ; <b>Restaurer une sauvegarde…</b> la reprend. <b>Enregistrer une copie de tout…</b> met tous les comptes, les préférences et le coffre de Documents dans un seul fichier .zip (sans les clés ni mots de passe) ; <b>Restaurer une copie de tout…</b> remplace tout par ce fichier, après une copie de sécurité, puis redémarre l'application. Gardez une copie sur une clé USB ou dans Google Drive.</li>
     <li><b>Réinitialiser…</b> efface les mois, ou tout, pour repartir de zéro (une confirmation est demandée).</li>
     <li>Il n'existe aucun serveur Mon Budget : rien n'est envoyé au développeur. Seul ce que vous demandez part vers Google ou les IA, comme décrit dans chaque onglet. Les règles complètes sont sur la page « Règles de confidentialité » du dépôt GitHub (docs/confidentialite.md).</li>
   </ul>

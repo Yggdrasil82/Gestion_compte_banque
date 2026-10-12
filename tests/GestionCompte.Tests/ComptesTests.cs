@@ -1,7 +1,9 @@
 using GestionCompte.Core;
+using GestionCompte.Core.Documents;
 using GestionCompte.Core.Import;
 using GestionCompte.Core.Modeles;
 using GestionCompte.Data;
+using GestionCompte.Data.Documents;
 using GestionCompte.Presentation;
 
 namespace GestionCompte.Tests;
@@ -377,6 +379,85 @@ public sealed class ComptesTests : IDisposable
         Assert.Equal(("Épargne livret", 100m, "compte.db"), (miroir.Nom, miroir.Credit, miroir.CompteLie));
     }
 
+    // ---- Sauvegarde globale ----
+
+    [Fact]
+    public async Task SauvegardeGlobale_TousLesComptesEtLeCoffre_SansLesSecrets()
+    {
+        Directory.CreateDirectory(_dossier);
+        var coffre = new CoffreDocuments(new StockageDossier(Chemin("Documents")));
+        await coffre.AjouterAsync(new DocumentImportant { Nom = "RIB" }, new byte[] { 1, 2, 3 });
+        File.WriteAllText(Chemin("secrets.json"), "{}");
+        var vm = OuvrirAvecLivret();
+        _dialogues.SauvegardeGlobale = Path.Combine(_dossier, "copie", "tout.zip");
+
+        await vm.SauvegarderToutCommand.ExecuteAsync(null);
+
+        var manifeste = SauvegardeGlobale.LireManifeste(_dialogues.SauvegardeGlobale)!;
+        Assert.Equal(new[] { RegistreComptes.NomPrincipal, "Livret A" }, manifeste.Comptes);
+        Assert.Equal(1, manifeste.Documents);
+        using var archive = System.IO.Compression.ZipFile.OpenRead(_dialogues.SauvegardeGlobale);
+        var noms = archive.Entries.Select(e => e.FullName.Replace('\\', '/')).ToList();
+        Assert.Contains("compte.db", noms);
+        Assert.Contains("compte-2.db", noms);
+        Assert.Contains("comptes.json", noms);
+        Assert.Contains("coffre/documents.json", noms);
+        Assert.DoesNotContain("secrets.json", noms);
+        Assert.DoesNotContain(noms, n => n.StartsWith("Documents/"));
+    }
+
+    [Fact]
+    public async Task RestaurationGlobale_RemplaceTousLesComptesEtRedemarre()
+    {
+        var vm = OuvrirAvecLivret();
+        _dialogues.SauvegardeGlobale = Path.Combine(Path.GetTempPath(), "GestionCompteTests", $"tout-{Guid.NewGuid():N}.zip");
+        try
+        {
+            await vm.SauvegarderToutCommand.ExecuteAsync(null);
+
+            // Après la sauvegarde : un troisième compte et un document, absents de la copie.
+            _dialogues.NouveauCompte = new DemandeNouveauCompte("Compte joint", CopierDe: null);
+            vm.NouveauCompteCommand.Execute(null);
+            var coffre = new CoffreDocuments(new StockageDossier(Chemin("Documents")));
+            await coffre.AjouterAsync(new DocumentImportant { Nom = "Bail" }, new byte[] { 4 });
+            var redemarrage = false;
+            vm.RedemarrageDemande += (_, _) => redemarrage = true;
+
+            await vm.RestaurerToutCommand.ExecuteAsync(null);
+
+            Assert.True(redemarrage);
+            Assert.Empty(_dialogues.Erreurs);
+            Assert.Equal(new[] { RegistreComptes.NomPrincipal, "Livret A" },
+                RegistreComptes.Charger(_dossier).Comptes.Select(c => c.Nom));
+            Assert.False(File.Exists(Chemin("compte-3.db")));
+            var relu = new CoffreDocuments(new StockageDossier(Chemin("Documents")));
+            await relu.ChargerAsync();
+            Assert.Empty(relu.Documents);
+            // Copie de sécurité des données d'avant (avec le compte joint), jamais remise dans une sauvegarde.
+            var securite = Assert.Single(Directory.GetFiles(_dossier, SauvegardeGlobale.PrefixeCopieSecurite + "*.zip"));
+            Assert.Equal(3, SauvegardeGlobale.LireManifeste(securite)!.Comptes.Count);
+
+        }
+        finally
+        {
+            File.Delete(_dialogues.SauvegardeGlobale);
+        }
+    }
+
+    [Fact]
+    public async Task RestaurationGlobale_FichierQuelconque_Refuse()
+    {
+        var vm = Ouvrir();
+        Directory.CreateDirectory(_dossier);
+        _dialogues.SauvegardeGlobale = Chemin("autre.zip");
+        File.WriteAllText(_dialogues.SauvegardeGlobale, "pas un zip");
+
+        await vm.RestaurerToutCommand.ExecuteAsync(null);
+
+        Assert.Single(_dialogues.Erreurs);
+        Assert.True(File.Exists(Chemin("compte.db")));
+    }
+
     private sealed class FauxDialogues : IDialogues
     {
         public bool Reponse { get; set; } = true;
@@ -396,6 +477,9 @@ public sealed class ComptesTests : IDisposable
         public string? ChoisirFichierSauvegarde(string nomParDefaut) => null;
         public string? ChoisirFichierExport(string nomParDefaut) => null;
         public string? ChoisirFichierARestaurer() => null;
+        public string? SauvegardeGlobale { get; set; }
+        public string? ChoisirSauvegardeGlobale(string nomParDefaut) => SauvegardeGlobale;
+        public string? ChoisirSauvegardeGlobaleARestaurer() => SauvegardeGlobale;
         public string? ChoisirReleve() => null;
         public void OuvrirDossier(string dossier) { }
         public DemandeReinitialisation? ChoisirReinitialisation() => Reinitialisation;

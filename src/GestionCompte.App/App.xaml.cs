@@ -281,6 +281,7 @@ public partial class App : Application
         JournalDemarrage.Noter("Fenêtre principale affichée");
 
         vm.DonneesDrive.RedemarrageDemande += async (_, _) => await RedemarrerAsync(fenetre, Environment.ProcessPath);
+        vm.RedemarrageDemande += async (_, _) => await RedemarrerAsync(fenetre, Environment.ProcessPath);
 
         // Mises à jour : l'exe de la version précédente est supprimé, puis une nouvelle version est cherchée sur GitHub
         // une fois la fenêtre affichée (sans rien dire si l'application est à jour ou hors ligne).

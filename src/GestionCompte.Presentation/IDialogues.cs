@@ -10,6 +10,12 @@ public interface IDialogues
     /// <summary>Demande où enregistrer une copie ; null si l'utilisateur annule.</summary>
     string? ChoisirFichierSauvegarde(string nomParDefaut);
 
+    /// <summary>Demande où enregistrer la sauvegarde globale (.zip) ; null si l'utilisateur annule.</summary>
+    string? ChoisirSauvegardeGlobale(string nomParDefaut) => null;
+
+    /// <summary>Demande quelle sauvegarde globale (.zip) restaurer ; null si l'utilisateur annule.</summary>
+    string? ChoisirSauvegardeGlobaleARestaurer() => null;
+
     /// <summary>Demande où enregistrer un export Excel ; null si l'utilisateur annule.</summary>
     string? ChoisirFichierExport(string nomParDefaut);
 

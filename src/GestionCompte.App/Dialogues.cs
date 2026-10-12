@@ -82,6 +82,32 @@ public sealed class Dialogues : IDialogues
         return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
     }
 
+    private const string FiltreSauvegardeGlobale = "Sauvegarde globale Mon Budget (*.zip)|*.zip|Tous les fichiers (*.*)|*.*";
+
+    public string? ChoisirSauvegardeGlobale(string nomParDefaut)
+    {
+        var dialogue = new SaveFileDialog
+        {
+            Title = "Enregistrer une copie de tout",
+            FileName = nomParDefaut,
+            Filter = FiltreSauvegardeGlobale,
+            DefaultExt = ".zip",
+            OverwritePrompt = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
+    public string? ChoisirSauvegardeGlobaleARestaurer()
+    {
+        var dialogue = new OpenFileDialog
+        {
+            Title = "Restaurer une copie de tout",
+            Filter = FiltreSauvegardeGlobale,
+            CheckFileExists = true,
+        };
+        return dialogue.ShowDialog(Fenetre) == true ? dialogue.FileName : null;
+    }
+
     public string? ChoisirFichierARestaurer()
     {
         var dialogue = new OpenFileDialog
