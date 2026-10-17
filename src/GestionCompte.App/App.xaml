@@ -180,8 +180,13 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Fond" Background="Transparent" CornerRadius="8" Padding="8,6">
                             <DockPanel>
-                                <TextBlock x:Name="Chevron" DockPanel.Dock="Right" Style="{StaticResource Icone}" FontSize="10" Text="&#xE70D;"
-                                           VerticalAlignment="Center" Opacity="0.75" />
+                                <!-- Flèche vers le bas : thème fermé ; vers le haut : thème ouvert. -->
+                                <Grid x:Name="Chevron" DockPanel.Dock="Right" VerticalAlignment="Center" Opacity="0.75">
+                                    <TextBlock Style="{StaticResource Icone}" FontSize="10" Text="&#xE70D;"
+                                               Visibility="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource MasqueSiVrai}}" />
+                                    <TextBlock Style="{StaticResource Icone}" FontSize="10" Text="&#xE70E;"
+                                               Visibility="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource Visible}}" />
+                                </Grid>
                                 <ContentPresenter x:Name="Titre" VerticalAlignment="Center" Opacity="0.75" />
                             </DockPanel>
                         </Border>
@@ -189,9 +194,6 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Fond" Property="Background" Value="{DynamicResource BarreActif}" />
                             </Trigger>
-                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
-                                <Setter TargetName="Chevron" Property="Text" Value="&#xE70E;" />
-                            </DataTrigger>
                             <!-- Barre réduite aux icônes : le titre laisse la place au seul chevron. -->
                             <DataTrigger Binding="{Binding Apparence.BarreReduite}" Value="True">
                                 <Setter TargetName="Titre" Property="Visibility" Value="Collapsed" />
