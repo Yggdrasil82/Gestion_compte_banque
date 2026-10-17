@@ -679,12 +679,12 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (SauvegardeGlobale.LireManifeste(source) is not { } manifeste)
         {
-            _dialogues.Erreur("Ce fichier n'est pas une sauvegarde globale de Mon Budget (fichier .zip créé par « Enregistrer une copie de tout… »).");
+            _dialogues.Erreur("Ce fichier n'est pas une sauvegarde globale de Mon Budget (fichier .zip créé par « Sauvegarder tout… »).");
             return;
         }
 
         var comptes = string.Join("\n", manifeste.Comptes.Select(c => $"• {c}"));
-        if (!_dialogues.Confirmer("Restaurer une copie de tout",
+        if (!_dialogues.Confirmer("Restaurer tout",
                 $"Remplacer tous les comptes et le coffre de Documents par la sauvegarde du {manifeste.Date:dd/MM/yyyy à HH:mm} ?\n\n" +
                 $"{comptes}\n• {manifeste.Documents} document(s)\n\n" +
                 "Une copie de sécurité des données actuelles est d'abord enregistrée dans le dossier des données. " +
@@ -725,7 +725,7 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        _dialogues.Information("Restaurer une copie de tout", "Sauvegarde restaurée. L'application redémarre pour ouvrir les données.");
+        _dialogues.Information("Restaurer tout", "Sauvegarde restaurée. L'application redémarre pour ouvrir les données.");
         RedemarrageDemande?.Invoke(this, EventArgs.Empty);
     }
 

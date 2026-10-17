@@ -88,7 +88,7 @@ public sealed class Dialogues : IDialogues
     {
         var dialogue = new SaveFileDialog
         {
-            Title = "Enregistrer une copie de tout",
+            Title = "Sauvegarder tout",
             FileName = nomParDefaut,
             Filter = FiltreSauvegardeGlobale,
             DefaultExt = ".zip",
@@ -101,7 +101,7 @@ public sealed class Dialogues : IDialogues
     {
         var dialogue = new OpenFileDialog
         {
-            Title = "Restaurer une copie de tout",
+            Title = "Restaurer tout",
             Filter = FiltreSauvegardeGlobale,
             CheckFileExists = true,
         };

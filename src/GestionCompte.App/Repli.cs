@@ -29,8 +29,12 @@ public static class Repli
 
     private static void CarteChangee(DependencyObject element, DependencyPropertyChangedEventArgs e)
     {
+        // Loaded n'arrive pas pour un écran rendu hors fenêtre (captures) : le changement de DataContext prépare aussi la carte.
         if (element is Border carte)
+        {
             carte.Loaded += (_, _) => Preparer(carte);
+            carte.DataContextChanged += (_, _) => Preparer(carte);
+        }
     }
 
     /// <summary>Apparence de l'écran Configuration (certaines cartes ont leur propre DataContext : on remonte jusqu'à lui).</summary>

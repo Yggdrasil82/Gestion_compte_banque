@@ -167,7 +167,7 @@
                             ToolTip="Tous les comptes, les préférences et le coffre de Documents dans un seul fichier .zip (sans les clés ni mots de passe)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icone}" Text="&#xE8F1;" Margin="0,0,10,0" />
-                            <TextBlock Text="Enregistrer une copie de tout…" />
+                            <TextBlock Text="Sauvegarder tout…" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource BoutonBarre}" Command="{Binding RestaurerCommand}">
@@ -177,10 +177,10 @@
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource BoutonBarre}" Command="{Binding RestaurerToutCommand}"
-                            ToolTip="Remplace tous les comptes et le coffre de Documents par une copie de tout (.zip)">
+                            ToolTip="Remplace tous les comptes et le coffre de Documents par une sauvegarde de tout (.zip)">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{StaticResource Icone}" Text="&#xE777;" Margin="0,0,10,0" />
-                            <TextBlock Text="Restaurer une copie de tout…" />
+                            <TextBlock Text="Restaurer tout…" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource BoutonBarre}" Command="{Binding OuvrirDossierDonneesCommand}">

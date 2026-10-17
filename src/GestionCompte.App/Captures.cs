@@ -76,7 +76,11 @@ internal static class Captures
         // Deux comptes d'exemple : le compte courant et un livret.
         var dossierDemo = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"gestioncompte-demo-{Guid.NewGuid():N}")).FullName;
         var registre = RegistreComptes.Charger(dossierDemo);
-        new DepotSqlite(registre.Chemin(registre.Actif)).Enregistrer(ConfigurationParDefaut.CreerDemo());
+        var demo = ConfigurationParDefaut.CreerDemo();
+        // Dernier relevé importé (affiché sous « Importer un relevé »).
+        demo.DerniereOperationImportee = new DateOnly(2026, 11, 12);
+        demo.DateDernierImport = new DateOnly(2026, 11, 14);
+        new DepotSqlite(registre.Chemin(registre.Actif)).Enregistrer(demo);
         new DepotSqlite(registre.Chemin(registre.Ajouter("Livret A"))).Enregistrer(ConfigurationParDefaut.CreerDemoLivret());
         CreerCarnetDemo(dossierDemo);
         CreerAchatsDemo(dossierDemo);
