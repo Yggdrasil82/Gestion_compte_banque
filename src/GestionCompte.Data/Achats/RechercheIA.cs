@@ -172,6 +172,101 @@ public sealed class Gemini : IAssistantIA
 /// La recherche internet passe par l'outil « browser_search » des modèles GPT-OSS ; si la clé la refuse,
 /// les demandes qui le permettent sont refaites de mémoire (réponses indicatives).
 /// </summary>
+public sealed class Mistral : IAssistantIA
+{
+    public const string ModeleParDefaut = "mistral-medium-latest";
+
+    /// <summary>
+    /// Longueur maximale des réponses (en tokens) : sans elle, Mistral compte la taille maximale du modèle
+    /// dans la limite gratuite de tokens par minute et refuse la demande.
+    /// </summary>
+    public const int LongueurMaximale = 2000;
+
+    private readonly HttpClient _http;
+    private readonly string _cle;
+    private readonly string _modele;
+
+    private readonly Action<string>? _patienter;
+
+    /// <param name="patienter">Prévenu quand l'IA attend la fin d'une limite par minute avant un nouvel essai.</param>
+    public Mistral(HttpClient http, string cle, string? modele = null, Action<string>? patienter = null)
+    {
+        _http = http;
+        _patienter = patienter;
+        _cle = cle;
+        _modele = string.IsNullOrWhiteSpace(modele) ? ModeleParDefaut : modele.Trim();
+    }
+
+    public SourceOffre Source => SourceOffre.Mistral;
+    public string Nom => "Mistral";
+
+    public bool SansRecherche { get; private set; }
+
+    public Task<string> DemanderAsync(string demande, bool avecRecherche, CancellationToken annulation = default) =>
+        DemanderAsync(demande, avecRecherche, repliSansRecherche: true, annulation);
+
+    public async Task<string> DemanderAsync(string demande, bool avecRecherche, bool repliSansRecherche, CancellationToken annulation = default)
+    {
+        var (statut, texte) = await ErreursIA.DemanderAvecRepliAsync(Nom, avecRecherche, repliSansRecherche,
+            (recherche, essais) => ErreursIA.EnvoyerAsync(_http,
+                () => Requete(recherche || !avecRecherche ? demande : demande + ErreursIA.NoteSansRecherche, recherche), annulation, _patienter, Nom, essais),
+            sans => SansRecherche = sans);
+        if (statut != HttpStatusCode.OK)
+            throw new HttpRequestException(ErreursIA.Message(Nom, statut, texte));
+
+        using var json = JsonDocument.Parse(texte);
+        var resultat = new StringBuilder();
+        if (json.RootElement.TryGetProperty("outputs", out var sorties))
+        {
+            foreach (var sortie in sorties.EnumerateArray())
+                if (sortie.TryGetProperty("type", out var type) && type.GetString() == "message.output"
+                    && sortie.TryGetProperty("content", out var contenu))
+                    AjouterContenu(contenu, resultat);
+        }
+        else if (json.RootElement.TryGetProperty("choices", out var choix) && choix.GetArrayLength() > 0
+                 && choix[0].TryGetProperty("message", out var message) && message.TryGetProperty("content", out var contenu))
+            AjouterContenu(contenu, resultat);
+        return resultat.ToString();
+    }
+
+    private HttpRequestMessage Requete(string demande, bool avecRecherche)
+    {
+        var corps = avecRecherche
+            ? new JsonObject
+            {
+                ["model"] = _modele,
+                ["inputs"] = demande,
+                ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }),
+                ["completion_args"] = new JsonObject { ["max_tokens"] = LongueurMaximale },
+                ["store"] = false,
+            }
+            : new JsonObject
+            {
+                ["model"] = _modele,
+                ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = demande }),
+                ["max_tokens"] = LongueurMaximale,
+            };
+        var requete = new HttpRequestMessage(HttpMethod.Post,
+            avecRecherche ? "https://api.mistral.ai/v1/conversations" : "https://api.mistral.ai/v1/chat/completions")
+        {
+            Content = new StringContent(corps.ToJsonString(), Encoding.UTF8, "application/json"),
+        };
+        requete.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _cle);
+        return requete;
+    }
+
+    /// <summary>Le contenu est un texte, ou une liste de morceaux (texte et références des pages consultées).</summary>
+    private static void AjouterContenu(JsonElement contenu, StringBuilder resultat)
+    {
+        if (contenu.ValueKind == JsonValueKind.String)
+            resultat.Append(contenu.GetString());
+        else if (contenu.ValueKind == JsonValueKind.Array)
+            foreach (var morceau in contenu.EnumerateArray())
+                if (morceau.TryGetProperty("type", out var t) && t.GetString() == "text" && morceau.TryGetProperty("text", out var texte))
+                    resultat.Append(texte.GetString());
+    }
+}
+
 public sealed class Groq : IAssistantIA
 {
     public const string ModeleParDefaut = "openai/gpt-oss-120b";

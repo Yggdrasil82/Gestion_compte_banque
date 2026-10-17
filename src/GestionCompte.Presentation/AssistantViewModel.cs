@@ -7,14 +7,12 @@ using CommunityToolkit.Mvvm.Input;
 namespace GestionCompte.Presentation;
 
 /// <summary>
-/// Module « Assistant » : questions sur le budget posées à Gemini et/ou Groq.
+/// Module « Assistant » : questions sur le budget posées aux IA cochées (Gemini, Groq, Mistral).
 /// Seul un résumé des chiffres, affiché avant l'envoi, part aux IA (s'il est coché) ; l'assistant ne modifie rien.
 /// La conversation n'est pas enregistrée.
 /// </summary>
 public sealed partial class AssistantViewModel : ObservableObject
 {
-    public const string LesDeux = "Gemini et Groq";
-
     /// <summary>Nombre d'échanges précédents renvoyés avec la question.</summary>
     private const int ToursGardes = 6;
 
@@ -25,6 +23,7 @@ public sealed partial class AssistantViewModel : ObservableObject
     public AssistantViewModel(ServicesIA ia, Func<string> resume)
     {
         _ia = ia;
+        ChoixIA = new ChoixIAModule(ia, "assistant", "l'assistant");
         _ia.Patiente += (_, message) => { if (Occupe) Statut = message; };
         _calculerResume = resume;
         _ia.PropertyChanged += (_, _) => OnPropertyChanged(nameof(IADisponibles));
@@ -54,9 +53,8 @@ public sealed partial class AssistantViewModel : ObservableObject
 
     // ---- IA utilisées ----
 
-    public IReadOnlyList<string> ChoixIA { get; } = new[] { LesDeux, "Gemini", "Groq" };
-
-    [ObservableProperty] private string _iAChoisie = LesDeux;
+    /// <summary>IA qui répondent (cases en haut de l'écran).</summary>
+    public ChoixIAModule ChoixIA { get; }
 
     // ---- Conversation ----
 
@@ -89,16 +87,10 @@ public sealed partial class AssistantViewModel : ObservableObject
 
     private async Task Demander(string question)
     {
-        var assistants = _ia.Assistants()
-            .Where(a => IAChoisie == LesDeux || a.Nom.Equals(IAChoisie, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var assistants = ChoixIA.Assistants();
         if (assistants.Count == 0)
         {
-            Erreur = !_ia.Actives
-                ? "Les IA sont coupées (Configuration › Intelligence artificielle)."
-                : IAChoisie == LesDeux
-                    ? "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle)."
-                    : $"{IAChoisie} n'est pas réglée : saisissez sa clé (Configuration › Intelligence artificielle) ou choisissez une autre IA.";
+            Erreur = ChoixIA.MessageAucune;
             return;
         }
 

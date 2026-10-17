@@ -23,10 +23,14 @@ public sealed partial class CreditsViewModel : ObservableObject
 
     /// <param name="donneesModifiees">Appelé après une modification des simulations (à enregistrer).</param>
     /// <param name="previsionnelModifie">Appelé après l'ajout ou le retrait des échéances (à enregistrer, prévisionnel à recalculer).</param>
+    /// <summary>IA qui cherchent les taux du marché (cases au-dessus du bouton) ; null sans IA (tests).</summary>
+    public ChoixIAModule? ChoixIA { get; }
+
     public CreditsViewModel(CompteBancaire compte, IReadOnlyList<ChoixPeriode> periodes, IDialogues dialogues,
         Action donneesModifiees, Action previsionnelModifie, ServicesIA? ia = null, Func<DateTime>? aujourdhui = null)
     {
         _ia = ia;
+        ChoixIA = ia is null ? null : new ChoixIAModule(ia, "credits", "les crédits");
         if (_ia is not null)
             _ia.Patiente += (_, message) => { if (RechercheEnCours) StatutTaux = message; };
         _aujourdhui = aujourdhui ?? (() => DateTime.Today);
@@ -223,12 +227,11 @@ public sealed partial class CreditsViewModel : ObservableObject
     {
         if (Selection is null)
             return;
-        var assistants = _ia?.Assistants() ?? Array.Empty<Data.Achats.IAssistantIA>();
+        var assistants = ChoixIA?.Assistants() ?? Array.Empty<Data.Achats.IAssistantIA>();
         if (assistants.Count == 0)
         {
-            ErreurTaux = _ia?.Actives == false
-                ? "Les IA sont coupées (Configuration › Intelligence artificielle)."
-                : "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle).";
+            ErreurTaux = ChoixIA?.MessageAucune
+                         ?? "Aucune IA réglée : saisissez une clé Gemini, Groq ou Mistral (Configuration › Intelligence artificielle).";
             return;
         }
 

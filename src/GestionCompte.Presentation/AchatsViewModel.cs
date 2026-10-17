@@ -25,10 +25,14 @@ public sealed partial class AchatsViewModel : ObservableObject
     /// <param name="dossier">Dossier des données de l'application (« achats.json »).</param>
     /// <param name="http">Client HTTP pour relire les pages produits (remplacé dans les tests).</param>
     /// <param name="relirePrix">Relit les prix des produits suivis au démarrage (une fois par jour).</param>
+    /// <summary>IA utilisées pour la recherche des prix (cases en haut de l'écran).</summary>
+    public ChoixIAModule ChoixIA { get; }
+
     public AchatsViewModel(string dossier, ServicesIA ia, IDialogues dialogues, HttpClient? http = null,
         Func<DateTime>? maintenant = null, bool relirePrix = true)
     {
         _ia = ia;
+        ChoixIA = new ChoixIAModule(ia, "achats", "les achats");
         _ia.Patiente += (_, message) => { if (Occupe) Statut = message; };
         _dialogues = dialogues;
         _lecteur = new LecteurPages(http ?? new HttpClient(new HttpClientHandler { AllowAutoRedirect = true })
@@ -90,13 +94,11 @@ public sealed partial class AchatsViewModel : ObservableObject
     {
         var produit = Recherche.Trim();
         // Seules les IA qui savent chercher sur internet proposent des offres.
-        var reglees = _ia.Assistants();
+        var reglees = ChoixIA.Assistants();
         var assistants = reglees.Where(a => a.RechercheInternet).ToList();
         if (assistants.Count == 0)
         {
-            Erreur = !_ia.Actives
-                ? "Les IA sont coupées (Configuration › Intelligence artificielle) : utilisez la liste des sites."
-                : "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle), ou utilisez la liste des sites.";
+            Erreur = ChoixIA.MessageAucune.TrimEnd('.') + " ; ou utilisez la liste des sites.";
             return;
         }
 

@@ -23,9 +23,13 @@ public sealed partial class LettresViewModel : ObservableObject
     private readonly Func<DateTime> _aujourdhui;
 
     /// <param name="dossier">Dossier des données de l'application (« lettres.json »).</param>
+    /// <summary>IA qui rédigent les lettres (cases en haut de l'écran).</summary>
+    public ChoixIAModule ChoixIA { get; }
+
     public LettresViewModel(string dossier, ServicesIA ia, IDialogues dialogues, Func<DateTime>? aujourdhui = null)
     {
         _ia = ia;
+        ChoixIA = new ChoixIAModule(ia, "lettres", "les lettres");
         _ia.Patiente += (_, message) => { if (Occupe) Statut = message; };
         _dialogues = dialogues;
         _aujourdhui = aujourdhui ?? (() => DateTime.Today);
@@ -123,12 +127,10 @@ public sealed partial class LettresViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(PeutRediger))]
     private async Task Rediger()
     {
-        var assistants = _ia.Assistants();
+        var assistants = ChoixIA.Assistants();
         if (assistants.Count == 0)
         {
-            Erreur = _ia.Actives
-                ? "Aucune IA réglée : saisissez une clé Gemini ou Groq (Configuration › Intelligence artificielle)."
-                : "Les IA sont coupées (Configuration › Intelligence artificielle).";
+            Erreur = ChoixIA.MessageAucune;
             return;
         }
 

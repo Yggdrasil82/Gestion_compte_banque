@@ -25,7 +25,7 @@
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                         <Button Style="{StaticResource BoutonEnteteBlanc}" Command="{Binding RedigerCommand}" Padding="16,7" Margin="10,0,6,0"
-                                ToolTip="Gemini et Groq proposent chacun une version de la lettre">
+                                ToolTip="Chaque IA cochée propose une version de la lettre">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" Margin="0,0,8,0" />
                                 <TextBlock Text="Rédiger avec les IA" />
@@ -44,6 +44,9 @@
                 </DockPanel>
                 <TextBlock Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
                            Text="Seules les informations ci-dessous sont envoyées aux IA : vos nom, adresse et coordonnées sont ajoutés par l'application." />
+                <ContentControl Content="{Binding ChoixIA}" ContentTemplate="{StaticResource CasesIA}" Margin="0,8,0,0"
+                                Foreground="{DynamicResource EnteteTexte}" Focusable="False"
+                                Visibility="{Binding ChoixIA.Visible, Converter={StaticResource Visible}}" />
             </StackPanel>
         </Border>
 

@@ -21,7 +21,7 @@
                 <DockPanel>
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                         <Button Style="{StaticResource BoutonEnteteBlanc}" Command="{Binding RechercherCommand}" Padding="16,7" Margin="10,0,6,0"
-                                ToolTip="Gemini cherche les offres sur internet (recherche incluse seulement avec une clé Gemini payante) ; les prix sont relus sur les pages">
+                                ToolTip="Les IA cochées cherchent les offres sur internet (quand leur clé le permet) ; les prix sont relus sur les pages">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icone}" Text="&#xE721;" Margin="0,0,8,0" />
                                 <TextBlock Text="Chercher le meilleur prix" />
@@ -40,6 +40,9 @@
                 </DockPanel>
                 <TextBlock Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" Margin="0,6,0,0"
                            Text="Seul le nom du produit est envoyé aux IA. Les prix trouvés sont relus sur les pages quand c'est possible." />
+                <ContentControl Content="{Binding ChoixIA}" ContentTemplate="{StaticResource CasesIA}" Margin="0,8,0,0"
+                                Foreground="{DynamicResource EnteteTexte}" Focusable="False"
+                                Visibility="{Binding ChoixIA.Visible, Converter={StaticResource Visible}}" />
             </StackPanel>
         </Border>
 

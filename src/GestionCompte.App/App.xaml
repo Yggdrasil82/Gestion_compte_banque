@@ -21,6 +21,27 @@
 
         <FontFamily x:Key="Icones">Segoe MDL2 Assets</FontFamily>
 
+        <!-- Cases « IA utilisées » d'un module (ChoixIAModule) ; la couleur du texte suit celle du ContentControl. -->
+        <DataTemplate x:Key="CasesIA" DataType="{x:Type vm:ChoixIAModule}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="IA utilisées :" VerticalAlignment="Center" Margin="0,0,10,0"
+                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentControl}}" />
+                <ItemsControl ItemsSource="{Binding Cases}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <CheckBox Content="{Binding Nom}" IsChecked="{Binding Cochee}" Margin="0,0,14,0" VerticalAlignment="Center"
+                                      Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ContentControl}}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </DataTemplate>
+
         <!-- Encadré utilisé pour chaque bloc d'un écran. -->
         <Style x:Key="Carte" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource FondCarte}" />

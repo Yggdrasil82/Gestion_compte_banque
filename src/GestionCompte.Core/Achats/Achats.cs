@@ -78,6 +78,7 @@ public enum SourceOffre
 {
     Gemini,
     Groq,
+    Mistral,
 }
 
 public enum VerificationOffre

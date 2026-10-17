@@ -253,7 +253,7 @@
                 <StackPanel>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Style="{StaticResource BoutonPrincipal}" Command="{Binding ChercherTauxCommand}" Margin="0"
-                                VerticalAlignment="Top" ToolTip="Gemini et Groq donnent les taux actuels : sur internet si votre clé le permet, sinon de mémoire (taux indicatifs)">
+                                VerticalAlignment="Top" ToolTip="Les IA cochées donnent les taux actuels : sur internet si leur clé le permet, sinon de mémoire (taux indicatifs)">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Style="{StaticResource Icone}" Text="&#xE721;" Margin="0,0,6,0" />
                                 <TextBlock Text="Chercher les taux du moment" />
@@ -264,6 +264,9 @@
                             <TextBlock Text="Taux du moment" Style="{StaticResource TitreCarte}" />
                         </StackPanel>
                     </DockPanel>
+                    <ContentControl Content="{Binding ChoixIA}" ContentTemplate="{StaticResource CasesIA}" Margin="0,0,0,8"
+                                    Foreground="{DynamicResource Texte}" Focusable="False"
+                                    Visibility="{Binding ChoixIA.Visible, Converter={StaticResource Visible}, FallbackValue=Collapsed}" />
                     <TextBlock Style="{StaticResource Aide}" TextWrapping="Wrap">
                         <Run Text="Pour la simulation sélectionnée :" />
                         <Run Text="{Binding CategorieSelection, Mode=OneWay}" FontWeight="SemiBold" />

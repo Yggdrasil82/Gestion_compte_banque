@@ -22,9 +22,9 @@
                     </StackPanel>
                 </Button>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Demander à" Foreground="{DynamicResource EnteteTexte}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <ComboBox ItemsSource="{Binding ChoixIA}" SelectedItem="{Binding IAChoisie}" MinWidth="190" Height="30"
-                              VerticalContentAlignment="Center" FontSize="14" />
+                    <ContentControl Content="{Binding ChoixIA}" ContentTemplate="{StaticResource CasesIA}" VerticalAlignment="Center"
+                                    Foreground="{DynamicResource EnteteTexte}" FontSize="14" Focusable="False"
+                                    Visibility="{Binding ChoixIA.Visible, Converter={StaticResource Visible}}" />
                     <TextBlock Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" VerticalAlignment="Center" Margin="14,0,0,0"
                                TextWrapping="Wrap" Text="L'assistant donne des pistes : il ne modifie jamais votre budget." />
                 </StackPanel>

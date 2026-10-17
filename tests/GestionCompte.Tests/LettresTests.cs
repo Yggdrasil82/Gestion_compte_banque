@@ -33,6 +33,30 @@ public sealed class LettresTests : IDisposable
     }
 
     [Fact]
+    public void ChoixIA_ParModule_MemoriseSurCePC()
+    {
+        var secrets = new SecretsEnMemoire();
+        var ia = new ServicesIA(secrets, _dialogues, assistantsTest: () => new IAssistantIA[]
+        {
+            new FausseIA(SourceOffre.Gemini, ""), new FausseIA(SourceOffre.Groq, ""), new FausseIA(SourceOffre.Mistral, ""),
+        });
+        var achats = new ChoixIAModule(ia, "achats", "les achats");
+        Assert.True(achats.Visible);
+        Assert.Equal(new[] { "Gemini", "Groq", "Mistral" }, achats.Cases.Select(c => c.Nom));
+
+        achats.Cases.Single(c => c.Nom == "Groq").Cochee = false;
+
+        Assert.Equal(new[] { "Gemini", "Mistral" }, achats.Assistants().Select(a => a.Nom));
+        Assert.Equal(3, new ChoixIAModule(ia, "lettres", "les lettres").Assistants().Count);
+        var relu = new ChoixIAModule(new ServicesIA(secrets, _dialogues, assistantsTest: ia.Assistants), "achats", "les achats");
+        Assert.False(relu.Cases.Single(c => c.Nom == "Groq").Cochee);
+
+        foreach (var c in achats.Cases)
+            c.Cochee = false;
+        Assert.Contains("Aucune IA cochée pour les achats", achats.MessageAucune);
+    }
+
+    [Fact]
     public void La_demande_a_l_ia_ne_contient_pas_les_coordonnees()
     {
         var modele = ModeleLettre.Liste[0];
@@ -186,7 +210,7 @@ public sealed class LettresTests : IDisposable
         Assert.Equal("", assistant.Question);
 
         assistant.InclureResume = false;
-        assistant.IAChoisie = "Groq";
+        assistant.ChoixIA.Cases.Single(c => c.Nom == "Gemini").Cochee = false;
         assistant.PoserCommand.ExecuteAsync("Et ensuite ?").GetAwaiter().GetResult();
         Assert.Single(gemini.Demandes);
         var derniere = groq.Demandes.Last();
