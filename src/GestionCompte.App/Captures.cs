@@ -402,6 +402,11 @@ internal static class Captures
                 "03/11/2026 18:47:00,\"Rappel par mail la veille d'un prélèvement important, avec le montant.\",2.10.0\n");
             await Capturer(("45-suggestions-ocean", Ambiance.Ocean, false, MainViewModel.OngletSuggestions, false));
 
+            // Barre de gauche réduite aux icônes, thème Outils ouvert.
+            vm.Apparence.BasculerBarreCommand.Execute(null);
+            await Capturer(("48-barre-reduite-ocean", Ambiance.Ocean, false, MainViewModel.OngletAchats, false));
+            vm.Apparence.BasculerBarreCommand.Execute(null);
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             Directory.Delete(dossierPC, true);

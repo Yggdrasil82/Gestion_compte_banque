@@ -94,6 +94,39 @@ public sealed class ApparenceTests : IDisposable
         Assert.True(Ouvrir("compte.db").ModuleCredits);
     }
 
+    [Fact]
+    public void Barre_ThemesEnAccordeon_EtIconesSeules_Memorises()
+    {
+        var apparence = Ouvrir("compte.db");
+        Assert.True(apparence.ThemeBudgetOuvert);
+
+        apparence.BasculerThemeCommand.Execute(ThemesBarre.Finances);
+        Assert.True(apparence.ThemeFinancesOuvert);
+        Assert.False(apparence.ThemeBudgetOuvert);
+        apparence.BasculerThemeCommand.Execute(ThemesBarre.Finances);
+        Assert.Equal("", apparence.ThemeOuvert);
+
+        apparence.OuvrirTheme(ThemesBarre.Outils);
+        apparence.BasculerBarreCommand.Execute(null);
+        var relu = Ouvrir("compte.db");
+        Assert.True(relu.ThemeOutilsOuvert);
+        Assert.True(relu.BarreReduite);
+
+        foreach (var module in new[] { "Credits", "Prets", "Bourse", "Impots" })
+            relu.Afficher(module, false);
+        Assert.False(relu.ThemeFinancesVisible);
+        Assert.True(relu.ThemeOutilsVisible);
+    }
+
+    [Fact]
+    public void Barre_ThemeDuModuleAffiche()
+    {
+        Assert.Equal(ThemesBarre.Budget, MainViewModel.ThemeDe(MainViewModel.OngletBilan));
+        Assert.Equal(ThemesBarre.Finances, MainViewModel.ThemeDe(MainViewModel.OngletImpots));
+        Assert.Equal(ThemesBarre.Outils, MainViewModel.ThemeDe(MainViewModel.OngletAssistant));
+        Assert.Null(MainViewModel.ThemeDe(MainViewModel.OngletConfiguration));
+    }
+
     private ApparenceViewModel Ouvrir(string compte)
     {
         var apparence = new ApparenceViewModel(Chemin);

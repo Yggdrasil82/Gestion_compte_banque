@@ -167,6 +167,43 @@
         </Style>
 
         <!-- Entrées de navigation de la barre de gauche : Tag = icône, Background = couleur de l'icône. -->
+        <!-- Titre d'un thème de la barre de gauche (Budget, Finances, Outils) : Tag vrai quand le thème est ouvert. -->
+        <Style x:Key="TitreTheme" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource BarreTexte}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Margin" Value="0,4,0,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Fond" Background="Transparent" CornerRadius="8" Padding="8,6">
+                            <DockPanel>
+                                <TextBlock x:Name="Chevron" DockPanel.Dock="Right" Style="{StaticResource Icone}" FontSize="10" Text="&#xE70D;"
+                                           VerticalAlignment="Center" Opacity="0.75" />
+                                <ContentPresenter x:Name="Titre" VerticalAlignment="Center" Opacity="0.75" />
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Fond" Property="Background" Value="{DynamicResource BarreActif}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                <Setter TargetName="Chevron" Property="Text" Value="&#xE70E;" />
+                            </DataTrigger>
+                            <!-- Barre réduite aux icônes : le titre laisse la place au seul chevron. -->
+                            <DataTrigger Binding="{Binding Apparence.BarreReduite}" Value="True">
+                                <Setter TargetName="Titre" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="Chevron" Property="DockPanel.Dock" Value="Left" />
+                                <Setter TargetName="Chevron" Property="Margin" Value="12,0,0,0" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="Navigation" TargetType="RadioButton">
             <Setter Property="Foreground" Value="{DynamicResource BarreTexte}" />
             <Setter Property="FontSize" Value="14" />
@@ -196,6 +233,12 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <!-- Barre réduite aux icônes : le nom du module s'affiche au survol (sauf bulle d'aide déjà prévue). -->
+                <DataTrigger Binding="{Binding Apparence.BarreReduite}" Value="True">
+                    <Setter Property="ToolTip" Value="{Binding Content, RelativeSource={RelativeSource Self}}" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Zones de saisie -->

@@ -271,8 +271,20 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty] private VueEnsembleViewModel? _ensemble;
 
+    /// <summary>Thème de la barre de gauche d'un onglet (null : hors thème, comme la Configuration).</summary>
+    public static string? ThemeDe(int onglet) => onglet switch
+    {
+        OngletMois or OngletPrevisionnel or OngletAide or OngletBilan => ThemesBarre.Budget,
+        OngletCredits or OngletPrets or OngletBourse or OngletImpots => ThemesBarre.Finances,
+        OngletDocuments or OngletMail or OngletAchats or OngletLettres or OngletAssistant => ThemesBarre.Outils,
+        _ => null,
+    };
+
     partial void OnOngletSelectionneChanged(int value)
     {
+        // Le thème du module affiché s'ouvre (et referme les autres).
+        if (ThemeDe(value) is { } theme)
+            Apparence.OuvrirTheme(theme);
         if (value == OngletEnsemble)
             Ensemble = CalculerEnsemble();
         else if (value == OngletAssistant)

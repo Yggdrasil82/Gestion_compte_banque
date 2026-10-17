@@ -37,6 +37,14 @@ public enum Ambiance
 }
 
 /// <summary>Préférences d'affichage, enregistrées à part des données du compte.</summary>
+/// <summary>Thèmes de la barre de gauche.</summary>
+public static class ThemesBarre
+{
+    public const string Budget = "Budget";
+    public const string Finances = "Finances";
+    public const string Outils = "Outils";
+}
+
 public sealed class PreferencesAffichage
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -100,6 +108,12 @@ public sealed class PreferencesAffichage
 
     /// <summary>Cartes de la Configuration réduites (titre seul), par nom de carte.</summary>
     public List<string> CartesReduites { get; set; } = new();
+
+    /// <summary>Thème ouvert dans la barre de gauche (« Budget », « Finances », « Outils »), vide si tous sont fermés.</summary>
+    public string ThemeOuvert { get; set; } = ThemesBarre.Budget;
+
+    /// <summary>Barre de gauche réduite aux icônes.</summary>
+    public bool BarreReduite { get; set; }
 
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
@@ -169,7 +183,7 @@ public sealed partial class ModuleAffiche : ObservableObject
 }
 
 /// <summary>Choix de l'ambiance de couleurs, du mode sombre et des modules affichés (réglages propres au PC).</summary>
-public sealed class ApparenceViewModel : ObservableObject
+public sealed partial class ApparenceViewModel : ObservableObject
 {
     private readonly string? _chemin;
     private readonly PreferencesAffichage _preferences;
@@ -289,6 +303,8 @@ public sealed class ApparenceViewModel : ObservableObject
     {
         foreach (var m in ListeModules)
             OnPropertyChanged("Module" + m.Id);
+        OnPropertyChanged(nameof(ThemeFinancesVisible));
+        OnPropertyChanged(nameof(ThemeOutilsVisible));
         if (ordre)
         {
             var ids = OrdreModules;
@@ -413,6 +429,45 @@ public sealed class ApparenceViewModel : ObservableObject
     }
 
     /// <summary>La carte de la Configuration est réduite à son titre.</summary>
+    // Barre de gauche rangée par thèmes : un seul thème ouvert à la fois (accordéon).
+    public string ThemeOuvert => _preferences.ThemeOuvert ?? "";
+
+    public bool ThemeBudgetOuvert => ThemeOuvert == ThemesBarre.Budget;
+    public bool ThemeFinancesOuvert => ThemeOuvert == ThemesBarre.Finances;
+    public bool ThemeOutilsOuvert => ThemeOuvert == ThemesBarre.Outils;
+
+    /// <summary>Un thème n'apparaît que s'il contient au moins un module affiché.</summary>
+    public bool ThemeFinancesVisible => ModuleCredits || ModulePrets || ModuleBourse || ModuleImpots;
+    public bool ThemeOutilsVisible => ModuleDocuments || ModuleMail || ModuleAchats || ModuleLettres || ModuleAssistant;
+
+    /// <summary>Ouvre un thème (les autres se referment) ; vide pour tout fermer.</summary>
+    public void OuvrirTheme(string theme)
+    {
+        if (theme == ThemeOuvert)
+            return;
+        _preferences.ThemeOuvert = theme;
+        Enregistrer();
+        OnPropertyChanged(nameof(ThemeOuvert));
+        OnPropertyChanged(nameof(ThemeBudgetOuvert));
+        OnPropertyChanged(nameof(ThemeFinancesOuvert));
+        OnPropertyChanged(nameof(ThemeOutilsOuvert));
+    }
+
+    /// <summary>Barre de gauche réduite aux icônes (le nom des modules s'affiche au survol).</summary>
+    public bool BarreReduite => _preferences.BarreReduite;
+
+    [RelayCommand]
+    private void BasculerBarre()
+    {
+        _preferences.BarreReduite = !_preferences.BarreReduite;
+        Enregistrer();
+        OnPropertyChanged(nameof(BarreReduite));
+    }
+
+    /// <summary>Clic sur le titre d'un thème : l'ouvre, ou le referme s'il était ouvert.</summary>
+    [RelayCommand]
+    private void BasculerTheme(string theme) => OuvrirTheme(theme == ThemeOuvert ? "" : theme);
+
     public bool CarteReduite(string carte) => _preferences.CartesReduites.Contains(carte);
 
     public void ReduireCarte(string carte, bool reduite)

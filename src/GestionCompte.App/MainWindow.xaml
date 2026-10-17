@@ -11,7 +11,7 @@
         FontFamily="Segoe UI" FontSize="13">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220" />
+            <ColumnDefinition x:Name="ColonneBarre" Width="220" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -23,53 +23,99 @@
                     MinHeight="{Binding ViewportHeight, RelativeSource={RelativeSource AncestorType=ScrollViewer}}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top">
-                    <StackPanel Orientation="Horizontal" Margin="8,0,0,16">
-                        <Image Source="/Ressources/icone.png" Width="34" Height="34" />
-                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="Mon Budget" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BarreTexte}" />
-                            <TextBlock Text="{Binding Version}" FontSize="11" Opacity="0.7" Foreground="{DynamicResource BarreTexte}" />
+                    <DockPanel Margin="8,0,0,16">
+                        <!-- Réduire la barre aux icônes, ou la remettre en entier. -->
+                        <Button DockPanel.Dock="Right" Style="{StaticResource BoutonBarre}" Command="{Binding Apparence.BasculerBarreCommand}"
+                                Padding="7,6" Margin="0" VerticalAlignment="Top" ToolTip="Réduire la barre aux icônes, ou l'afficher en entier">
+                            <TextBlock Style="{StaticResource Icone}" Text="&#xE700;" FontSize="13" />
+                        </Button>
+                        <StackPanel Orientation="Horizontal" Visibility="{Binding Apparence.BarreReduite, Converter={StaticResource MasqueSiVrai}}">
+                            <Image Source="/Ressources/icone.png" Width="34" Height="34" />
+                            <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Mon Budget" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BarreTexte}" />
+                                <TextBlock Text="{Binding Version}" FontSize="11" Opacity="0.7" Foreground="{DynamicResource BarreTexte}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <StackPanel Visibility="{Binding Apparence.BarreReduite, Converter={StaticResource MasqueSiVrai}}">
+                        <!-- Choix du compte (un compte par banque, livret…). -->
+                        <StackPanel Margin="8,0,8,16" Visibility="{Binding GestionComptes, Converter={StaticResource Visible}}">
+                            <TextBlock Text="COMPTE" FontSize="11" FontWeight="SemiBold" Opacity="0.7" Margin="0,0,0,6"
+                                       Foreground="{DynamicResource BarreTexte}" />
+                            <ComboBox ItemsSource="{Binding NomsComptes}" SelectedItem="{Binding CompteActif}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Button Style="{StaticResource BoutonBarre}" Command="{Binding NouveauCompteCommand}" ToolTip="Nouveau compte…"
+                                        Padding="8,5">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" Margin="0,0,6,0" />
+                                        <TextBlock Text="Nouveau" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource BoutonBarre}" Command="{Binding RenommerCompteCommand}" ToolTip="Renommer ce compte…"
+                                        Padding="8,5">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" FontSize="12" />
+                                </Button>
+                                <Button Style="{StaticResource BoutonBarre}" Command="{Binding SupprimerCompteCommand}" ToolTip="Supprimer ce compte…"
+                                        Padding="8,5">
+                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" FontSize="12" />
+                                </Button>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Choix du compte (un compte par banque, livret…). -->
-                    <StackPanel Margin="8,0,8,16" Visibility="{Binding GestionComptes, Converter={StaticResource Visible}}">
-                        <TextBlock Text="COMPTE" FontSize="11" FontWeight="SemiBold" Opacity="0.7" Margin="0,0,0,6"
-                                   Foreground="{DynamicResource BarreTexte}" />
-                        <ComboBox ItemsSource="{Binding NomsComptes}" SelectedItem="{Binding CompteActif}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Style="{StaticResource BoutonBarre}" Command="{Binding NouveauCompteCommand}" ToolTip="Nouveau compte…"
-                                    Padding="8,5">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" FontSize="11" Margin="0,0,6,0" />
-                                    <TextBlock Text="Nouveau" FontSize="12" />
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource BoutonBarre}" Command="{Binding RenommerCompteCommand}" ToolTip="Renommer ce compte…"
-                                    Padding="8,5">
-                                <TextBlock Style="{StaticResource Icone}" Text="&#xE70F;" FontSize="12" />
-                            </Button>
-                            <Button Style="{StaticResource BoutonBarre}" Command="{Binding SupprimerCompteCommand}" ToolTip="Supprimer ce compte…"
-                                    Padding="8,5">
-                                <TextBlock Style="{StaticResource Icone}" Text="&#xE74D;" FontSize="12" />
-                            </Button>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Mois"
-                                 Tag="&#xE787;" Background="{DynamicResource Accent1}"
-                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=0}" />
-                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Prévisionnel"
-                                 Tag="&#xEAFC;" Background="{DynamicResource Accent4}"
-                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=1}" />
-                    <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Aide au budget"
-                                 Tag="&#xEA80;" Background="{DynamicResource Accent2}"
-                                 IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=2}" />
-                    <!-- Modules : affichage et ordre propres au compte ouvert (rangés depuis MainWindow.xaml.cs). -->
-                    <StackPanel x:Name="BarreModules">
+                    <!-- Modules rangés par thèmes (accordéon) ; affichage et ordre propres au compte ouvert (rangés depuis MainWindow.xaml.cs). -->
+                    <Button Style="{StaticResource TitreTheme}" Command="{Binding Apparence.BasculerThemeCommand}" CommandParameter="Budget"
+                            Tag="{Binding Apparence.ThemeBudgetOuvert}" ToolTip="Budget : ouvrir ou fermer">
+                        <TextBlock Text="BUDGET" />
+                    </Button>
+                    <StackPanel x:Name="BarreBudget" Visibility="{Binding Apparence.ThemeBudgetOuvert, Converter={StaticResource Visible}}">
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Mois"
+                                     Tag="&#xE787;" Background="{DynamicResource Accent1}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=0}" />
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Prévisionnel"
+                                     Tag="&#xEAFC;" Background="{DynamicResource Accent4}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=1}" />
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Aide au budget"
+                                     Tag="&#xEA80;" Background="{DynamicResource Accent2}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=2}" />
                         <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Bilan" Content="Bilan"
                                      Tag="&#xE9D2;" Background="{DynamicResource Accent1}"
                                      Visibility="{Binding Apparence.ModuleBilan, Converter={StaticResource Visible}}"
                                      IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=7}" />
+                    </StackPanel>
+                    <Button Style="{StaticResource TitreTheme}" Command="{Binding Apparence.BasculerThemeCommand}" CommandParameter="Finances"
+                            Tag="{Binding Apparence.ThemeFinancesOuvert}" ToolTip="Finances : ouvrir ou fermer"
+                            Visibility="{Binding Apparence.ThemeFinancesVisible, Converter={StaticResource Visible}}">
+                        <TextBlock Text="FINANCES" />
+                    </Button>
+                    <StackPanel x:Name="BarreFinances" Visibility="{Binding Apparence.ThemeFinancesOuvert, Converter={StaticResource Visible}}">
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Credits" Content="Crédits"
+                                     Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
+                                     Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=6}" />
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Prets" Content="Prêts"
+                                     Tag="&#xE80F;" Background="{DynamicResource Accent2}"
+                                     ToolTip="Prêts en cours : tableau d'amortissement, remboursement anticipé"
+                                     Visibility="{Binding Apparence.ModulePrets, Converter={StaticResource Visible}}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=13}" />
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Bourse" Content="Bourse"
+                                     Tag="&#xE9D2;" Background="{DynamicResource Accent1}"
+                                     ToolTip="Placements en bourse (Trade Republic) : positions, plus-values, cours"
+                                     Visibility="{Binding Apparence.ModuleBourse, Converter={StaticResource Visible}}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=15}" />
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Impots" Content="Impôts"
+                                     Tag="&#xE8EF;" Background="{DynamicResource Accent3}"
+                                     ToolTip="Estimation de l'impôt sur le revenu à partir de tous les comptes, et pistes pour le réduire"
+                                     Visibility="{Binding Apparence.ModuleImpots, Converter={StaticResource Visible}}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=17}" />
+                    </StackPanel>
+                    <Button Style="{StaticResource TitreTheme}" Command="{Binding Apparence.BasculerThemeCommand}" CommandParameter="Outils"
+                            Tag="{Binding Apparence.ThemeOutilsOuvert}" ToolTip="Outils : ouvrir ou fermer"
+                            Visibility="{Binding Apparence.ThemeOutilsVisible, Converter={StaticResource Visible}}">
+                        <TextBlock Text="OUTILS" />
+                    </Button>
+                    <StackPanel x:Name="BarreOutils" Visibility="{Binding Apparence.ThemeOutilsOuvert, Converter={StaticResource Visible}}">
                         <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Documents" Content="{Binding Documents.TitreNavigation}"
                                      Tag="&#xE8F1;" Background="{DynamicResource Accent2}"
                                      ToolTip="Documents importants : pièces d'identité, contrats, factures, échéances"
@@ -95,26 +141,8 @@
                                      ToolTip="Questions sur votre budget aux IA (ne modifie rien)"
                                      Visibility="{Binding Apparence.ModuleAssistant, Converter={StaticResource Visible}}"
                                      IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=12}" />
-                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Credits" Content="Crédits"
-                                     Tag="&#xE8C7;" Background="{DynamicResource Accent4}"
-                                     Visibility="{Binding Apparence.ModuleCredits, Converter={StaticResource Visible}}"
-                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=6}" />
-                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Prets" Content="Prêts"
-                                     Tag="&#xE80F;" Background="{DynamicResource Accent2}"
-                                     ToolTip="Prêts en cours : tableau d'amortissement, remboursement anticipé"
-                                     Visibility="{Binding Apparence.ModulePrets, Converter={StaticResource Visible}}"
-                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=13}" />
-                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Bourse" Content="Bourse"
-                                     Tag="&#xE9D2;" Background="{DynamicResource Accent1}"
-                                     ToolTip="Placements en bourse (Trade Republic) : positions, plus-values, cours"
-                                     Visibility="{Binding Apparence.ModuleBourse, Converter={StaticResource Visible}}"
-                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=15}" />
-                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Impots" Content="Impôts"
-                                     Tag="&#xE8EF;" Background="{DynamicResource Accent3}"
-                                     ToolTip="Estimation de l'impôt sur le revenu à partir de tous les comptes, et pistes pour le réduire"
-                                     Visibility="{Binding Apparence.ModuleImpots, Converter={StaticResource Visible}}"
-                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=17}" />
                     </StackPanel>
+                    <Border Height="1" Background="{DynamicResource BarreTexte}" Opacity="0.15" Margin="8,4,8,8" />
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Vue d'ensemble"
                                  Tag="&#xE80A;" Background="{DynamicResource Positif}"
                                  Visibility="{Binding PlusieursComptes, Converter={StaticResource Visible}}"
@@ -131,17 +159,19 @@
                                  ToolTip="Suggestions envoyées par les utilisateurs (formulaire Google)"
                                  Visibility="{Binding Suggestions.OngletDisponible, Converter={StaticResource Visible}}"
                                  IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=16}" />
-                    <Button Style="{StaticResource BoutonBarre}" Command="{Binding Suggestions.SuggererCommand}" Margin="0,4,0,0"
-                            ToolTip="Proposer une amélioration de l'application (formulaire en ligne, sans compte)"
-                            Visibility="{Binding Suggestions.FormulaireDisponible, Converter={StaticResource Visible}}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{StaticResource Icone}" Text="&#xE82F;" Margin="0,0,8,0" />
-                            <TextBlock Text="Suggérer une amélioration" />
-                        </StackPanel>
-                    </Button>
+                    <StackPanel Visibility="{Binding Apparence.BarreReduite, Converter={StaticResource MasqueSiVrai}}">
+                        <Button Style="{StaticResource BoutonBarre}" Command="{Binding Suggestions.SuggererCommand}" Margin="0,4,0,0"
+                                ToolTip="Proposer une amélioration de l'application (formulaire en ligne, sans compte)"
+                                Visibility="{Binding Suggestions.FormulaireDisponible, Converter={StaticResource Visible}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource Icone}" Text="&#xE82F;" Margin="0,0,8,0" />
+                                <TextBlock Text="Suggérer une amélioration" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
 
-                <StackPanel DockPanel.Dock="Bottom">
+                <StackPanel DockPanel.Dock="Bottom" Visibility="{Binding Apparence.BarreReduite, Converter={StaticResource MasqueSiVrai}}">
                     <TextBlock Text="APPARENCE" FontSize="11" FontWeight="SemiBold" Opacity="0.7" Margin="8,0,0,6"
                                Foreground="{DynamicResource BarreTexte}" />
                     <ComboBox ItemsSource="{x:Static vm:ApparenceViewModel.Ambiances}" DisplayMemberPath="Nom" SelectedValuePath="Valeur"
