@@ -57,6 +57,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Suggestions reçues (seulement quand le lien des réponses est réglé).</summary>
     public const int OngletSuggestions = 16;
 
+    /// <summary>Module « Impôts » (masquable dans la configuration).</summary>
+    public const int OngletImpots = 17;
+
     private DepotSqlite _depot;
     private readonly RegistreComptes? _registre;
     private readonly IDialogues _dialogues;
@@ -106,6 +109,8 @@ public sealed partial class MainViewModel : ObservableObject
         IA = new ServicesIA(secrets, dialogues);
         Achats = new AchatsViewModel(dossier, IA, dialogues);
         Achats.AchatAPrevoir += (_, achat) => PrevoirAchat(achat);
+        Impots = new ImpotsViewModel(dossier, TousLesComptes, aujourdHui.Date);
+        Impots.AnalyseDemandee += (_, question) => AnalyserPortefeuille(question);
         Lettres = new LettresViewModel(dossier, IA, dialogues, () => aujourdHui.Date) { EnvoiParMailPossible = Apparence.ModuleMail };
         Lettres.EnvoiParMailDemande += (_, lettre) =>
         {
@@ -136,7 +141,8 @@ public sealed partial class MainViewModel : ObservableObject
                 || (OngletSelectionne == OngletLettres && !Apparence.ModuleLettres)
                 || (OngletSelectionne == OngletAssistant && !Apparence.ModuleAssistant)
                 || (OngletSelectionne == OngletPrets && !Apparence.ModulePrets)
-                || (OngletSelectionne == OngletBourse && !Apparence.ModuleBourse))
+                || (OngletSelectionne == OngletBourse && !Apparence.ModuleBourse)
+                || (OngletSelectionne == OngletImpots && !Apparence.ModuleImpots))
                 OngletSelectionne = OngletConfiguration;
             Documents.EnvoiParMailPossible = Apparence.ModuleMail;
             Lettres.EnvoiParMailPossible = Apparence.ModuleMail;
@@ -273,6 +279,8 @@ public sealed partial class MainViewModel : ObservableObject
             Assistant.ActualiserResume();
         else if (value == OngletSuggestions)
             Suggestions.MarquerVues();
+        else if (value == OngletImpots)
+            Impots.Actualiser();
     }
 
     private void NotifierComptes()
@@ -396,6 +404,27 @@ public sealed partial class MainViewModel : ObservableObject
         Statut = $"Compte « {actif.Nom} » supprimé ; compte « {_registre.Actif.Nom} » ouvert.";
     }
 
+    /// <summary>Tous les comptes lisibles (module Impôts).</summary>
+    private IReadOnlyList<(string Nom, CompteBancaire Compte)> TousLesComptes()
+    {
+        if (_registre is null)
+            return _compte is null ? Array.Empty<(string, CompteBancaire)>() : new[] { (RegistreComptes.NomPrincipal, _compte) };
+        var comptes = new List<(string, CompteBancaire)>();
+        foreach (var entree in _registre.Comptes)
+        {
+            try
+            {
+                if (LireCompte(entree) is { } compte)
+                    comptes.Add((entree.Nom, compte));
+            }
+            catch (Exception)
+            {
+                // Compte illisible : ignoré dans l'estimation.
+            }
+        }
+        return comptes;
+    }
+
     private VueEnsembleViewModel CalculerEnsemble()
     {
         var comptes = new List<CompteEnsemble>();
@@ -471,6 +500,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>Aide à l'achat : recherche du meilleur prix, sites, prix suivis.</summary>
     public AchatsViewModel Achats { get; }
+
+    /// <summary>Estimation de l'impôt sur le revenu à partir de tous les comptes.</summary>
+    public ImpotsViewModel Impots { get; }
 
     /// <summary>Lettres types rédigées par les IA, communes à tous les comptes.</summary>
     public LettresViewModel Lettres { get; }
@@ -1099,7 +1131,7 @@ public sealed partial class MainViewModel : ObservableObject
         Assistant?.ActualiserResume();
     }
 
-    /// <summary>« Analyser avec l'Assistant » du module Bourse : ouvre l'Assistant et lui pose la question.</summary>
+    /// <summary>« Analyser avec l'Assistant » des modules Bourse et Impôts : ouvre l'Assistant et lui pose la question.</summary>
     private void AnalyserPortefeuille(string question)
     {
         if (!Apparence.ModuleAssistant)

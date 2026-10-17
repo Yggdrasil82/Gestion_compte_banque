@@ -195,6 +195,7 @@ public sealed class ApparenceViewModel : ObservableObject
         ("Credits", "Crédits", "simulation et comparaison de crédits"),
         ("Prets", "Prêts", "prêts en cours, tableau d'amortissement, remboursement anticipé"),
         ("Bourse", "Bourse", "placements Trade Republic, positions, plus-values, cours"),
+        ("Impots", "Impôts", "estimation de l'impôt sur le revenu et pistes pour le réduire"),
     };
 
     private ModulesCompte _modules;
@@ -395,6 +396,13 @@ public sealed class ApparenceViewModel : ObservableObject
     {
         get => Affiche("Bourse");
         set => Afficher("Bourse", value);
+    }
+
+    /// <summary>Module « Impôts » affiché (réglages conservés même s'il est masqué).</summary>
+    public bool ModuleImpots
+    {
+        get => Affiche("Impots");
+        set => Afficher("Impots", value);
     }
 
     /// <summary>Module « Assistant » affiché.</summary>

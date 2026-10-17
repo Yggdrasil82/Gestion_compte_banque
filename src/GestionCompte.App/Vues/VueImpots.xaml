@@ -1,0 +1,389 @@
+<UserControl x:Class="GestionCompte.App.Vues.VueImpots"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Racine">
+    <UserControl.Resources>
+        <Style x:Key="Tuile" TargetType="Border" BasedOn="{StaticResource Carte}">
+            <Setter Property="BorderThickness" Value="5,1,1,1" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+        <Style x:Key="LibelleTuile" TargetType="TextBlock" BasedOn="{StaticResource Discret}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="ValeurTuile" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="21" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style x:Key="Saisie" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Width" Value="110" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="LibelleSaisie" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Bandeau -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource Entete}" CornerRadius="14" Padding="16,12" Margin="6,6,6,4">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource BoutonEntete}" Command="{Binding AnalyserCommand}" Margin="0" VerticalAlignment="Center"
+                        ToolTip="Ouvre l'Assistant et lui envoie le détail de l'estimation (montants seulement, sans nom de compte ni de banque)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icone}" Text="&#xE8BD;" Margin="0,0,8,0" />
+                        <TextBlock Text="Analyser avec l'Assistant" />
+                    </StackPanel>
+                </Button>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Impôts" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource EnteteTexte}" />
+                    <TextBlock Text="{Binding SousTitre}" Foreground="{DynamicResource EnteteTexte}" Opacity="0.85" FontSize="12" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Erreur}" Margin="12,2,12,4" FontWeight="SemiBold"
+                   Foreground="{DynamicResource Negatif}" TextWrapping="Wrap">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <!-- Chiffres clés -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent1}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="Impôt sur le revenu estimé" />
+                            <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent1}" Text="{Binding TexteImpot}" />
+                            <TextBlock Style="{StaticResource LibelleTuile}">
+                                <Run Text="{Binding Estimation.RevenuImposable, Mode=OneWay, Converter={StaticResource Euros}, StringFormat='Revenu imposable {0}'}" /><Run Text=", " /><Run Text="{Binding TexteParts, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent2}"
+                            ToolTip="Tranche marginale : taux appliqué à chaque euro de revenu en plus. Taux moyen : impôt divisé par le revenu imposable." Cursor="Help">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="Tranche marginale" />
+                            <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent2}" Text="{Binding TexteTmi}" />
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding TexteTauxMoyen, StringFormat='Taux moyen {0}'}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent4}"
+                            ToolTip="Flat tax (12,8 %) sur les plus-values du compte-titres et prélèvements sociaux sur les loyers et les plus-values" Cursor="Help">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="Flat tax et prélèvements sociaux" />
+                            <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent4}" Text="{Binding TexteSociaux}" />
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="Loyers et bourse" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Style="{StaticResource Tuile}" BorderBrush="{DynamicResource Accent3}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="Total estimé" />
+                            <TextBlock Style="{StaticResource ValeurTuile}" Foreground="{DynamicResource Accent3}" Text="{Binding TexteTotal}" />
+                            <TextBlock Style="{StaticResource LibelleTuile}" Text="{Binding Annee, StringFormat='Revenus {0}'}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Prélèvement à la source -->
+                <Border Style="{StaticResource Carte}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icone}" Text="&#xE8C7;" FontSize="18" Margin="0,0,12,0"
+                                   VerticalAlignment="Center" Foreground="{DynamicResource Accent2}" />
+                        <TextBlock Text="{Binding TextePrelevement}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                    </DockPanel>
+                </Border>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.35*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <!-- Revenus des comptes -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                                    <TextBlock Text="Revenus de l'année" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Aide}"
+                                           Text="Revenus de tous les comptes (mois saisis, montant par défaut pour les autres). Choisissez comment chacun est imposé. Salaires : le net imposable est estimé à partir du net reçu ; saisissez le cumul net imposable de la fiche de paie pour être exact." />
+                                <Grid Margin="0,8,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="170" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource Discret}" Text="Revenu" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource Discret}" Text="Reçu sur l'année" TextAlignment="Right" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="2" Style="{StaticResource Discret}" Text="Imposé comme" />
+                                    <TextBlock Grid.Column="3" Style="{StaticResource Discret}" Text="Imposable (saisi)" TextAlignment="Right" />
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding Lignes}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="170" />
+                                                    <ColumnDefinition Width="110" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Revenu}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Style="{StaticResource Discret}" FontSize="11" TextTrimming="CharacterEllipsis">
+                                                        <Run Text="{Binding Compte, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Estimation, Mode=OneWay}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding MontantRecu, Converter={StaticResource Euros}}" TextAlignment="Right"
+                                                           VerticalAlignment="Center" Margin="0,0,10,0" />
+                                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Types, ElementName=Racine}"
+                                                          SelectedIndex="{Binding IndexType}" VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="3" Style="{StaticResource Saisie}" Width="100" HorizontalAlignment="Right"
+                                                         Text="{Binding MontantImposable, Converter={StaticResource Montant}}"
+                                                         ToolTip="Vide : montant estimé. Salaire : cumul net imposable de la fiche de paie de décembre." />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Revenus hors des comptes -->
+                                <ItemsControl ItemsSource="{Binding RevenusManuels}" Margin="0,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="170" />
+                                                    <ColumnDefinition Width="110" />
+                                                </Grid.ColumnDefinitions>
+                                                <DockPanel VerticalAlignment="Center">
+                                                    <Button DockPanel.Dock="Left" Command="{Binding DataContext.RetirerRevenuCommand, ElementName=Racine}"
+                                                            CommandParameter="{Binding}" Padding="6,2" Margin="0,0,6,0" ToolTip="Retirer ce revenu">
+                                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE738;" FontSize="10" />
+                                                    </Button>
+                                                    <TextBox Text="{Binding Libelle}" VerticalAlignment="Center" ToolTip="Revenu perçu hors des comptes suivis" />
+                                                </DockPanel>
+                                                <TextBox Grid.Column="1" Style="{StaticResource Saisie}" Width="90" HorizontalAlignment="Right" Margin="0,0,10,0"
+                                                         Text="{Binding Montant, Converter={StaticResource Montant}}" ToolTip="Montant de l'année" />
+                                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Types, ElementName=Racine}"
+                                                          SelectedIndex="{Binding IndexType}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="3" Style="{StaticResource Discret}" Text="saisi à la main" TextAlignment="Right"
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Command="{Binding AjouterRevenuCommand}" HorizontalAlignment="Left" Margin="0,6,0,0"
+                                        ToolTip="Revenu perçu ailleurs (loyer versé sur une autre banque, pension…)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" Margin="0,0,8,0" />
+                                        <TextBlock Text="Ajouter un revenu" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Grid Margin="0,10,0,0" Visibility="{Binding AvecBourse, Converter={StaticResource Visible}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Plus-values de bourse (compte-titres)" FontWeight="SemiBold" />
+                                        <TextBlock Style="{StaticResource Discret}" FontSize="11" TextWrapping="Wrap"
+                                                   Text="Ventes de l'année, module Bourse de tous les comptes. Les dividendes sont déjà taxés par le courtier." />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding PlusValues, Converter={StaticResource Euros}}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Pistes -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Positif}" />
+                                    <TextBlock Text="Pistes pour réduire l'impôt" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Aide}" Text="Économies calculées avec vos chiffres : ce ne sont pas des conseils personnalisés." />
+                                <ItemsControl ItemsSource="{Binding Pistes}" Margin="0,6,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="0,5">
+                                                <Border Width="10" Height="10" CornerRadius="5" Margin="2,5,10,0" VerticalAlignment="Top" DockPanel.Dock="Left"
+                                                        Background="{DynamicResource Positif}" />
+                                                <TextBlock DockPanel.Dock="Right" FontWeight="Bold" Foreground="{DynamicResource Positif}" Margin="10,0,0,0"
+                                                           Text="{Binding Economie, Converter={StaticResource Euros}, StringFormat='−{0}'}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Economie}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Titre}" FontWeight="SemiBold" />
+                                                    <TextBlock Text="{Binding Texte}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+                        <!-- Foyer -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                                    <TextBlock Text="Votre foyer" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Style="{StaticResource LibelleSaisie}" Text="Situation" />
+                                    <ComboBox Grid.Row="0" Grid.Column="1" Width="190" Margin="0,3" ItemsSource="{Binding Situations}" SelectedIndex="{Binding Situation}" />
+                                    <TextBlock Grid.Row="1" Style="{StaticResource LibelleSaisie}" Text="Enfants à charge" />
+                                    <TextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource Saisie}" Width="60" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding Enfants}" ToolTip="Personne seule avec enfants : comptée comme parent isolé (case T)" />
+                                    <TextBlock Grid.Row="2" Style="{StaticResource LibelleSaisie}" Text="Taux du prélèvement à la source (%)" />
+                                    <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding TauxPrelevement, Converter={StaticResource Montant}}" ToolTip="Sur la fiche de paie ou impots.gouv.fr" />
+                                    <TextBlock Grid.Row="3" Style="{StaticResource LibelleSaisie}" Text="Frais réels (vide : déduction de 10 %)" />
+                                    <TextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding FraisReels, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="4" Style="{StaticResource LibelleSaisie}" Text="Versements PER de l'année" />
+                                    <TextBox Grid.Row="4" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding VersementsPer, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="5" Style="{StaticResource LibelleSaisie}" Text="Dons aux associations" />
+                                    <TextBox Grid.Row="5" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding Dons, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="6" Style="{StaticResource LibelleSaisie}" Text="Emploi à domicile (ménage, garde…)" />
+                                    <TextBox Grid.Row="6" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding EmploiDomicile, Converter={StaticResource Montant}}" />
+                                    <CheckBox Grid.Row="7" Grid.ColumnSpan="2" Margin="0,6,0,0" IsChecked="{Binding OptionBareme}"
+                                              Content="Plus-values de bourse imposées au barème (case 2OP)" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Détail du calcul -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                                    <TextBlock Text="Détail du calcul" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                                <ItemsControl ItemsSource="{Binding Detail}" Margin="0,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Important}" Value="True">
+                                                                <Setter Property="TextElement.FontWeight" Value="Bold" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Grid.Style>
+                                                <TextBlock Text="{Binding Libelle}" TextWrapping="Wrap" Margin="0,0,10,0" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Montant, Converter={StaticResource Euros}}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding Remarques}" Margin="0,6,0,0" Visibility="{Binding AvecRemarques, Converter={StaticResource Visible}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="{DynamicResource Avertissement}" Margin="0,2" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
+                                           Text="Estimation simplifiée : barème 2026 (revenus 2025, modifiable ci-dessous), sans les autres réductions, pensions alimentaires ni revenus exceptionnels. Seul l'avis d'impôt fait foi." />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Barème -->
+                        <Border Style="{StaticResource Carte}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Command="{Binding BaremeParDefautCommand}" VerticalAlignment="Center"
+                                            ToolTip="Remettre les valeurs de la loi de finances 2026">
+                                        <TextBlock Text="Valeurs par défaut" />
+                                    </Button>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                                        <TextBlock Text="Barème et taux" Style="{StaticResource TitreCarte}" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <TextBlock Style="{StaticResource Aide}" Text="À corriger quand la loi de finances change (impots.gouv.fr, service-public.fr)." />
+                                <ItemsControl ItemsSource="{Binding Parametres}" Margin="0,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="20" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Style="{StaticResource LibelleSaisie}" Text="{Binding Libelle}" />
+                                                <TextBox Grid.Column="1" Style="{StaticResource Saisie}" Width="90"
+                                                         Text="{Binding Valeur, Converter={StaticResource Montant}}" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Unite}" Margin="4,0,0,0" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

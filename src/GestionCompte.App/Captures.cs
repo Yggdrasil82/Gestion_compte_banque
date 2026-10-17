@@ -167,6 +167,7 @@ internal static class Captures
                 MainViewModel.OngletAssistant => HauteurMail,
                 MainViewModel.OngletPrets => HauteurPrets,
                 MainViewModel.OngletBourse => HauteurBourse,
+                MainViewModel.OngletImpots => HauteurBourse,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -248,6 +249,21 @@ internal static class Captures
             vm.Bourse.Filtre = 0;
             await Capturer(("41-ensemble-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletEnsemble, false));
             vm.CompteActif = RegistreComptes.NomPrincipal;
+
+            // Impôts : tous les comptes d'exemple, un foyer et des loyers inventés.
+            vm.Impots.Situation = 1;
+            vm.Impots.Enfants = 1;
+            vm.Impots.TauxPrelevement = 6.2m;
+            vm.Impots.VersementsPer = 1500m;
+            vm.Impots.AjouterRevenuCommand.Execute(null);
+            vm.Impots.RevenusManuels[^1].Libelle = "Loyer studio (autre banque)";
+            vm.Impots.RevenusManuels[^1].Montant = 7800m;
+            vm.Impots.AjouterRevenuCommand.Execute(null);
+            vm.Impots.RevenusManuels[^1].Libelle = "Location meublée";
+            vm.Impots.RevenusManuels[^1].IndexType = (int)Core.Impots.TypeRevenuFiscal.LoyerMeuble;
+            vm.Impots.RevenusManuels[^1].Montant = 5400m;
+            await Capturer(("46-impots-ocean", Ambiance.Ocean, false, MainViewModel.OngletImpots, false));
+            await Capturer(("47-impots-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletImpots, false));
 
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
             new DepotSqlite(registre.Chemin(registre.Ajouter("Compte joint"))).Enregistrer(ConfigurationParDefaut.CreerDemoHistorique());

@@ -111,11 +111,11 @@ public sealed class ApparenceTests : IDisposable
 
         apparence.ChoisirCompte("compte.db");
         Assert.True(apparence.ModuleBourse);
-        Assert.Equal("Bourse", apparence.OrdreModules[^1]);
+        Assert.Equal("Impots", apparence.OrdreModules[^1]);
 
         var relu = Ouvrir("compte-2.db");
         Assert.False(relu.ModuleBourse);
-        Assert.Equal(new[] { "Bourse", "Prets" }, relu.OrdreModules.TakeLast(2));
+        Assert.Equal(new[] { "Bourse", "Prets", "Impots" }, relu.OrdreModules.TakeLast(3));
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public sealed class ApparenceTests : IDisposable
 
         Assert.Equal(new[] { "Mail", "Bilan", "Documents" }, apparence.OrdreModules.Take(3));
         Assert.Equal(apparence.OrdreModules, apparence.Modules.Select(m => m.Id));
-        Assert.Equal(9, apparence.OrdreModules.Count);
+        Assert.Equal(10, apparence.OrdreModules.Count);
     }
 
     [Fact]

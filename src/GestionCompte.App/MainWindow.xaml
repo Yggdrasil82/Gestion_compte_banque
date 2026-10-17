@@ -109,6 +109,11 @@
                                      ToolTip="Placements en bourse (Trade Republic) : positions, plus-values, cours"
                                      Visibility="{Binding Apparence.ModuleBourse, Converter={StaticResource Visible}}"
                                      IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=15}" />
+                        <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Uid="Impots" Content="Impôts"
+                                     Tag="&#xE8EF;" Background="{DynamicResource Accent3}"
+                                     ToolTip="Estimation de l'impôt sur le revenu à partir de tous les comptes, et pistes pour le réduire"
+                                     Visibility="{Binding Apparence.ModuleImpots, Converter={StaticResource Visible}}"
+                                     IsChecked="{Binding OngletSelectionne, Converter={StaticResource Egal}, ConverterParameter=17}" />
                     </StackPanel>
                     <RadioButton Style="{StaticResource Navigation}" GroupName="Navigation" Content="Vue d'ensemble"
                                  Tag="&#xE80A;" Background="{DynamicResource Positif}"
@@ -328,6 +333,9 @@
                 <!-- Module Bourse -->
                 <ContentControl Content="{Binding Bourse}"
                                 Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=15}" />
+                <!-- Module Impôts -->
+                <ContentControl Content="{Binding Impots}"
+                                Visibility="{Binding OngletSelectionne, Converter={StaticResource VisibleSiEgal}, ConverterParameter=17}" />
 
                 <!-- Suggestions reçues -->
                 <ContentControl Content="{Binding Suggestions}"

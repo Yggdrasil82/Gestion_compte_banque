@@ -416,3 +416,9 @@ public static class CalculImpot
     public static string Pourcent(decimal taux) =>
         $"{(taux * 100).ToString("0.##", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))} %";
 }
+
+/// <summary>Type fiscal choisi pour un revenu d'un compte, et montant imposable de l'année saisi à la main (ou null).</summary>
+public sealed record AffectationRevenu(string Compte, string Revenu, TypeRevenuFiscal Type, decimal? MontantImposable);
+
+/// <summary>Revenu ajouté à la main (perçu hors des comptes suivis), montant de l'année.</summary>
+public sealed record RevenuManuel(string Libelle, TypeRevenuFiscal Type, decimal Montant);

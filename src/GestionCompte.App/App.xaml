@@ -580,6 +580,10 @@
             <vues:VueBourse />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:ImpotsViewModel}">
+            <vues:VueImpots />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:SuggestionsViewModel}">
             <vues:VueSuggestions />
         </DataTemplate>
