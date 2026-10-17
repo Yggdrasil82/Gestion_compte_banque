@@ -83,11 +83,10 @@ du classeur Excel d'origine.
 - **2.12.0** : Bourse, nouvelles tuiles : « Réalisé, revenus et frais » en premier avec le gain réalisé net, nouvelle tuile « Gain net et impôt » (flat tax prévue sur les plus-values de l'année du compte-titres, net après impôt), « Prévision de gain » dans la plus-value latente ; plus-values aussi « hors frais d'achat » (calcul de Trade Republic) ; tableau « Mes titres » séparé entre compte-titres et PEA avec le total de chacun ; carte « Aide à la décision » (poids des frais, concentration, PEA ou compte-titres, fiscalité de fin d'année, rythme et espèces) et bouton « Analyser avec l'Assistant » ; nouvelle icône et nouveau logo (canard en redingote sur ses pièces d'or) et vidéo du canard à l'ouverture, sans le son (l'ancienne animation la remplace si Windows ne sait pas la lire).
 - **2.12.1** : la vidéo du canard s'affiche aussi avec les données dans Google Drive, avant la fenêtre du mot de passe (le réglage est retenu sur le PC).
 - **2.13.0** : « Enregistrer une copie de tout… » : tous les comptes, les préférences et le coffre de Documents dans un seul fichier .zip (sans les clés ni mots de passe), et « Restaurer une copie de tout… » (copie de sécurité des données actuelles, puis redémarrage).
+- **2.14.0** : Mistral ajouté dans Configuration › Intelligence artificielle ; cases « IA utilisées » dans chaque module (Achats, Lettres, Assistant, Crédits), mémorisées ; date de la dernière opération importée sous « Importer un relevé » ; Configuration réorganisée sur deux colonnes (budget à gauche, application à droite, charges en bas) avec des cartes réductibles d'un clic sur leur titre.
 
 ## Prochainement
 
-- Mistral de retour dans Configuration › IA (offre gratuite « Experiment ») pour l'Assistant et les Lettres ; recherche des achats par Mistral si sa recherche internet est incluse dans l'offre gratuite.
-- Module Achats : choisir les IA utilisées pour la recherche (une case par IA réglée, mémorisée).
 - Recherche des achats : Groq « Compound » (recherche internet intégrée, même clé Groq) en deuxième choix.
 
 ## Télécharger l'application

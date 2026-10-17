@@ -98,6 +98,9 @@ public sealed class PreferencesAffichage
     /// <summary>Date de la dernière suggestion déjà vue (les suivantes sont signalées comme nouvelles).</summary>
     public DateTime? SuggestionsVuesJusquA { get; set; }
 
+    /// <summary>Cartes de la Configuration réduites (titre seul), par nom de carte.</summary>
+    public List<string> CartesReduites { get; set; } = new();
+
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
     {
@@ -399,6 +402,20 @@ public sealed class ApparenceViewModel : ObservableObject
     {
         get => Affiche("Assistant");
         set => Afficher("Assistant", value);
+    }
+
+    /// <summary>La carte de la Configuration est réduite à son titre.</summary>
+    public bool CarteReduite(string carte) => _preferences.CartesReduites.Contains(carte);
+
+    public void ReduireCarte(string carte, bool reduite)
+    {
+        if (reduite == CarteReduite(carte))
+            return;
+        if (reduite)
+            _preferences.CartesReduites.Add(carte);
+        else
+            _preferences.CartesReduites.Remove(carte);
+        Enregistrer();
     }
 
     /// <summary>Animation du canard à l'ouverture de l'application (réglage propre au PC).</summary>

@@ -42,7 +42,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 <section class="couverture">
   <img class="logo" src="images/logo.png" alt="">
   <h1>Mon Budget</h1>
-  <p class="sous">Manuel d'utilisation · version 2.13.0</p>
+  <p class="sous">Manuel d'utilisation · version 2.14.0</p>
   <p class="note">Toutes les captures de ce manuel sont prises avec des données d'exemple : les noms, montants, adresses et documents sont fictifs.</p>
 </section>
 
@@ -130,7 +130,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 
 <section class="page">
   <h2>4. Importer un relevé</h2>
-  <p>Téléchargez le relevé sur le site de votre banque au format <b>OFX</b> ou <b>QIF</b> (Fortuneo…), puis « Relevé » (onglet Mois) ou « Importer un relevé… » (barre de gauche). Le fichier est lu sur votre PC uniquement.</p>
+  <p>Téléchargez le relevé sur le site de votre banque au format <b>OFX</b> ou <b>QIF</b> (Fortuneo…), puis « Relevé » (onglet Mois) ou « Importer un relevé… » (barre de gauche). Le fichier est lu sur votre PC uniquement. Sous ce bouton, la date de la dernière opération importée indique à partir de quand télécharger le relevé suivant.</p>
   <figure><img src="images/12-import-ocean.png" alt="Import du relevé"><figcaption>Chaque ligne du relevé est rapprochée d'une opération prévue ou ajoutée.</figcaption></figure>
   <ul>
     <li><b>Rapprochée</b> : l'opération prévue est pointée. <b>Montant ajusté</b> : pointée avec le montant de la banque. <b>Revenu reçu</b> : le revenu est coché. <b>Nouvelle</b> : ajoutée au mois.</li>
@@ -238,7 +238,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 
 <section class="page">
   <h2>12. Assistant</h2>
-  <p>Poser une question sur son budget à Gemini, à Groq ou aux deux.</p>
+  <p>Poser une question sur son budget aux IA cochées en haut de l'écran (Gemini, Groq, Mistral).</p>
   <figure><img src="images/27-assistant-ocean.png" alt="Assistant"></figure>
   <ul>
     <li>Choisissez l'IA en haut, tapez la question ou cliquez sur une question proposée, puis « Demander ».</li>
@@ -328,7 +328,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 
 <section class="page">
   <h2>17. Configuration</h2>
-  <p>Les réglages du compte ouvert et du PC.</p>
+  <p>Les réglages du compte ouvert et du PC, sur deux colonnes : le budget à gauche, l'application à droite, les charges en bas. Un clic sur le titre d'une carte la réduit (ou la rouvre) ; l'état est mémorisé.</p>
   <figure class="demi"><img src="images/9-configuration-ocean.png" alt="Configuration"></figure>
 </section>
 
@@ -346,7 +346,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Suggestions</b></td><td>« Suggérer une amélioration » ouvre le formulaire en ligne (la version de l'application est déjà remplie). Le lien des réponses ne concerne que l'auteur de l'application : il affiche l'onglet « Suggestions » avec les suggestions reçues, lues à chaque ouverture.</td></tr>
     <tr><td><b>Compte Google</b></td><td>État « Connecté : adresse » ou « Non connecté », boutons Connecter, Reconnecter et Déconnecter. Pendant la connexion, la carte affiche l'étape en cours.</td></tr>
     <tr><td><b>Stockage des données</b></td><td>Sur ce PC, ou dans Google Drive, chiffrées : voir le chapitre 19.</td></tr>
-    <tr><td><b>Intelligence artificielle</b></td><td>Case pour couper tout envoi aux IA, et clés Gemini et Groq.</td></tr>
+    <tr><td><b>Intelligence artificielle</b></td><td>Case pour couper tout envoi aux IA, et clés Gemini, Groq et Mistral. Dans chaque module (Achats, Lettres, Assistant, Crédits), les cases « IA utilisées » choisissent les IA de ce module.</td></tr>
     <tr><td><b>Mises à jour</b></td><td>Version installée et bouton « Rechercher une mise à jour ». L'application vérifie aussi au démarrage : si une nouvelle version existe, elle affiche ses nouveautés et demande avant d'installer. « Installer et redémarrer » remplace le programme ; vos données ne sont pas touchées.</td></tr>
   </table>
   <p>Les montants de Configuration servent pour chaque nouveau mois. Pour un mois déjà créé, utilisez « Appliquer la configuration » dans l'onglet Mois.</p>
@@ -369,6 +369,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><th style="width:18%">IA</th><th style="width:36%">Où créer la clé</th><th>À savoir</th></tr>
     <tr><td><b>Gemini</b> (Google)</td><td>Google AI Studio : aistudio.google.com, « Get API key »</td><td>Gratuit sans carte bancaire. Modèle Flash-Lite par défaut (environ 500 demandes par jour). Pas de recherche internet avec une clé gratuite.</td></tr>
     <tr><td><b>Groq</b></td><td>console.groq.com/keys, « Create API Key »</td><td>Gratuit sans carte bancaire (environ 1 000 demandes par jour). Recherche internet possible (Achats, Taux du moment) ; si la clé la refuse, l'application le dit.</td></tr>
+    <tr><td><b>Mistral</b></td><td>console.mistral.ai/api-keys, offre « Experiment »</td><td>Gratuit sans carte bancaire (limites par minute). Recherche internet tentée ; si l'offre gratuite la refuse, Mistral répond de mémoire et l'application le dit.</td></tr>
   </table>
   <p>Collez la clé dans Configuration › Intelligence artificielle › « Saisir la clé… ». Elle est chiffrée par Windows et reste sur votre PC (ou voyage, chiffrée, avec vos données dans Google Drive). Ne la communiquez à personne.</p>
   <div class="encart"><p><b>Tout reste gratuit</b> tant qu'aucune carte bancaire ni compte de facturation n'est ajouté chez Google ou Groq. Si une limite du jour est atteinte, l'application le dit et indique quand réessayer.</p></div>

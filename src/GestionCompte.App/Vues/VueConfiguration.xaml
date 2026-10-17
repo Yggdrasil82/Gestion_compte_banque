@@ -1,6 +1,7 @@
 <UserControl x:Class="GestionCompte.App.Vues.VueConfiguration"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:GestionCompte.App"
              xmlns:vm="clr-namespace:GestionCompte.Presentation;assembly=GestionCompte.Presentation">
     <UserControl.Resources>
         <!-- Boutons + / − / ▲ / ▼ d'une liste (le DataContext est la ListeEditable). -->
@@ -35,7 +36,7 @@
             </Grid.RowDefinitions>
 
             <!-- Démarrage -->
-            <Border Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource Carte}">
+            <Border Grid.Row="0" Grid.ColumnSpan="2" Style="{StaticResource Carte}" local:Repli.Carte="Démarrage">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
@@ -57,9 +58,9 @@
                 </StackPanel>
             </Border>
 
-            <StackPanel Grid.Row="2" Grid.Column="0">
+            <StackPanel Grid.Row="1" Grid.Column="0">
                 <!-- Revenus -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Revenus">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding Revenus}" ContentTemplate="{StaticResource BoutonsListe}" />
@@ -82,7 +83,7 @@
                 </Border>
 
                 <!-- Enveloppes -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Enveloppes">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding Enveloppes}" ContentTemplate="{StaticResource BoutonsListe}" />
@@ -114,11 +115,8 @@
                     </DockPanel>
                 </Border>
 
-            </StackPanel>
-
-            <StackPanel Grid.Row="2" Grid.Column="1">
                 <!-- Comptes cumulés -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Comptes cumulés">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding ComptesCumul}" ContentTemplate="{StaticResource BoutonsListe}" />
@@ -147,7 +145,7 @@
                 </Border>
 
                 <!-- Catégories d'opérations (choisies à la main dans le mois) -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Catégories d'opérations">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding CategoriesOperations}" ContentTemplate="{StaticResource BoutonsListe}" />
@@ -186,7 +184,7 @@
                 </Border>
 
                 <!-- Règles de classement des relevés importés -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Règles de classement">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top">
                             <ContentControl DockPanel.Dock="Right" Content="{Binding Regles}" ContentTemplate="{StaticResource BoutonsListe}" />
@@ -214,9 +212,11 @@
                         </DataGrid>
                     </DockPanel>
                 </Border>
+            </StackPanel>
 
+            <StackPanel Grid.Row="1" Grid.Column="1">
                 <!-- Modules (propres au compte ouvert) -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Modules">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
@@ -251,7 +251,7 @@
                 </Border>
 
                 <!-- Suggestions : formulaire pour tous, réponses chez l'auteur de l'application -->
-                <Border Style="{StaticResource Carte}" DataContext="{Binding Suggestions}">
+                <Border Style="{StaticResource Carte}" DataContext="{Binding Suggestions}" local:Repli.Carte="Suggestions">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
@@ -278,7 +278,7 @@
                 </Border>
 
                 <!-- Mises à jour de l'application -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Mises à jour">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
@@ -296,7 +296,7 @@
                 </Border>
 
                 <!-- Compte Google (réglage propre à ce PC) -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Compte Google">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
@@ -318,7 +318,7 @@
                 </Border>
 
                 <!-- Stockage des données : sur ce PC ou dans Google Drive (chiffrées) -->
-                <Border Style="{StaticResource Carte}" DataContext="{Binding DonneesDrive}">
+                <Border Style="{StaticResource Carte}" DataContext="{Binding DonneesDrive}" local:Repli.Carte="Stockage des données">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
@@ -346,7 +346,7 @@
                 </Border>
 
                 <!-- Intelligence artificielle (réglage propre à ce PC) -->
-                <Border Style="{StaticResource Carte}">
+                <Border Style="{StaticResource Carte}" local:Repli.Carte="Intelligence artificielle">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
                             <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
@@ -385,7 +385,7 @@
             </StackPanel>
 
             <!-- Charges -->
-            <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Carte}">
+            <Border Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource Carte}" local:Repli.Carte="Charges">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <ContentControl DockPanel.Dock="Right" Content="{Binding Charges}" ContentTemplate="{StaticResource BoutonsListe}" />

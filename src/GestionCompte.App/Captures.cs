@@ -86,12 +86,19 @@ internal static class Captures
         secrets.Ecrire(MailViewModel.SecretSmtp, System.Text.Json.JsonSerializer.Serialize(
             new ReglagesSmtp("smtp.orange.fr", 465, SecuriteSmtp.Ssl, "prenom.nom@exemple.fr", "", "Prénom Nom")));
         secrets.Ecrire(MailViewModel.SecretSmtpMotDePasse, "demo");
+        // Clés d'IA fictives (aucune IA n'est appelée) : les cases « IA utilisées » des modules s'affichent.
+        secrets.Ecrire(ServicesIA.SecretGemini, "demo");
+        secrets.Ecrire(ServicesIA.SecretGroq, "demo");
+        secrets.Ecrire(ServicesIA.SecretMistral, "demo");
+        secrets.Ecrire("ia-module-achats-sans", "Mistral");
         var vm = new MainViewModel(registre, new Dialogues(), new DateTime(2026, 11, 15), null, secrets);
         // Stockage des données : sur ce PC (réglage Google Drive dans un dossier temporaire, rien n'est envoyé).
         var dossierPC = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"gestioncompte-pc-{Guid.NewGuid():N}")).FullName;
         const string DossierLocalDemo = @"C:\Users\Prénom\Documents\GestionCompte";
         vm.DonneesDrive = new DonneesDriveViewModel(vm.Google, new Dialogues(), new DemarrageDrive(dossierPC, null), null,
             dossierDemo, DossierLocalDemo, secrets, secrets, null);
+        // Une carte réduite dans la Configuration, pour montrer le repli.
+        vm.Apparence.ReduireCarte("Mises à jour", true);
         vm.Apparence.Changee += (_, _) => Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
         Themes.Appliquer(app, vm.Apparence.Ambiance, vm.Apparence.Sombre);
 
