@@ -131,7 +131,7 @@
                                 <Grid Margin="0,8,0,4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="118" />
                                         <ColumnDefinition Width="170" />
                                         <ColumnDefinition Width="110" />
                                     </Grid.ColumnDefinitions>
@@ -146,7 +146,7 @@
                                             <Grid Margin="0,3">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="118" />
                                                     <ColumnDefinition Width="170" />
                                                     <ColumnDefinition Width="110" />
                                                 </Grid.ColumnDefinitions>
@@ -175,7 +175,7 @@
                                             <Grid Margin="0,3">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="118" />
                                                     <ColumnDefinition Width="170" />
                                                     <ColumnDefinition Width="110" />
                                                 </Grid.ColumnDefinitions>
