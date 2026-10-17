@@ -95,7 +95,12 @@ public sealed class DepotSqlite
             l => configuration.ComptesCumul.Add(new CompteCumul(
                 l.GetString(0), LireDecimal(l.GetString(1)), l.IsDBNull(2) ? null : LireDecimal(l.GetString(2)))));
 
-        var compte = new CompteBancaire(configuration) { IdentifiantBanque = parametres.GetValueOrDefault("identifiant_banque") };
+        var compte = new CompteBancaire(configuration)
+        {
+            IdentifiantBanque = parametres.GetValueOrDefault("identifiant_banque"),
+            DerniereOperationImportee = LireDate(parametres.GetValueOrDefault("derniere_operation_importee")),
+            DateDernierImport = LireDate(parametres.GetValueOrDefault("dernier_import_le")),
+        };
         var moisParId = new Dictionary<long, MoisBudget>();
 
         Lire(connexion, "SELECT id, annee, mois FROM mois ORDER BY annee, mois", l =>
@@ -237,6 +242,12 @@ public sealed class DepotSqlite
             ("$s", EcrireDecimal(configuration.SoldeInitial)));
         if (compte.IdentifiantBanque is not null)
             Executer(connexion, "INSERT INTO parametres (cle, valeur) VALUES ('identifiant_banque', $id)", ("$id", compte.IdentifiantBanque));
+        if (compte.DerniereOperationImportee is { } derniere)
+            Executer(connexion, "INSERT INTO parametres (cle, valeur) VALUES ('derniere_operation_importee', $d)",
+                ("$d", derniere.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        if (compte.DateDernierImport is { } importLe)
+            Executer(connexion, "INSERT INTO parametres (cle, valeur) VALUES ('dernier_import_le', $d)",
+                ("$d", importLe.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
         foreach (var (revenu, ordre) in configuration.Revenus.Select((r, i) => (r, i)))
             Executer(connexion, "INSERT INTO modele_revenu (ordre, nom, montant) VALUES ($o, $n, $m)",
@@ -375,6 +386,9 @@ public sealed class DepotSqlite
     // Pooling désactivé : le fichier est libéré dès la fermeture (copie, sauvegarde, suppression).
     private static string ChaineConnexion(string chemin, SqliteOpenMode mode) =>
         new SqliteConnectionStringBuilder { DataSource = chemin, Mode = mode, Pooling = false }.ToString();
+
+    private static DateOnly? LireDate(string? texte) =>
+        DateOnly.TryParseExact(texte, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) ? date : null;
 
     private int VerifierVersion(SqliteConnection connexion)
     {

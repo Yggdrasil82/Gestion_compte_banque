@@ -26,6 +26,19 @@ public sealed class CompteBancaire
     /// <summary>Numéro du compte bancaire (ACCTID) des relevés importés dans ce compte, ou null.</summary>
     public string? IdentifiantBanque { get; set; }
 
+    /// <summary>Date de la dernière opération importée d'un relevé (pour télécharger le suivant à partir de là), ou null.</summary>
+    public DateOnly? DerniereOperationImportee { get; set; }
+
+    /// <summary>Jour du dernier import de relevé, ou null.</summary>
+    public DateOnly? DateDernierImport { get; set; }
+
+    /// <summary>
+    /// Dernier mois contenant une opération importée : repère pour les imports faits avant que la date ne soit retenue.
+    /// </summary>
+    public PeriodeMois? DernierMoisImporte =>
+        _mois.LastOrDefault(m => m.Operations.Any(o => o.IdentifiantBanque is not null)
+                                 || m.Revenus.Any(r => r.IdentifiantBanque is not null))?.Periode;
+
     public IReadOnlyList<MoisBudget> Mois => _mois;
 
     public MoisBudget? Trouver(PeriodeMois periode) => _mois.Find(m => m.Periode == periode);

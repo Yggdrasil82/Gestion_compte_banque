@@ -364,6 +364,14 @@ public static class ImportReleve
             nouvelles++;
         }
 
+        // Dernière opération du relevé importé : le prochain relevé se télécharge à partir de cette date.
+        if (aImporter.Count > 0)
+        {
+            var derniere = aImporter.Max(l => l.Source.Date);
+            if (compte.DerniereOperationImportee is not { } avant || derniere > avant)
+                compte.DerniereOperationImportee = derniere;
+        }
+
         return new ResultatImport(rapprochees, ajustees, revenus, nouvelles, plan.Lignes.Count - aImporter.Count, crees);
     }
 

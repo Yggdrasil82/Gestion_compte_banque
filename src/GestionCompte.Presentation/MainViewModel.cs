@@ -818,6 +818,9 @@ public sealed partial class MainViewModel : ObservableObject
         nouveau.SimulationsCredit.AddRange(_compte.SimulationsCredit);
         nouveau.Prets.AddRange(_compte.Prets);
         nouveau.Portefeuille.Ajouter(_compte.Portefeuille.Operations);
+        nouveau.IdentifiantBanque = _compte.IdentifiantBanque;
+        nouveau.DerniereOperationImportee = _compte.DerniereOperationImportee;
+        nouveau.DateDernierImport = _compte.DateDernierImport;
         foreach (var (isin, cours) in _compte.Portefeuille.Cours)
             nouveau.Portefeuille.Cours[isin] = cours;
         Repartir(nouveau);
@@ -1010,6 +1013,8 @@ public sealed partial class MainViewModel : ObservableObject
             : resultat.MoisCrees.Count > 0 ? resultat.MoisCrees[^1] : (PeriodeMois?)null;
         var index = cible is { } p ? _compte.Mois.ToList().FindIndex(m => m.Periode == p) : -1;
         _indexMois = index >= 0 ? index : IndexMoisParDefaut();
+        if (concernes.Count > 0)
+            _compte.DateDernierImport = DateOnly.FromDateTime(_aujourdhui);
 
         Enregistrer();
         Reconstruire();
@@ -1051,7 +1056,23 @@ public sealed partial class MainViewModel : ObservableObject
             { Apparence = Apparence, Google = Google, IA = IA, MisesAJour = MisesAJour, DonneesDrive = DonneesDrive, Suggestions = Suggestions };
         ReconstruirePrevisionnel();
         AfficherMoisCourant();
+        OnPropertyChanged(nameof(TexteDernierImport));
+        OnPropertyChanged(nameof(AvecDernierImport));
     }
+
+    /// <summary>
+    /// Sous « Importer un relevé » : date de la dernière opération importée, pour télécharger le relevé suivant à partir
+    /// de cette date sur le site de la banque ; vide si aucun relevé n'a été importé dans ce compte.
+    /// </summary>
+    public string TexteDernierImport =>
+        _compte?.DerniereOperationImportee is { } derniere
+            ? $"Dernière opération importée : {derniere:dd/MM/yyyy}" +
+              (_compte.DateDernierImport is { } le ? $" (import du {le:dd/MM/yyyy})" : "")
+            : _compte?.DernierMoisImporte is { } mois
+                ? $"Dernier import : opérations de {mois.Libelle.ToLower(System.Globalization.CultureInfo.CurrentCulture)}"
+                : "";
+
+    public bool AvecDernierImport => TexteDernierImport.Length > 0;
 
     private void ReconstruirePrevisionnel()
     {

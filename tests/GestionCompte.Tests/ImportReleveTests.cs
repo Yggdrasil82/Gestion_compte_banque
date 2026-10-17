@@ -337,6 +337,37 @@ public class ImportReleveTests
     }
 
     [Fact]
+    public void Appliquer_RetientLaDerniereOperationImportee()
+    {
+        var compte = CompteOctobre();
+        Assert.Null(compte.DernierMoisImporte);
+        ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, Releve(
+            Ligne("XFER", "20261005", "-801.00", "L1", "PRLV SEPA LOYER"),
+            Ligne("DEBIT", "20261012", "-64.20", "C1", "CB CARREFOUR MARKET"))));
+
+        Assert.Equal(new DateOnly(2026, 10, 12), compte.DerniereOperationImportee);
+        Assert.Equal(new PeriodeMois(2026, 10), compte.DernierMoisImporte);
+
+        // Un relevé plus ancien ne recule pas la date.
+        ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, Releve(
+            Ligne("DEBIT", "20261008", "-12.00", "C0", "CB BOULANGERIE"))));
+        Assert.Equal(new DateOnly(2026, 10, 12), compte.DerniereOperationImportee);
+
+        var chemin = Path.Combine(Path.GetTempPath(), $"import-{Guid.NewGuid():N}.db");
+        try
+        {
+            compte.DateDernierImport = new DateOnly(2026, 10, 15);
+            new GestionCompte.Data.DepotSqlite(chemin).Enregistrer(compte);
+            var relu = new GestionCompte.Data.DepotSqlite(chemin).Charger()!;
+            Assert.Equal((new DateOnly(2026, 10, 12), new DateOnly(2026, 10, 15)), (relu.DerniereOperationImportee, relu.DateDernierImport));
+        }
+        finally
+        {
+            File.Delete(chemin);
+        }
+    }
+
+    [Fact]
     public void Appliquer_UneDeuxiemeFois_AucunDoublon()
     {
         var compte = CompteOctobre();
