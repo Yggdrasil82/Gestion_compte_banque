@@ -58,7 +58,7 @@
                 </StackPanel>
             </Border>
 
-            <StackPanel Grid.Row="1" Grid.Column="0">
+            <StackPanel Grid.Row="2" Grid.Column="0">
                 <!-- Revenus -->
                 <Border Style="{StaticResource Carte}" local:Repli.Carte="Revenus">
                     <DockPanel>
@@ -214,7 +214,7 @@
                 </Border>
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Grid.Column="1">
+            <StackPanel Grid.Row="2" Grid.Column="1">
                 <!-- Modules (propres au compte ouvert) -->
                 <Border Style="{StaticResource Carte}" local:Repli.Carte="Modules">
                     <StackPanel>
@@ -385,7 +385,7 @@
             </StackPanel>
 
             <!-- Charges -->
-            <Border Grid.Row="2" Grid.ColumnSpan="2" Style="{StaticResource Carte}" local:Repli.Carte="Charges">
+            <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Carte}" local:Repli.Carte="Charges">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top">
                         <ContentControl DockPanel.Dock="Right" Content="{Binding Charges}" ContentTemplate="{StaticResource BoutonsListe}" />
