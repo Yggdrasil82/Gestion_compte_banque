@@ -65,8 +65,14 @@ public sealed record BilanBourse(
     /// <summary>Plus-values des ventes du compte-titres pendant <see cref="AnneeImpot"/> (le PEA n'est imposé qu'au retrait).</summary>
     public decimal PlusValuesImposables { get; init; }
 
-    /// <summary>Taux de la flat tax (prélèvement forfaitaire unique) : 12,8 % d'impôt et 17,2 % de prélèvements sociaux.</summary>
-    public const decimal TauxFlatTax = 0.30m;
+    /// <summary>
+    /// Taux de la flat tax (prélèvement forfaitaire unique) d'une année : 12,8 % d'impôt et les prélèvements sociaux,
+    /// 17,2 % jusqu'en 2025 puis 18,6 % (loi de financement de la sécurité sociale pour 2026), soit 30 % puis 31,4 %.
+    /// </summary>
+    public static decimal TauxFlatTaxPour(int annee) => annee >= 2026 ? 0.314m : 0.30m;
+
+    /// <summary>Taux de la flat tax de <see cref="AnneeImpot"/>.</summary>
+    public decimal TauxFlatTax => TauxFlatTaxPour(AnneeImpot);
 
     /// <summary>Flat tax prévisionnelle sur les plus-values de l'année (0 en cas de perte).</summary>
     public decimal FlatTax => Math.Round(Math.Max(0, PlusValuesImposables) * TauxFlatTax, 2);

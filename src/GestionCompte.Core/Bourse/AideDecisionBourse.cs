@@ -113,8 +113,8 @@ public static class AideDecisionBourse
             var cinqAns = ouverture.AddYears(5);
             texte.Append(aujourdhui.Date < cinqAns
                 ? $"PEA ouvert le {ouverture:dd/MM/yyyy} (première opération) : à partir du {cinqAns:dd/MM/yyyy}, ses gains retirés ne paieront plus " +
-                  "que les prélèvements sociaux (17,2 %) au lieu de 30 %. Avant cette date, un retrait ferme le PEA."
-                : $"PEA de plus de 5 ans (ouvert le {ouverture:dd/MM/yyyy}) : ses gains retirés ne paient que les prélèvements sociaux (17,2 %).");
+                  "que les prélèvements sociaux (18,6 %) au lieu de 31,4 %. Avant cette date, un retrait ferme le PEA."
+                : $"PEA de plus de 5 ans (ouvert le {ouverture:dd/MM/yyyy}) : ses gains retirés ne paient que les prélèvements sociaux (18,6 %).");
         }
         var eligibles = bilan.Positions
             .Where(p => p.Enveloppe == EnveloppeBourse.CompteTitres && !EstFonds(p.Classe) && p.Isin.Length >= 2 && PaysPea.Contains(p.Isin[..2]))
@@ -147,7 +147,7 @@ public static class AideDecisionBourse
                 $"Plus-values {annee} du compte-titres : {Signe(imposables)}, flat tax prévue {Euros(bilan.FlatTax)}. " +
                 $"Les lignes en moins-value ({string.Join(", ", pertes.Select(p => $"{p.Nom} {Signe(p.PlusValue)}"))}), si elles étaient vendues " +
                 $"avant le 31/12, compenseraient {Euros(compensable)} de ces plus-values, soit environ " +
-                $"{Euros(Math.Round(compensable * BilanBourse.TauxFlatTax, 2))} d'impôt en moins. À peser selon vos projets : ce n'est pas un conseil de vente.",
+                $"{Euros(Math.Round(compensable * bilan.TauxFlatTax, 2))} d'impôt en moins. À peser selon vos projets : ce n'est pas un conseil de vente.",
                 NiveauIndicateur.Info);
         }
         if (imposables > 0)

@@ -150,8 +150,9 @@ public sealed class BourseTests : IDisposable
         Assert.Equal(3.00m, bilan.TaxesSurRevenus);
         Assert.Equal(122.00m, bilan.GainRealiseNet);      // 115 + 10 − 3
         Assert.Equal(38.50m, bilan.PlusValuesImposables);
-        Assert.Equal(11.55m, bilan.FlatTax);              // 30 % de 38,50
-        Assert.Equal(110.45m, bilan.NetApresImpot);
+        Assert.Equal(12.09m, bilan.FlatTax);              // 31,4 % de 38,50 (taux 2026)
+        Assert.Equal(109.91m, bilan.NetApresImpot);
+        Assert.Equal(8.55m, CalculBourse.Calculer(portefeuille, null, 2025).FlatTax); // 30 % de 28,50 (taux 2025)
         Assert.Equal(0m, CalculBourse.Calculer(portefeuille, EnveloppeBourse.Pea, 2026).FlatTax);
     }
 

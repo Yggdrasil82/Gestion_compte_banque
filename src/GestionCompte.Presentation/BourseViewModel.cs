@@ -105,7 +105,9 @@ public sealed partial class BourseViewModel : ObservableObject
 
     public bool NetApresImpotPositif => Bilan.NetApresImpot >= 0;
 
-    public string LibelleFlatTax => $"Flat tax {Bilan.AnneeImpot} prévue (30 %)";
+    public string LibelleFlatTax => $"Flat tax {Bilan.AnneeImpot} prévue ({Pourcent(Bilan.TauxFlatTax)})";
+
+    private static string Pourcent(decimal taux) => $"{(taux * 100).ToString("0.#", Francais)} %";
 
     public string TexteFlatTax => Bilan.FlatTax == 0 ? "0,00 €" : $"−{Montants.Formater(Bilan.FlatTax)} €";
 
@@ -113,7 +115,7 @@ public sealed partial class BourseViewModel : ObservableObject
         : $"−{Montants.Formater(Bilan.TaxesSurRevenus + Bilan.AutresFrais)} €";
 
     public string DetailImpot =>
-        $"Flat tax : 30 % (12,8 % d'impôt et 17,2 % de prélèvements sociaux) des plus-values {Bilan.AnneeImpot} des ventes du compte-titres " +
+        $"Flat tax : {Pourcent(Bilan.TauxFlatTax)} (12,8 % d'impôt et {Pourcent(Bilan.TauxFlatTax - 0.128m)} de prélèvements sociaux) des plus-values {Bilan.AnneeImpot} des ventes du compte-titres " +
         $"({Signe(Bilan.PlusValuesImposables)} €), 0 en cas de perte. Les dividendes sont déjà taxés par Trade Republic. " +
         "Le PEA n'est imposé qu'en cas de retrait. Prévision indicative : seul l'imprimé fiscal fait foi.";
 
