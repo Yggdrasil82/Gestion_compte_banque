@@ -8,6 +8,20 @@ internal sealed class PortefeuilleEnregistre
 {
     public List<OperationEnregistree> Operations { get; set; } = new();
     public List<CoursEnregistre> Cours { get; set; } = new();
+    public Dictionary<string, string> Secteurs { get; set; } = new();
+    public List<IdeeEnregistree> Idees { get; set; } = new();
+    public bool IdeesRepliees { get; set; }
+
+    internal sealed class IdeeEnregistree
+    {
+        public string Nom { get; set; } = "";
+        public string? Secteur { get; set; }
+        public string? Recherche { get; set; }
+        public string? Note { get; set; }
+        public decimal? Cours { get; set; }
+        public DateTime? Date { get; set; }
+        public string? Symbole { get; set; }
+    }
 
     internal sealed class OperationEnregistree
     {
@@ -46,6 +60,12 @@ internal sealed class PortefeuilleEnregistre
         {
             Isin = c.Key, Valeur = c.Value.Valeur, Date = c.Value.Date, Manuel = c.Value.Manuel, Symbole = c.Value.Symbole,
         }).ToList(),
+        Secteurs = new Dictionary<string, string>(portefeuille.Secteurs),
+        Idees = portefeuille.Idees.Select(i => new IdeeEnregistree
+        {
+            Nom = i.Nom, Secteur = i.Secteur, Recherche = i.Recherche, Note = i.Note, Cours = i.Cours, Date = i.DateCours, Symbole = i.Symbole,
+        }).ToList(),
+        IdeesRepliees = portefeuille.IdeesRepliees,
     });
 
     /// <summary>Relit le portefeuille dans <paramref name="portefeuille"/> ; des données illisibles laissent le portefeuille vide.</summary>
@@ -59,6 +79,10 @@ internal sealed class PortefeuilleEnregistre
                 o.Quantite, o.Prix, o.Montant, o.Frais, o.Taxes, o.Description)));
             foreach (var c in e.Cours.Where(c => c.Isin.Length > 0))
                 portefeuille.Cours[c.Isin] = new CoursTitre(c.Valeur, c.Date, c.Manuel, c.Symbole);
+            foreach (var (isin, secteur) in e.Secteurs ?? new())
+                portefeuille.Secteurs[isin] = secteur;
+            portefeuille.Idees.AddRange((e.Idees ?? new()).Select(i => new IdeeInvestissement(i.Nom, i.Secteur, i.Recherche, i.Note, i.Cours, i.Date, i.Symbole)));
+            portefeuille.IdeesRepliees = e.IdeesRepliees;
         }
         catch (JsonException)
         {

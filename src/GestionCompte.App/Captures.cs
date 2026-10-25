@@ -46,7 +46,10 @@ internal static class Captures
     private const double HauteurPrets = 2000;
 
     /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
-    private const double HauteurBourse = 1620;
+    private const double HauteurBourse = 2900;
+
+    /// <summary>Module Impôts : revenus, foyer, détail du calcul et pistes.</summary>
+    private const double HauteurImpots = 1620;
 
     /// <summary>Mois en entier (virements liés : toutes les opérations visibles).</summary>
     private const double HauteurMoisComplet = 1500;
@@ -167,7 +170,7 @@ internal static class Captures
                 MainViewModel.OngletAssistant => HauteurMail,
                 MainViewModel.OngletPrets => HauteurPrets,
                 MainViewModel.OngletBourse => HauteurBourse,
-                MainViewModel.OngletImpots => HauteurBourse,
+                MainViewModel.OngletImpots => HauteurImpots,
                 _ => Hauteur,
             };
             hote.Height = hauteur;
@@ -239,10 +242,26 @@ internal static class Captures
             {
                 new Core.Bourse.OperationBourse("demo-14", new DateTime(2026, 9, 15, 10, 0, 0), Core.Bourse.EnveloppeBourse.CompteTitres,
                     Core.Bourse.TypeOperationBourse.Vente, "iShares Core MSCI World", "IE00B4L5Y983", "FUND", -5, 106m, 530m, -1m, 0m, "Vente"),
+                // Un titre acheté puis entièrement vendu (carte « Titres vendus »).
+                new Core.Bourse.OperationBourse("demo-15", new DateTime(2025, 4, 7, 10, 0, 0), Core.Bourse.EnveloppeBourse.CompteTitres,
+                    Core.Bourse.TypeOperationBourse.Achat, "Schneider Electric", "FR0000121972", "STOCK", 3, 198m, -594m, -1m, -1.78m, "Achat"),
+                new Core.Bourse.OperationBourse("demo-16", new DateTime(2025, 7, 21, 10, 0, 0), Core.Bourse.EnveloppeBourse.CompteTitres,
+                    Core.Bourse.TypeOperationBourse.Vente, "Schneider Electric", "FR0000121972", "STOCK", -3, 221m, 663m, -1m, 0m, "Vente"),
+            });
+            // Secteurs et idées d'investissement (cours inventés).
+            demoBourse.Portefeuille.Secteurs["IE00B4L5Y983"] = "ETF monde";
+            demoBourse.Portefeuille.Secteurs["FR0011871128"] = "ETF États-Unis";
+            demoBourse.Portefeuille.Secteurs["FR0000120271"] = "Pétrole et gaz";
+            demoBourse.Portefeuille.Secteurs["FR0000120073"] = "Industrie";
+            demoBourse.Portefeuille.Idees.AddRange(new[]
+            {
+                new Core.Bourse.IdeeInvestissement("Sanofi", "Pharmaceutique", "FR0000120578", "Attendre un repli", 92.40m, new DateTime(2026, 11, 13), "SAN.PA"),
+                new Core.Bourse.IdeeInvestissement("ASML", "Semi-conducteurs", "NL0010273215", "Leader des machines de gravure", 651.20m, new DateTime(2026, 11, 13), "ASML.AS"),
+                new Core.Bourse.IdeeInvestissement("Siemens Energy", "Énergie", null, "À regarder après les résultats"),
             });
             new DepotSqlite(registre.Chemin(registre.Ajouter("Trade Republic"))).Enregistrer(demoBourse);
             vm.CompteActif = "Trade Republic";
-            vm.Bourse.Statut = "14 opérations importées.";
+            vm.Bourse.Statut = "16 opérations importées.";
             await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 2;
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));

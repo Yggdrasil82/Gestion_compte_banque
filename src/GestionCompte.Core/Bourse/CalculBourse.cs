@@ -18,6 +18,25 @@ public sealed record PositionBourse(
     public decimal? PlusValuePourcent => Cours is null || PrixRevient == 0 ? null : Math.Round(PlusValue / PrixRevient * 100, 2);
 }
 
+/// <summary>Tout ce qui s'est passé sur un titre : achats, dividendes et ventes, qu'il soit encore détenu ou non.</summary>
+/// <param name="Achete">Argent mis dans les achats, frais et taxes compris.</param>
+/// <param name="Dividendes">Dividendes reçus, nets des taxes retenues.</param>
+/// <param name="Vendu">Argent reçu des ventes, net des frais.</param>
+/// <param name="GainVentes">Plus-values des ventes (reçu − prix de revient moyen des titres vendus).</param>
+/// <param name="CoutVendu">Prix de revient des titres vendus.</param>
+public sealed record BilanTitre(
+    EnveloppeBourse Enveloppe, string Isin, string Nom, decimal Achete, decimal Dividendes, decimal Vendu, decimal GainVentes,
+    decimal CoutVendu, decimal QuantiteDetenue)
+{
+    public bool Solde => QuantiteDetenue == 0;
+
+    /// <summary>Plus-value des ventes en % du prix de revient des titres vendus, null sans vente.</summary>
+    public decimal? GainVentesPourcent => CoutVendu == 0 ? null : Math.Round(GainVentes / CoutVendu * 100, 2);
+
+    /// <summary>Gain encaissé : plus-values des ventes et dividendes nets.</summary>
+    public decimal GainRealise => GainVentes + Dividendes;
+}
+
 /// <summary>Bilan d'un portefeuille (ou d'une seule enveloppe).</summary>
 /// <param name="Versements">Argent versé sur le compte du courtier.</param>
 /// <param name="Retraits">Argent retiré vers la banque (positif).</param>
@@ -49,6 +68,9 @@ public sealed record BilanBourse(
 
     /// <summary>Gain total depuis le début : ce que vaut le portefeuille moins ce qui y a été mis.</summary>
     public decimal Gain => ValeurTotale - VerseNet;
+
+    /// <summary>Bilan de chaque titre acheté ou ayant versé un dividende, vendus compris.</summary>
+    public IReadOnlyList<BilanTitre> Titres { get; init; } = Array.Empty<BilanTitre>();
 
     /// <summary>Taxes et frais retenus sur les dividendes et intérêts (positif).</summary>
     public decimal TaxesSurRevenus { get; init; }
@@ -118,6 +140,8 @@ public static class CalculBourse
                 case TypeOperationBourse.Interets:
                     dividendes += o.Montant;
                     taxesRevenus -= o.Frais + o.Taxes;
+                    if (o.Type == TypeOperationBourse.Dividende && o.Isin is not null)
+                        Trouver(lignes, o).Dividendes += o.Net;
                     break;
                 case TypeOperationBourse.Frais:
                 case TypeOperationBourse.Impot:
@@ -130,6 +154,7 @@ public static class CalculBourse
                     l.Quantite += Math.Abs(o.Quantite);
                     l.Cout -= o.Net;
                     l.CoutHorsFrais -= o.Montant;
+                    l.Achete -= o.Net;
                     break;
                 }
                 case TypeOperationBourse.Vente when o.Isin is not null:
@@ -143,6 +168,9 @@ public static class CalculBourse
                     if (o.Enveloppe == EnveloppeBourse.CompteTitres && o.Date.Year == annee)
                         imposables += o.Net - coutVendu;
                     horsFraisAchat += o.Net - coutVenduHorsFrais;
+                    l.Vendu += o.Net;
+                    l.GainVentes += o.Net - coutVendu;
+                    l.CoutVendu += coutVendu;
                     l.Quantite -= vendue;
                     l.Cout -= coutVendu;
                     l.CoutHorsFrais -= coutVenduHorsFrais;
@@ -171,6 +199,13 @@ public static class CalculBourse
             AutresFrais = autresFrais,
             AnneeImpot = annee,
             PlusValuesImposables = imposables,
+            Titres = lignes
+                .Where(x => x.Value.Achete != 0 || x.Value.Dividendes != 0 || x.Value.Vendu != 0)
+                .Select(x => new BilanTitre(x.Key.Item1, x.Key.Item2, x.Value.Nom, Math.Round(x.Value.Achete, 2), Math.Round(x.Value.Dividendes, 2),
+                    Math.Round(x.Value.Vendu, 2), Math.Round(x.Value.GainVentes, 2), Math.Round(x.Value.CoutVendu, 2),
+                    x.Value.Quantite < Epsilon ? 0 : x.Value.Quantite))
+                .OrderBy(t => t.Solde).ThenByDescending(t => t.Achete)
+                .ToList(),
         };
     }
 
@@ -202,6 +237,11 @@ public static class CalculBourse
         public decimal Quantite;
         public decimal Cout;
         public decimal CoutHorsFrais;
+        public decimal Achete;
+        public decimal Dividendes;
+        public decimal Vendu;
+        public decimal GainVentes;
+        public decimal CoutVendu;
     }
 
     private static Ligne Trouver(Dictionary<(EnveloppeBourse, string), Ligne> lignes, OperationBourse o)

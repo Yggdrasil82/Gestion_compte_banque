@@ -884,8 +884,7 @@ public sealed partial class MainViewModel : ObservableObject
         nouveau.IdentifiantBanque = _compte.IdentifiantBanque;
         nouveau.DerniereOperationImportee = _compte.DerniereOperationImportee;
         nouveau.DateDernierImport = _compte.DateDernierImport;
-        foreach (var (isin, cours) in _compte.Portefeuille.Cours)
-            nouveau.Portefeuille.Cours[isin] = cours;
+        _compte.Portefeuille.CopierReglagesDans(nouveau.Portefeuille);
         Repartir(nouveau);
         Statut = "Mois effacés : vérifiez le premier mois et le solde de départ, puis créez le premier mois.";
     }

@@ -390,13 +390,115 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Historique -->
+                    <!-- Titres vendus : bilan de chaque titre entièrement vendu ; un clic montre son historique. -->
+                    <Border Style="{StaticResource Carte}" Visibility="{Binding AvecTitresVendus, Converter={StaticResource Visible}}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent3}" />
+                                <TextBlock Text="Titres vendus" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Aide}"
+                                       Text="Acheté : frais et taxes compris. Dividendes : nets des taxes retenues. Vendu : net des frais. Cliquez sur une ligne pour voir ses opérations." />
+                            <DataGrid ItemsSource="{Binding TitresVendus}" SelectedItem="{Binding SelectionVendus}" IsReadOnly="True" Margin="0,6,0,0" RowHeight="40">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Titre" Width="*" MinWidth="180">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="6,2">
+                                                    <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Nom}" />
+                                                    <TextBlock FontSize="11" Foreground="{DynamicResource TexteDiscret}" Text="{Binding Enveloppe}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Acheté" Width="100" Binding="{Binding Achete, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Header="Dividendes" Width="100" Binding="{Binding Dividendes, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Header="Vendu" Width="100" Binding="{Binding Vendu, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Header="Gain des ventes" Width="150" Binding="{Binding TexteGainVentes, Mode=OneWay}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Perte}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Bilan des titres détenus : achats, dividendes et ventes partielles sur une ligne, et le secteur. -->
                     <Border Style="{StaticResource Carte}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
-                                <TextBlock Text="Opérations importées" Style="{StaticResource TitreCarte}" />
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                                <TextBlock Text="Bilan par titre" Style="{StaticResource TitreCarte}" />
                             </StackPanel>
+                            <TextBlock Style="{StaticResource Aide}"
+                                       Text="Titres encore détenus : tout ce qui a été acheté, reçu en dividendes et vendu. Le secteur sert à la répartition en bas de page. Cliquez sur une ligne pour voir ses opérations." />
+                            <DataGrid ItemsSource="{Binding TitresDetenus}" SelectedItem="{Binding SelectionDetenus}" IsReadOnly="True" Margin="0,6,0,0" RowHeight="40">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Titre" Width="*" MinWidth="180">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="6,2">
+                                                    <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Nom}" />
+                                                    <TextBlock FontSize="11" Foreground="{DynamicResource TexteDiscret}" Text="{Binding Enveloppe}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Secteur" Width="170">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox IsEditable="True" Margin="2,0" VerticalAlignment="Center"
+                                                          ItemsSource="{Binding DataContext.Secteurs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          Text="{Binding Secteur, UpdateSourceTrigger=LostFocus}"
+                                                          ToolTip="Choisissez un secteur ou tapez-en un nouveau" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Acheté" Width="100" Binding="{Binding Achete, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Header="Dividendes" Width="100" Binding="{Binding Dividendes, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Header="Vendu" Width="100" Binding="{Binding Vendu, Mode=OneWay, Converter={StaticResource Montant}}"
+                                                        ElementStyle="{StaticResource CelluleMontant}" />
+                                    <DataGridTextColumn Header="Gain des ventes" Width="150" Binding="{Binding TexteGainVentes, Mode=OneWay}">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Perte}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Historique -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Command="{Binding ToutLHistoriqueCommand}" VerticalAlignment="Center"
+                                        Visibility="{Binding HistoriqueFiltre, Converter={StaticResource Visible}}" Content="Tout afficher" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                                    <TextBlock Text="{Binding TitreHistorique}" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                            </DockPanel>
                             <DataGrid ItemsSource="{Binding Historique}" IsReadOnly="True" MaxHeight="320">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Date" Width="90" Binding="{Binding Date, Mode=OneWay, StringFormat=dd/MM/yyyy}"
@@ -420,6 +522,125 @@
                             </DataGrid>
                             <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0"
                                        Text="Montant : effet sur les espèces du compte Trade Republic, frais et taxes compris (négatif pour un achat)." />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Idées d'investissement : titres à surveiller, carte repliable. -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                    <Button Command="{Binding AjouterIdeeCommand}" ToolTip="Ajouter une idée d'investissement" Margin="0,0,6,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE710;" Margin="0,0,6,0" />
+                                            <TextBlock Text="Ajouter" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Command="{Binding BasculerIdeesCommand}" Padding="8,4" ToolTip="Replier ou déplier la carte">
+                                        <Grid>
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70D;"
+                                                       Visibility="{Binding IdeesRepliees, Converter={StaticResource Visible}}" />
+                                            <TextBlock Style="{StaticResource Icone}" Text="&#xE70E;"
+                                                       Visibility="{Binding IdeesRepliees, Converter={StaticResource MasqueSiVrai}}" />
+                                        </Grid>
+                                    </Button>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent2}" />
+                                    <TextBlock Text="Idées d'investissement" Style="{StaticResource TitreCarte}" />
+                                    <TextBlock Style="{StaticResource Discret}" VerticalAlignment="Center" Margin="8,0,0,0"
+                                               Text="{Binding Idees.Count, StringFormat='({0})'}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel Visibility="{Binding IdeesRepliees, Converter={StaticResource MasqueSiVrai}}">
+                                <TextBlock Style="{StaticResource Aide}"
+                                           Text="Titres à surveiller avant de les acheter. Le cours se met à jour avec « Actualiser les cours » ; indiquez l'ISIN ou le code Yahoo s'il n'est pas trouvé avec le nom." />
+                                <TextBlock Style="{StaticResource Discret}" Margin="0,8,0,0" Text="Aucune idée pour l'instant : cliquez sur « Ajouter »."
+                                           Visibility="{Binding AucuneIdee, Converter={StaticResource Visible}}" />
+                                <DataGrid ItemsSource="{Binding Idees}" Margin="0,6,0,0" RowHeight="36"
+                                          Visibility="{Binding AucuneIdee, Converter={StaticResource MasqueSiVrai}}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Nom" Width="190" Binding="{Binding Nom}"
+                                                            ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
+                                        <DataGridTemplateColumn Header="Secteur" Width="170">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox IsEditable="True" Margin="2,0" VerticalAlignment="Center"
+                                                              ItemsSource="{Binding DataContext.Secteurs, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              Text="{Binding Secteur, UpdateSourceTrigger=LostFocus}" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Width="130" Binding="{Binding Recherche}"
+                                                            ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}">
+                                            <DataGridTextColumn.Header>
+                                                <TextBlock Text="ISIN / Yahoo" ToolTip="ISIN (ex. FR0000120073) ou code Yahoo (ex. AI.PA) ; vide : le cours est cherché avec le nom" />
+                                            </DataGridTextColumn.Header>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Cours" Width="90" IsReadOnly="True" Binding="{Binding Cours, Mode=OneWay, Converter={StaticResource Montant}}">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource CelluleMontant}">
+                                                    <Setter Property="ToolTip" Value="{Binding InfoCours}" />
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Note" Width="*" Binding="{Binding Note}"
+                                                            ElementStyle="{StaticResource CelluleTexte}" EditingElementStyle="{StaticResource EditionTexte}" />
+                                        <DataGridTemplateColumn Width="44" IsReadOnly="True">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Command="{Binding DataContext.RetirerIdeeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" Padding="6,2" ToolTip="Retirer cette idée">
+                                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE738;" FontSize="10" />
+                                                    </Button>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Répartition par secteur : en bas, information secondaire. -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent4}" />
+                                <TextBlock Text="Répartition par secteur" Style="{StaticResource TitreCarte}" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Aide}" Text="Valeur des titres détenus par secteur. Le secteur se choisit dans « Bilan par titre »." />
+                            <ItemsControl ItemsSource="{Binding RepartitionSecteurs}" Margin="0,6,0,0" MaxWidth="640" HorizontalAlignment="Left">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="190" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="56" />
+                                                <ColumnDefinition Width="100" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Secteur}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            <Grid Grid.Column="1" Height="6" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <Border Background="{DynamicResource Bordure}" CornerRadius="3" />
+                                                <Border Background="{DynamicResource Accent4}" CornerRadius="3" HorizontalAlignment="Left">
+                                                    <Border.Width>
+                                                        <MultiBinding Converter="{StaticResource Proportion}">
+                                                            <Binding Path="PartBarre" />
+                                                            <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Grid}" />
+                                                        </MultiBinding>
+                                                    </Border.Width>
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock Grid.Column="2" Text="{Binding TextePart}" TextAlignment="Right" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="3" Text="{Binding Valeur, Converter={StaticResource Euros}}" TextAlignment="Right"
+                                                       Style="{StaticResource Discret}" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0" Foreground="{DynamicResource Avertissement}" Text="{Binding AlerteSecteur}"
+                                       Visibility="{Binding AvecAlerteSecteur, Converter={StaticResource Visible}}" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

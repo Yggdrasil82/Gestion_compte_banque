@@ -52,7 +52,35 @@ public sealed class Portefeuille
     /// <summary>Derniers cours, par ISIN.</summary>
     public Dictionary<string, CoursTitre> Cours { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Secteur de chaque titre (Pharmaceutique, Énergie…), par ISIN, choisi à la main.</summary>
+    public Dictionary<string, string> Secteurs { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Idées d'investissement : titres à surveiller, pas encore achetés.</summary>
+    public List<IdeeInvestissement> Idees { get; } = new();
+
+    /// <summary>Carte des idées d'investissement repliée.</summary>
+    public bool IdeesRepliees { get; set; }
+
     public bool Vide => Operations.Count == 0;
+
+    /// <summary>Rien à enregistrer : ni opération, ni cours, ni secteur, ni idée.</summary>
+    public bool SansDonnees => Vide && Cours.Count == 0 && Secteurs.Count == 0 && Idees.Count == 0 && !IdeesRepliees;
+
+    /// <summary>Secteur du titre, « Non classé » s'il n'a pas été choisi.</summary>
+    public string SecteurDe(string isin) => Secteurs.TryGetValue(isin, out var secteur) && !string.IsNullOrWhiteSpace(secteur)
+        ? secteur
+        : SecteursBourse.NonClasse;
+
+    /// <summary>Recopie les cours, secteurs et idées dans un autre portefeuille (les opérations sont ajoutées à part).</summary>
+    public void CopierReglagesDans(Portefeuille autre)
+    {
+        foreach (var (isin, cours) in Cours)
+            autre.Cours[isin] = cours;
+        foreach (var (isin, secteur) in Secteurs)
+            autre.Secteurs[isin] = secteur;
+        autre.Idees.AddRange(Idees.Select(i => i with { }));
+        autre.IdeesRepliees = IdeesRepliees;
+    }
 
     /// <summary>Ajoute les opérations pas encore connues (même identifiant) ; renvoie le nombre d'ajouts.</summary>
     public int Ajouter(IEnumerable<OperationBourse> operations) => Importer(operations).Ajoutees;
@@ -86,4 +114,21 @@ public sealed class Portefeuille
         Operations.Sort((a, b) => a.Date.CompareTo(b.Date));
         return (ajoutees, corrigees);
     }
+}
+
+/// <summary>Titre à surveiller avant de l'acheter.</summary>
+/// <param name="Recherche">ISIN ou code Yahoo (ex. « AI.PA ») pour trouver le cours ; vide : le nom est cherché.</param>
+public sealed record IdeeInvestissement(string Nom, string? Secteur = null, string? Recherche = null, string? Note = null,
+    decimal? Cours = null, DateTime? DateCours = null, string? Symbole = null);
+
+/// <summary>Secteurs proposés pour ranger les titres (la liste s'allonge des secteurs saisis à la main).</summary>
+public static class SecteursBourse
+{
+    public const string NonClasse = "Non classé";
+
+    public static readonly IReadOnlyList<string> Proposes = new[]
+    {
+        "ETF monde", "Pharmaceutique", "Semi-conducteurs", "Technologie", "Énergie", "Pétrole et gaz", "Matières premières",
+        "Défense et aéronautique", "Industrie", "Banque et assurance", "Consommation", "Luxe et cosmétique", "Immobilier", "Autre",
+    };
 }

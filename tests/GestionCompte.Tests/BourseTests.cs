@@ -287,6 +287,94 @@ public sealed class BourseTests : IDisposable
     }
 
     [Fact]
+    public void Calcul_BilanParTitre_AchatsDividendesVentes()
+    {
+        var portefeuille = Demo();
+        portefeuille.Ajouter(new[]
+        {
+            new OperationBourse("v-1", new DateTime(2025, 4, 7), EnveloppeBourse.CompteTitres, TypeOperationBourse.Achat,
+                "Titre vendu", "FR0000000001", "STOCK", 3, 100m, -300m, -1m, 0m, "Achat"),
+            new OperationBourse("v-2", new DateTime(2025, 7, 21), EnveloppeBourse.CompteTitres, TypeOperationBourse.Vente,
+                "Titre vendu", "FR0000000001", "STOCK", -3, 90m, 270m, -1m, 0m, "Vente"),
+        });
+
+        var titres = CalculBourse.Calculer(portefeuille).Titres;
+
+        var total = titres.Single(t => t.Isin == "FR0000120271");
+        Assert.Equal((1_461m, 19.75m, 620m, 35.60m), (total.Achete, total.Dividendes, total.Vendu, total.GainVentes));
+        Assert.Equal(6.09m, total.GainVentesPourcent);
+        Assert.False(total.Solde);
+        Assert.Equal(9.24m, titres.Single(t => t.Isin == "FR0000120073").Dividendes); // 13,20 − 3,96 de taxes
+        var vendu = titres.Single(t => t.Isin == "FR0000000001");
+        Assert.True(vendu.Solde);
+        Assert.Equal(-32m, vendu.GainVentes); // 269 reçus − 301 payés
+        Assert.Equal(vendu, titres[^1]); // les titres vendus en dernier
+    }
+
+    [Fact]
+    public void Depot_EnregistreSecteursEtIdees()
+    {
+        var chemin = Path.Combine(_dossier, "idees.db");
+        var compte = new CompteBancaire(new ConfigurationBudget { PremierMois = new PeriodeMois(2026, 11) });
+        compte.Portefeuille.Secteurs["FR0000120271"] = "Pétrole et gaz";
+        compte.Portefeuille.Idees.Add(new IdeeInvestissement("Sanofi", "Pharmaceutique", "FR0000120578", "Attendre", 90m, new DateTime(2026, 11, 13), "SAN.PA"));
+        compte.Portefeuille.IdeesRepliees = true;
+        new DepotSqlite(chemin).Enregistrer(compte);
+
+        var relu = new DepotSqlite(chemin).Charger(new PeriodeMois(2026, 11))!.Portefeuille;
+
+        Assert.Equal("Pétrole et gaz", relu.SecteurDe("FR0000120271"));
+        Assert.Equal(SecteursBourse.NonClasse, relu.SecteurDe("FR0000120073"));
+        Assert.Equal(compte.Portefeuille.Idees, relu.Idees);
+        Assert.True(relu.IdeesRepliees);
+    }
+
+    [Fact]
+    public async Task ViewModel_IdeesSecteursEtHistoriqueDUnTitre()
+    {
+        SynchronizationContext.SetSynchronizationContext(null);
+        var compte = ConfigurationParDefaut.CreerDemoBourse();
+        var enregistrements = 0;
+        var vm = new BourseViewModel(compte, new Dialogues(), () => enregistrements++, new ServiceCoursBourse(new HttpClient(new FauxYahoo())),
+            new DateTime(2026, 11, 15));
+
+        // Secteurs : répartition et alerte au-delà de 40 %.
+        Assert.Equal(new[] { SecteursBourse.NonClasse }, vm.RepartitionSecteurs.Select(r => r.Secteur));
+        vm.TitresDetenus.Single(t => t.Isin == "IE00B4L5Y983").Secteur = "ETF monde";
+        vm.TitresDetenus.Single(t => t.Isin == "FR0011871128").Secteur = "ETF États-Unis";
+        Assert.Equal("ETF monde", compte.Portefeuille.Secteurs["IE00B4L5Y983"]);
+        Assert.Contains("ETF États-Unis", vm.Secteurs);
+        Assert.Equal(3, vm.RepartitionSecteurs.Count);
+        Assert.Equal(100m, vm.RepartitionSecteurs.Sum(r => r.Part), 0);
+        Assert.False(vm.AvecAlerteSecteur); // un ETF est déjà diversifié
+        compte.Portefeuille.Secteurs["IE00B4L5Y983"] = "Technologie";
+        compte.Portefeuille.Secteurs["FR0011871128"] = "Technologie";
+        vm.Recalculer();
+        Assert.True(vm.AvecAlerteSecteur);
+        Assert.StartsWith("Technologie pèse", vm.AlerteSecteur);
+
+        // Historique d'un titre.
+        vm.SelectionDetenus = vm.TitresDetenus.Single(t => t.Isin == "FR0000120271");
+        Assert.Equal(3, vm.Historique.Count); // achat, dividende, vente
+        Assert.Equal("Opérations : TotalEnergies", vm.TitreHistorique);
+        vm.ToutLHistoriqueCommand.Execute(null);
+        Assert.Equal(13, vm.Historique.Count);
+
+        // Idées : ajout, modification, cours, repli, retrait.
+        vm.AjouterIdeeCommand.Execute(null);
+        vm.Idees[0].Nom = "Sanofi";
+        vm.Idees[0].Recherche = "fr0000120578";
+        Assert.Equal(new IdeeInvestissement("Sanofi", Recherche: "FR0000120578"), compte.Portefeuille.Idees[0]);
+        await vm.ActualiserCoursCommand.ExecuteAsync(null);
+        Assert.Equal(180m, vm.Idees[0].Cours);
+        vm.BasculerIdeesCommand.Execute(null);
+        Assert.True(vm.IdeesRepliees);
+        vm.RetirerIdeeCommand.Execute(vm.Idees[0]);
+        Assert.Empty(compte.Portefeuille.Idees);
+        Assert.True(enregistrements >= 6);
+    }
+
+    [Fact]
     public void Yahoo_ChoisitUnePlaceEnEuros()
     {
         const string json = """

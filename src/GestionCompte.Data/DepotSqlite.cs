@@ -330,7 +330,7 @@ public sealed class DepotSqlite
         foreach (var (pret, ordre) in compte.Prets.Select((p, i) => (p, i)))
             Executer(connexion, "INSERT INTO pret (ordre, donnees) VALUES ($o, $d)", ("$o", ordre), ("$d", PretEnregistre.Ecrire(pret)));
 
-        if (!compte.Portefeuille.Vide || compte.Portefeuille.Cours.Count > 0)
+        if (!compte.Portefeuille.SansDonnees)
             Executer(connexion, "INSERT INTO bourse (donnees) VALUES ($d)", ("$d", PortefeuilleEnregistre.Ecrire(compte.Portefeuille)));
 
         transaction.Commit();
