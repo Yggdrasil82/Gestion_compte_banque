@@ -647,14 +647,33 @@ public sealed partial class MainViewModel : ObservableObject
     private void AppliquerConfiguration()
     {
         var mois = _compte.Mois[_indexMois];
-        if (!_dialogues.Confirmer("Appliquer la configuration",
-                $"Mettre à jour {mois.Periode.Libelle} avec la configuration actuelle ?\n\n" +
-                "• les montants des charges mensuelles et les budgets des enveloppes seront remplacés ;\n" +
-                "• les charges, enveloppes et revenus manquants seront ajoutés ;\n" +
-                "• vos autres opérations et les montants de vos revenus ne changent pas."))
+        var changements = _compte.ChangementsConfiguration(mois);
+        var ajouts = _compte.AjoutsConfiguration(mois);
+        if (changements.Count == 0 && ajouts.Count == 0)
+        {
+            _dialogues.Information("Appliquer la configuration", $"{mois.Periode.Libelle} est déjà à jour avec la configuration.");
+            return;
+        }
+
+        var garder = new List<ChangementConfiguration>();
+        if (changements.Count > 0)
+        {
+            var lignes = changements
+                .Select(c => $"{(c.Enveloppe ? "Enveloppe" : "Charge")} « {c.Libelle} » : {Montants.Formater(c.MontantDuMois)} € → {Montants.Formater(c.MontantConfiguration)} €")
+                .ToList();
+            var information = ajouts.Count == 0 ? "" : "Lignes ajoutées : " + string.Join(", ", ajouts) + ".";
+            var cases = _dialogues.ChoisirElements("Appliquer la configuration",
+                $"Ces montants de {mois.Periode.Libelle} diffèrent de la configuration. Décochez ceux à garder :",
+                lignes, information, "Appliquer");
+            if (cases is null)
+                return;
+            garder.AddRange(changements.Where((_, i) => !cases[i]));
+        }
+        else if (!_dialogues.Confirmer("Appliquer la configuration",
+                     $"Ajouter à {mois.Periode.Libelle} les lignes de la configuration qui manquent ?\n\n• " + string.Join("\n• ", ajouts)))
             return;
 
-        _compte.AppliquerConfiguration(mois);
+        _compte.AppliquerConfiguration(mois, garder);
         Enregistrer();
         Reconstruire();
         Statut = $"Configuration appliquée à {mois.Periode.Libelle}.";

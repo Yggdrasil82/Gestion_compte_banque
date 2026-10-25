@@ -412,6 +412,18 @@ internal static class Captures
             await Capturer(("48-barre-reduite-ocean", Ambiance.Ocean, false, MainViewModel.OngletAchats, false));
             vm.Apparence.BasculerBarreCommand.Execute(null);
 
+            // « Appliquer la configuration » : montants modifiés à la main, à décocher pour les garder (exemples inventés).
+            await CapturerFenetre(new FenetreChoix("Appliquer la configuration",
+                "Ces montants de Novembre 2026 diffèrent de la configuration. Décochez ceux à garder :",
+                new[]
+                {
+                    "Charge « Électricité » : 92,40 € → 85,00 €",
+                    "Charge « Téléphone » : 19,99 € → 24,99 €",
+                    "Enveloppe « Courses » : 450,00 € → 400,00 €",
+                },
+                coches: true, "Lignes ajoutées : Enveloppe « Cadeaux ».", "Appliquer") { Width = 560 },
+                Path.Combine(dossier, "49-appliquer-configuration.png"));
+
             Directory.Delete(dossierDemo, true);
             Directory.Delete(dossierReleve, true);
             Directory.Delete(dossierPC, true);

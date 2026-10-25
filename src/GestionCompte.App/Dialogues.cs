@@ -266,6 +266,12 @@ public sealed class Dialogues : IDialogues
         return fenetre.ShowDialog() == true ? fenetre.Choix : null;
     }
 
+    public IReadOnlyList<bool>? ChoisirElements(string titre, string message, IReadOnlyList<string> elements, string information, string bouton)
+    {
+        var fenetre = new FenetreChoix(titre, message, elements, coches: true, information, bouton) { Owner = Fenetre, Width = 560 };
+        return fenetre.ShowDialog() == true ? fenetre.Cases : null;
+    }
+
     public Contact? DemanderContact(Contact? actuel)
     {
         var fenetre = new FenetreContact(actuel) { Owner = Fenetre };

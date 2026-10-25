@@ -325,6 +325,22 @@ public sealed class MainViewModelTests : IDisposable
     }
 
     [Fact]
+    public void AppliquerConfiguration_MontantDecoche_EstGarde()
+    {
+        var vm = OuvrirAvecUnMois();
+        vm.MoisCourant!.Operations.Elements.Single(o => o.Libelle == "Loyer").Debit = 820m;
+        vm.Configuration.Charges.Elements.Single(c => c.Nom == "Internet").Debit = 40m;
+        _dialogues.Cases = new[] { false, true };
+
+        vm.AppliquerConfigurationCommand.Execute(null);
+
+        Assert.Equal(2, _dialogues.DerniersElements.Count);
+        Assert.StartsWith("Charge « Loyer » : 820,00 €", _dialogues.DerniersElements[0]);
+        Assert.Equal(820m, vm.MoisCourant!.Operations.Elements.Single(o => o.Libelle == "Loyer").Debit);
+        Assert.Equal(40m, vm.MoisCourant.Operations.Elements.Single(o => o.Libelle == "Internet").Debit);
+    }
+
+    [Fact]
     public void SoldeInitial_ModifieDansLaConfiguration_ChangeLeMoisAffiche()
     {
         var vm = OuvrirAvecUnMois();
@@ -494,5 +510,14 @@ public sealed class MainViewModelTests : IDisposable
         public DemandeReinitialisation? ChoisirReinitialisation() => Reinitialisation;
 
         public void OuvrirDossier(string dossier) { }
+
+        public IReadOnlyList<bool>? Cases { get; set; }
+        public IReadOnlyList<string> DerniersElements { get; private set; } = Array.Empty<string>();
+
+        public IReadOnlyList<bool>? ChoisirElements(string titre, string message, IReadOnlyList<string> elements, string information, string bouton)
+        {
+            DerniersElements = elements;
+            return Cases ?? elements.Select(_ => true).ToList();
+        }
     }
 }

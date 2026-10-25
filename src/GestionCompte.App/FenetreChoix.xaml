@@ -18,9 +18,10 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
+        <TextBlock x:Name="Information" Margin="0,8,0,0" TextWrapping="Wrap" Style="{StaticResource Discret}" Visibility="Collapsed" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="Annuler" IsCancel="True" Padding="16,7" />
-            <Button Content="OK" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="16,7" Margin="0" Click="Valider" />
+            <Button x:Name="BoutonValider" Content="OK" Style="{StaticResource BoutonPrincipal}" IsDefault="True" Padding="16,7" Margin="0" Click="Valider" />
         </StackPanel>
     </StackPanel>
 </Window>

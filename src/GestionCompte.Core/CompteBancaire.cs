@@ -111,8 +111,12 @@ public sealed class CompteBancaire
     /// tous les mois n'est ajoutée que les mois où elle tombe).
     /// Les revenus déjà présents et les autres opérations ne sont pas modifiés ; rien n'est supprimé.
     /// </summary>
-    public void AppliquerConfiguration(MoisBudget mois)
+    /// <param name="garder">Montants du mois à garder (changements décochés, voir <see cref="ChangementsConfiguration"/>).</param>
+    public void AppliquerConfiguration(MoisBudget mois, IEnumerable<ChangementConfiguration>? garder = null)
     {
+        var aGarder = garder?.ToList() ?? new List<ChangementConfiguration>();
+        bool Garde(bool enveloppe, string nom) => aGarder.Any(c => c.Enveloppe == enveloppe && CalculateurMois.MemeNom(c.Libelle, nom));
+
         ArgumentNullException.ThrowIfNull(mois);
         if (!_mois.Contains(mois))
             throw new ArgumentException("Ce mois n'appartient pas au compte.", nameof(mois));
@@ -128,7 +132,7 @@ public sealed class CompteBancaire
             var existante = mois.Enveloppes.Find(e => CalculateurMois.MemeNom(e.Nom, enveloppe.Nom));
             if (existante is null)
                 mois.Enveloppes.Add(new LigneEnveloppe(enveloppe.Nom, enveloppe.BudgetParDefaut));
-            else
+            else if (!Garde(true, enveloppe.Nom))
                 existante.Budget = enveloppe.BudgetParDefaut;
         }
 
@@ -142,8 +146,11 @@ public sealed class CompteBancaire
             }
             else
             {
-                existante.Debit = charge.Debit;
-                existante.Credit = charge.Credit;
+                if (!Garde(false, charge.Nom))
+                {
+                    existante.Debit = charge.Debit;
+                    existante.Credit = charge.Credit;
+                }
                 existante.CompteCumul = charge.CompteCumul;
                 // Virement lié : l'opération du mois devient le virement de ce mois (son double suit dans l'autre compte).
                 if (charge.Lien is not null)
@@ -156,6 +163,38 @@ public sealed class CompteBancaire
                     existante.CategorieOperation = charge.CategorieOperation;
             }
         }
+    }
+
+    /// <summary>Montants du mois que « Appliquer la configuration » remplacerait (charges et budgets des enveloppes).</summary>
+    public IReadOnlyList<ChangementConfiguration> ChangementsConfiguration(MoisBudget mois)
+    {
+        ArgumentNullException.ThrowIfNull(mois);
+        var changements = new List<ChangementConfiguration>();
+        foreach (var charge in Configuration.Charges)
+        {
+            var existante = mois.Operations.Find(o => o.Enveloppe is null && CalculateurMois.MemeNom(o.Libelle, charge.Nom));
+            if (existante is not null && (existante.Debit != charge.Debit || existante.Credit != charge.Credit))
+                changements.Add(new ChangementConfiguration(charge.Nom, false, existante.Debit - existante.Credit, charge.Debit - charge.Credit));
+        }
+        foreach (var enveloppe in Configuration.Enveloppes)
+        {
+            var existante = mois.Enveloppes.Find(e => CalculateurMois.MemeNom(e.Nom, enveloppe.Nom));
+            if (existante is not null && existante.Budget != enveloppe.BudgetParDefaut)
+                changements.Add(new ChangementConfiguration(enveloppe.Nom, true, existante.Budget, enveloppe.BudgetParDefaut));
+        }
+        return changements;
+    }
+
+    /// <summary>Lignes de la configuration absentes du mois, que « Appliquer la configuration » ajouterait.</summary>
+    public IReadOnlyList<string> AjoutsConfiguration(MoisBudget mois)
+    {
+        ArgumentNullException.ThrowIfNull(mois);
+        return Configuration.Revenus.Where(r => !mois.Revenus.Any(m => CalculateurMois.MemeNom(m.Nom, r.Nom))).Select(r => $"Revenu « {r.Nom} »")
+            .Concat(Configuration.Enveloppes.Where(e => !mois.Enveloppes.Any(m => CalculateurMois.MemeNom(m.Nom, e.Nom))).Select(e => $"Enveloppe « {e.Nom} »"))
+            .Concat(Configuration.Charges.Where(c => c.TombeEn(mois.Periode)
+                    && !mois.Operations.Any(o => o.Enveloppe is null && CalculateurMois.MemeNom(o.Libelle, c.Nom)))
+                .Select(c => $"Charge « {c.Nom} »"))
+            .ToList();
     }
 
     /// <summary>
@@ -214,3 +253,6 @@ public sealed class CompteBancaire
             .ToList();
     }
 }
+
+/// <summary>Montant d'un mois que la configuration remplacerait (débit − crédit pour une charge, budget pour une enveloppe).</summary>
+public sealed record ChangementConfiguration(string Libelle, bool Enveloppe, decimal MontantDuMois, decimal MontantConfiguration);

@@ -42,6 +42,13 @@ public interface IDialogues
     /// <summary>Demande un mot de passe, saisi deux fois si <paramref name="confirmer"/> ; null si annulé.</summary>
     string? DemanderMotDePasse(string titre, string message, bool confirmer) => null;
 
+    /// <summary>
+    /// Liste à cocher, tout coché au départ, avec un texte d'information sous la liste ; renvoie l'état de chaque case,
+    /// null si annulé.
+    /// </summary>
+    IReadOnlyList<bool>? ChoisirElements(string titre, string message, IReadOnlyList<string> elements, string information, string bouton) =>
+        Confirmer(titre, message) ? elements.Select(_ => true).ToList() : null;
+
     /// <summary>Question à plusieurs réponses (boutons) ; renvoie la position choisie, null si la fenêtre est fermée.</summary>
     int? ChoisirOption(string titre, string message, IReadOnlyList<string> options) => null;
 

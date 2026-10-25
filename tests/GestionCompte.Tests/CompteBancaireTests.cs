@@ -195,6 +195,32 @@ public class CompteBancaireTests
     }
 
     [Fact]
+    public void ChangementsConfiguration_ListeLesMontantsModifies_EtLesGardeSiDecoches()
+    {
+        var configuration = DonneesExcel.ConfigurationOctobre2026();
+        var compte = new CompteBancaire(configuration);
+        var octobre = compte.CreerMoisSuivant();
+        Assert.Empty(compte.ChangementsConfiguration(octobre));
+        Assert.Empty(compte.AjoutsConfiguration(octobre));
+
+        octobre.Operations[0].Debit = 820m; // Loyer modifié à la main
+        octobre.Enveloppes[0].Budget = 500m;
+        configuration.Enveloppes.Add(new ModeleEnveloppe("Loisirs", 80m));
+
+        var changements = compte.ChangementsConfiguration(octobre);
+        Assert.Equal(2, changements.Count);
+        var loyer = changements.Single(c => !c.Enveloppe);
+        Assert.Equal((820m, 801m), (loyer.MontantDuMois, loyer.MontantConfiguration));
+        Assert.Equal(new[] { "Enveloppe « Loisirs »" }, compte.AjoutsConfiguration(octobre));
+
+        compte.AppliquerConfiguration(octobre, new[] { loyer });
+
+        Assert.Equal(820m, octobre.Operations[0].Debit);
+        Assert.NotEqual(500m, octobre.Enveloppes[0].Budget);
+        Assert.Contains(octobre.Enveloppes, e => e.Nom == "Loisirs");
+    }
+
+    [Fact]
     public void AppliquerConfiguration_DeuxFois_NeDupliqueRien()
     {
         var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
