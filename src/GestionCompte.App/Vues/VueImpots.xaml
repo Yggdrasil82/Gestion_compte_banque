@@ -132,13 +132,15 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="118" />
-                                        <ColumnDefinition Width="170" />
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="104" />
                                         <ColumnDefinition Width="110" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Style="{StaticResource Discret}" Text="Revenu" />
                                     <TextBlock Grid.Column="1" Style="{StaticResource Discret}" Text="Reçu sur l'année" TextAlignment="Right" Margin="0,0,10,0" />
                                     <TextBlock Grid.Column="2" Style="{StaticResource Discret}" Text="Imposé comme" />
-                                    <TextBlock Grid.Column="3" Style="{StaticResource Discret}" Text="Imposable (saisi)" TextAlignment="Right" />
+                                    <TextBlock Grid.Column="3" Style="{StaticResource Discret}" Text="Personne" Margin="6,0,0,0" />
+                                    <TextBlock Grid.Column="4" Style="{StaticResource Discret}" Text="Imposable (saisi)" TextAlignment="Right" />
                                 </Grid>
                                 <ItemsControl ItemsSource="{Binding Lignes}">
                                     <ItemsControl.ItemTemplate>
@@ -147,7 +149,8 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="118" />
-                                                    <ColumnDefinition Width="170" />
+                                                    <ColumnDefinition Width="160" />
+                                                    <ColumnDefinition Width="104" />
                                                     <ColumnDefinition Width="110" />
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center">
@@ -160,7 +163,11 @@
                                                            VerticalAlignment="Center" Margin="0,0,10,0" />
                                                 <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Types, ElementName=Racine}"
                                                           SelectedIndex="{Binding IndexType}" VerticalAlignment="Center" />
-                                                <TextBox Grid.Column="3" Style="{StaticResource Saisie}" Width="100" HorizontalAlignment="Right"
+                                                <ComboBox Grid.Column="3" ItemsSource="{Binding DataContext.Personnes, ElementName=Racine}"
+                                                          SelectedIndex="{Binding IndexPersonne}" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                          Visibility="{Binding AvecPersonne, Converter={StaticResource Visible}}"
+                                                          ToolTip="Qui perçoit ce salaire : la déduction de 10 % et le plafond PER se calculent par personne." />
+                                                <TextBox Grid.Column="4" Style="{StaticResource Saisie}" Width="100" HorizontalAlignment="Right"
                                                          Text="{Binding MontantImposable, Converter={StaticResource Montant}}"
                                                          ToolTip="Vide : montant estimé. Salaire : cumul net imposable de la fiche de paie de décembre." />
                                             </Grid>
@@ -176,7 +183,8 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="118" />
-                                                    <ColumnDefinition Width="170" />
+                                                    <ColumnDefinition Width="160" />
+                                                    <ColumnDefinition Width="104" />
                                                     <ColumnDefinition Width="110" />
                                                 </Grid.ColumnDefinitions>
                                                 <DockPanel VerticalAlignment="Center">
@@ -190,7 +198,11 @@
                                                          Text="{Binding Montant, Converter={StaticResource Montant}}" ToolTip="Montant de l'année" />
                                                 <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.Types, ElementName=Racine}"
                                                           SelectedIndex="{Binding IndexType}" VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="3" Style="{StaticResource Discret}" Text="saisi à la main" TextAlignment="Right"
+                                                <ComboBox Grid.Column="3" ItemsSource="{Binding DataContext.Personnes, ElementName=Racine}"
+                                                          SelectedIndex="{Binding IndexPersonne}" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                          Visibility="{Binding AvecPersonne, Converter={StaticResource Visible}}"
+                                                          ToolTip="Qui perçoit ce salaire : la déduction de 10 % et le plafond PER se calculent par personne." />
+                                                <TextBlock Grid.Column="4" Style="{StaticResource Discret}" Text="saisi à la main" TextAlignment="Right"
                                                            VerticalAlignment="Center" />
                                             </Grid>
                                         </DataTemplate>
@@ -288,7 +300,7 @@
                                     <TextBlock Grid.Row="2" Style="{StaticResource LibelleSaisie}" Text="Taux du prélèvement à la source (%)" />
                                     <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
                                              Text="{Binding TauxPrelevement, Converter={StaticResource Montant}}" ToolTip="Sur la fiche de paie ou impots.gouv.fr" />
-                                    <TextBlock Grid.Row="3" Style="{StaticResource LibelleSaisie}" Text="Frais réels (vide : déduction de 10 %)" />
+                                    <TextBlock Grid.Row="3" Style="{StaticResource LibelleSaisie}" Text="Vos frais réels (vide : déduction de 10 %)" />
                                     <TextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource Saisie}" HorizontalAlignment="Right" Margin="0,3"
                                              Text="{Binding FraisReels, Converter={StaticResource Montant}}" />
                                     <TextBlock Grid.Row="4" Style="{StaticResource LibelleSaisie}" Text="Versements PER de l'année" />

@@ -43,7 +43,7 @@ public sealed class ParametresImpot
     /// <summary>Avantage maximal de la part entière du premier enfant d'un parent seul (case T).</summary>
     public decimal PlafondParentIsole { get; set; } = 4_262m;
 
-    /// <summary>Déduction forfaitaire de 10 % des salaires : minimum et maximum par foyer (estimés).</summary>
+    /// <summary>Déduction forfaitaire de 10 % des salaires : minimum et maximum pour chaque personne du foyer.</summary>
     public decimal TauxAbattementSalaires { get; set; } = 0.10m;
 
     public decimal AbattementMinimum { get; set; } = 509m;
@@ -102,7 +102,7 @@ public sealed class FoyerFiscal
     /// <summary>Taux du prélèvement à la source (en %), celui de la fiche de paie ou de impots.gouv.fr.</summary>
     public decimal TauxPrelevement { get; set; }
 
-    /// <summary>Frais réels des salaires ; null pour la déduction de 10 %.</summary>
+    /// <summary>Frais réels des salaires de « Vous » ; null pour la déduction de 10 %.</summary>
     public decimal? FraisReels { get; set; }
 
     /// <summary>Versements de l'année sur un plan d'épargne retraite (PER).</summary>
@@ -120,8 +120,21 @@ public sealed class FoyerFiscal
     public FoyerFiscal Copier() => (FoyerFiscal)MemberwiseClone();
 }
 
+/// <summary>Personnes du foyer à qui un salaire peut appartenir.</summary>
+public static class PersonnesFoyer
+{
+    public const string Vous = "Vous";
+    public const string Conjoint = "Conjoint";
+
+    public static IReadOnlyList<string> Toutes { get; } = new[] { Vous, Conjoint, "Enfant 1", "Enfant 2", "Enfant 3", "Enfant 4" };
+
+    /// <summary>Personne d'un revenu ; « Vous » si elle n'est pas précisée (réglages d'avant la 2.15.2).</summary>
+    public static string De(string? personne) => string.IsNullOrWhiteSpace(personne) ? Vous : personne;
+}
+
 /// <summary>Un revenu annuel, déjà ramené au montant imposable avant abattement (salaire net imposable, loyers perçus).</summary>
-public sealed record RevenuFiscal(string Libelle, TypeRevenuFiscal Type, decimal Montant);
+/// <param name="Personne">Personne du foyer qui perçoit le salaire : la déduction de 10 % se calcule pour chacune.</param>
+public sealed record RevenuFiscal(string Libelle, TypeRevenuFiscal Type, decimal Montant, string? Personne = null);
 
 /// <summary>Une idée pour payer moins, avec l'économie estimée quand elle se chiffre.</summary>
 public sealed record PisteImpot(string Titre, string Texte, decimal? Economie);
@@ -198,12 +211,28 @@ public static class CalculImpot
         var liste = revenus.ToList();
         var remarques = new List<string>();
 
-        var salaires = liste.Where(r => r.Type == TypeRevenuFiscal.Salaire).Sum(r => r.Montant);
-        var forfait = salaires <= 0 ? 0 : Math.Min(salaires, Math.Clamp(Arrondi(salaires * p.TauxAbattementSalaires),
-            p.AbattementMinimum, p.AbattementMaximum));
-        var fraisReels = foyer.FraisReels is { } frais && frais > forfait;
-        var deduction = fraisReels ? Math.Min(salaires, foyer.FraisReels!.Value) : forfait;
-        var salairesNets = salaires - deduction;
+        // Déduction de 10 % (minimum et maximum) ou frais réels : pour chaque personne du foyer.
+        var salairesParPersonne = liste.Where(r => r.Type == TypeRevenuFiscal.Salaire)
+            .GroupBy(r => PersonnesFoyer.De(r.Personne))
+            .ToDictionary(g => g.Key, g => g.Sum(r => r.Montant));
+        var salaires = salairesParPersonne.Values.Sum();
+        decimal deduction = 0, salairesNets = 0;
+        var fraisReels = false;
+        var netsParPersonne = new Dictionary<string, decimal>();
+        foreach (var (personne, montant) in salairesParPersonne)
+        {
+            var forfait = montant <= 0 ? 0 : Math.Min(montant, Math.Clamp(Arrondi(montant * p.TauxAbattementSalaires),
+                p.AbattementMinimum, p.AbattementMaximum));
+            var deduit = forfait;
+            if (personne == PersonnesFoyer.Vous && foyer.FraisReels is { } frais && frais > forfait)
+            {
+                fraisReels = true;
+                deduit = Math.Min(Math.Max(0, montant), frais);
+            }
+            deduction += deduit;
+            salairesNets += montant - deduit;
+            netsParPersonne[personne] = montant - deduit;
+        }
 
         var loyersNus = liste.Where(r => r.Type == TypeRevenuFiscal.LoyerNu).Sum(r => r.Montant);
         var foncier = Arrondi(Math.Max(0, loyersNus) * (1 - p.AbattementMicroFoncier));
@@ -215,7 +244,10 @@ public static class CalculImpot
         if (loyersMeubles > p.PlafondMicroBic)
             remarques.Add($"Loyers meublés au-dessus de {Montants.Formater(p.PlafondMicroBic)} € : le régime réel est obligatoire.");
 
-        var plafondPer = Math.Clamp(Arrondi(salairesNets * p.TauxPlafondPer), p.PlafondPerMinimum, p.PlafondPerMaximum);
+        // Plafond PER : propre à chaque déclarant (vous, et le conjoint d'un couple), cumulable dans un couple.
+        var declarants = foyer.EnCouple ? new[] { PersonnesFoyer.Vous, PersonnesFoyer.Conjoint } : new[] { PersonnesFoyer.Vous };
+        var plafondPer = declarants.Sum(d => Math.Clamp(Arrondi(netsParPersonne.GetValueOrDefault(d) * p.TauxPlafondPer),
+            p.PlafondPerMinimum, p.PlafondPerMaximum));
         var deductionPer = Math.Min(Math.Max(0, foyer.VersementsPer), plafondPer);
         if (foyer.VersementsPer > plafondPer)
             remarques.Add($"Versements PER au-dessus du plafond estimé ({Montants.Formater(plafondPer)} €) : le plafond réel, sur l'avis " +
@@ -418,7 +450,7 @@ public static class CalculImpot
 }
 
 /// <summary>Type fiscal choisi pour un revenu d'un compte, et montant imposable de l'année saisi à la main (ou null).</summary>
-public sealed record AffectationRevenu(string Compte, string Revenu, TypeRevenuFiscal Type, decimal? MontantImposable);
+public sealed record AffectationRevenu(string Compte, string Revenu, TypeRevenuFiscal Type, decimal? MontantImposable, string? Personne = null);
 
 /// <summary>Revenu ajouté à la main (perçu hors des comptes suivis), montant de l'année.</summary>
-public sealed record RevenuManuel(string Libelle, TypeRevenuFiscal Type, decimal Montant);
+public sealed record RevenuManuel(string Libelle, TypeRevenuFiscal Type, decimal Montant, string? Personne = null);

@@ -57,6 +57,9 @@ public sealed partial class ImpotsViewModel : ObservableObject
 
     public IReadOnlyList<string> Situations => NomsSituations;
 
+    /// <summary>Personnes du foyer à qui un salaire peut être rattaché (déduction de 10 % et plafond PER par personne).</summary>
+    public IReadOnlyList<string> Personnes => PersonnesFoyer.Toutes;
+
     [ObservableProperty] private string _erreur = "";
 
     public ObservableCollection<LigneRevenuImpot> Lignes { get; } = new();
@@ -146,14 +149,14 @@ public sealed partial class ImpotsViewModel : ObservableObject
             {
                 var affectation = _fichier.Affectations.FirstOrDefault(a => a.Compte == nom && a.Revenu == revenu);
                 Lignes.Add(new LigneRevenuImpot(this, nom, revenu, montant, affectation?.Type ?? TypeParDefaut(revenu),
-                    affectation?.MontantImposable));
+                    affectation?.MontantImposable, affectation?.Personne));
             }
             if (!compte.Portefeuille.Vide)
                 plusValues += CalculBourse.Calculer(compte.Portefeuille, null, _annee).PlusValuesImposables;
         }
         RevenusManuels.Clear();
         foreach (var manuel in _fichier.RevenusManuels)
-            RevenusManuels.Add(new RevenuManuelViewModel(this, manuel.Libelle, manuel.Type, manuel.Montant));
+            RevenusManuels.Add(new RevenuManuelViewModel(this, manuel.Libelle, manuel.Type, manuel.Montant, manuel.Personne));
         PlusValues = plusValues;
         OnPropertyChanged(nameof(AvecBourse));
         _chargement = false;
@@ -219,9 +222,9 @@ public sealed partial class ImpotsViewModel : ObservableObject
 
     private IReadOnlyList<RevenuFiscal> RevenusFiscaux() =>
         Lignes.Where(l => l.Type != TypeRevenuFiscal.NonImposable)
-            .Select(l => new RevenuFiscal($"{l.Revenu} ({l.Compte})", l.Type, l.MontantRetenu))
+            .Select(l => new RevenuFiscal($"{l.Revenu} ({l.Compte})", l.Type, l.MontantRetenu, l.Personne))
             .Concat(RevenusManuels.Where(r => r.Type != TypeRevenuFiscal.NonImposable && r.Montant != 0)
-                .Select(r => new RevenuFiscal(r.Libelle, r.Type, r.Montant)))
+                .Select(r => new RevenuFiscal(r.Libelle, r.Type, r.Montant, r.Personne)))
             .ToList();
 
     private void Recalculer()
@@ -394,11 +397,11 @@ public sealed partial class ImpotsViewModel : ObservableObject
     {
         if (_chargement)
             return;
-        _fichier.Affectations = Lignes.Select(l => new AffectationRevenu(l.Compte, l.Revenu, l.Type, l.MontantImposable))
+        _fichier.Affectations = Lignes.Select(l => new AffectationRevenu(l.Compte, l.Revenu, l.Type, l.MontantImposable, l.Personne))
             // Les revenus des comptes non relus (autre année) gardent leur réglage.
             .Concat(_fichier.Affectations.Where(a => !Lignes.Any(l => l.Compte == a.Compte && l.Revenu == a.Revenu)))
             .ToList();
-        _fichier.RevenusManuels = RevenusManuels.Select(r => new RevenuManuel(r.Libelle, r.Type, r.Montant)).ToList();
+        _fichier.RevenusManuels = RevenusManuels.Select(r => new RevenuManuel(r.Libelle, r.Type, r.Montant, r.Personne)).ToList();
         try
         {
             _fichier.Enregistrer();
@@ -442,9 +445,10 @@ public sealed partial class LigneRevenuImpot : ObservableObject
     private readonly ImpotsViewModel _module;
 
     public LigneRevenuImpot(ImpotsViewModel module, string compte, string revenu, decimal montantRecu, TypeRevenuFiscal type,
-        decimal? montantImposable)
+        decimal? montantImposable, string? personne = null)
     {
         _module = module;
+        _personne = PersonnesFoyer.De(personne);
         Compte = compte;
         Revenu = revenu;
         MontantRecu = montantRecu;
@@ -467,9 +471,29 @@ public sealed partial class LigneRevenuImpot : ObservableObject
         set => Type = (TypeRevenuFiscal)value;
     }
 
+    /// <summary>Personne du foyer qui perçoit le revenu (utile pour les salaires).</summary>
+    [ObservableProperty] private string _personne;
+
+    /// <summary>Index dans la liste des personnes (pour la liste déroulante).</summary>
+    public int IndexPersonne
+    {
+        get => Math.Max(0, PersonnesFoyer.Toutes.ToList().IndexOf(Personne));
+        set => Personne = PersonnesFoyer.Toutes[Math.Clamp(value, 0, PersonnesFoyer.Toutes.Count - 1)];
+    }
+
+    /// <summary>La personne ne compte que pour les salaires.</summary>
+    public bool AvecPersonne => Type == TypeRevenuFiscal.Salaire;
+
+    partial void OnPersonneChanged(string value)
+    {
+        OnPropertyChanged(nameof(IndexPersonne));
+        _module.LigneModifiee();
+    }
+
     partial void OnTypeChanged(TypeRevenuFiscal value)
     {
         OnPropertyChanged(nameof(IndexType));
+        OnPropertyChanged(nameof(AvecPersonne));
         _module.LigneModifiee();
     }
 
@@ -501,9 +525,10 @@ public sealed partial class RevenuManuelViewModel : ObservableObject
 {
     private readonly ImpotsViewModel _module;
 
-    public RevenuManuelViewModel(ImpotsViewModel module, string libelle, TypeRevenuFiscal type, decimal montant)
+    public RevenuManuelViewModel(ImpotsViewModel module, string libelle, TypeRevenuFiscal type, decimal montant, string? personne = null)
     {
         _module = module;
+        _personne = PersonnesFoyer.De(personne);
         _libelle = libelle;
         _type = type;
         _montant = montant;
@@ -521,9 +546,29 @@ public sealed partial class RevenuManuelViewModel : ObservableObject
 
     partial void OnLibelleChanged(string value) => _module.LigneModifiee();
 
+    /// <summary>Personne du foyer qui perçoit le revenu (utile pour les salaires).</summary>
+    [ObservableProperty] private string _personne;
+
+    /// <summary>Index dans la liste des personnes (pour la liste déroulante).</summary>
+    public int IndexPersonne
+    {
+        get => Math.Max(0, PersonnesFoyer.Toutes.ToList().IndexOf(Personne));
+        set => Personne = PersonnesFoyer.Toutes[Math.Clamp(value, 0, PersonnesFoyer.Toutes.Count - 1)];
+    }
+
+    /// <summary>La personne ne compte que pour les salaires.</summary>
+    public bool AvecPersonne => Type == TypeRevenuFiscal.Salaire;
+
+    partial void OnPersonneChanged(string value)
+    {
+        OnPropertyChanged(nameof(IndexPersonne));
+        _module.LigneModifiee();
+    }
+
     partial void OnTypeChanged(TypeRevenuFiscal value)
     {
         OnPropertyChanged(nameof(IndexType));
+        OnPropertyChanged(nameof(AvecPersonne));
         _module.LigneModifiee();
     }
 

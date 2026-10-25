@@ -262,6 +262,11 @@ internal static class Captures
             vm.Impots.RevenusManuels[^1].Libelle = "Location meublée";
             vm.Impots.RevenusManuels[^1].IndexType = (int)Core.Impots.TypeRevenuFiscal.LoyerMeuble;
             vm.Impots.RevenusManuels[^1].Montant = 5400m;
+            vm.Impots.AjouterRevenuCommand.Execute(null);
+            vm.Impots.RevenusManuels[^1].Libelle = "Job d'été";
+            vm.Impots.RevenusManuels[^1].IndexType = (int)Core.Impots.TypeRevenuFiscal.Salaire;
+            vm.Impots.RevenusManuels[^1].Personne = Core.Impots.PersonnesFoyer.Toutes[2];
+            vm.Impots.RevenusManuels[^1].Montant = 2400m;
             await Capturer(("46-impots-ocean", Ambiance.Ocean, false, MainViewModel.OngletImpots, false));
             await Capturer(("47-impots-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletImpots, false));
 

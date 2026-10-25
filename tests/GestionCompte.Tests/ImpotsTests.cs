@@ -78,6 +78,45 @@ public sealed class ImpotsTests
     }
 
     [Fact]
+    public void Deduction10Pourcent_ParPersonne()
+    {
+        var revenus = new[]
+        {
+            new RevenuFiscal("Salaire", TypeRevenuFiscal.Salaire, 3_000m),
+            new RevenuFiscal("Job d'été", TypeRevenuFiscal.Salaire, 3_000m, "Enfant 1"),
+        };
+        var e = CalculImpot.Calculer(Bareme, new FoyerFiscal { Enfants = 1 }, revenus, 0);
+
+        Assert.Equal(1_018m, e.DeductionSalaires); // minimum de 509 € pour chacun (et non 600 € pour le foyer)
+    }
+
+    [Fact]
+    public void Deduction10Pourcent_PlafondParPersonne()
+    {
+        var revenus = new[]
+        {
+            new RevenuFiscal("Salaire", TypeRevenuFiscal.Salaire, 200_000m),
+            new RevenuFiscal("Salaire conjoint", TypeRevenuFiscal.Salaire, 200_000m, PersonnesFoyer.Conjoint),
+        };
+        var e = CalculImpot.Calculer(Bareme, new FoyerFiscal { EnCouple = true }, revenus, 0);
+
+        Assert.Equal(2 * 14_555m, e.DeductionSalaires);
+    }
+
+    [Fact]
+    public void PlafondPer_ParDeclarant()
+    {
+        var revenus = new[]
+        {
+            new RevenuFiscal("Salaire", TypeRevenuFiscal.Salaire, 60_000m),
+            new RevenuFiscal("Salaire conjoint", TypeRevenuFiscal.Salaire, 20_000m, PersonnesFoyer.Conjoint),
+        };
+
+        Assert.Equal(5_400m + 4_710m, CalculImpot.Calculer(Bareme, new FoyerFiscal { EnCouple = true }, revenus, 0).PlafondPer);
+        Assert.Equal(5_400m, CalculImpot.Calculer(Bareme, new FoyerFiscal(), revenus.Take(1), 0).PlafondPer);
+    }
+
+    [Fact]
     public void Pistes_OptionBareme_SiPetiteTranche()
     {
         var revenus = new[] { new RevenuFiscal("Salaire", TypeRevenuFiscal.Salaire, 15_000m) };
@@ -123,12 +162,14 @@ public sealed class ImpotsViewModelTests : IDisposable
         salaire.MontantImposable = 26_000m;
         module.Lignes.Single(l => l.Revenu == "Loyer T2").IndexType = (int)TypeRevenuFiscal.LoyerMeuble;
         module.Enfants = 2;
+        salaire.IndexPersonne = 1;
 
         var relu = new GestionCompte.Presentation.ImpotsViewModel(_dossier, () => new[] { ("Compte", compte) }, new DateTime(2026, 6, 1));
         relu.Actualiser();
         Assert.Equal(26_000m, relu.Lignes.Single(l => l.Revenu == "Salaire").MontantRetenu);
         Assert.Equal(TypeRevenuFiscal.LoyerMeuble, relu.Lignes.Single(l => l.Revenu == "Loyer T2").Type);
         Assert.Equal(2, relu.Enfants);
+        Assert.Equal(PersonnesFoyer.Conjoint, relu.Lignes.Single(l => l.Revenu == "Salaire").Personne);
         Assert.Equal(3_000m, relu.Estimation.MeubleImposable);
         Assert.Contains("Voici l'estimation", relu.QuestionAnalyse());
     }
