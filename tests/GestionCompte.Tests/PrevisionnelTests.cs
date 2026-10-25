@@ -45,6 +45,36 @@ public class PrevisionnelTests
     }
 
     [Fact]
+    public void MoisCreesEnAvance_ComptesCommePrevus()
+    {
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
+        for (var i = 0; i < 5; i++)
+            compte.CreerMoisSuivant(); // octobre 2026 à février 2027
+        compte.Mois[2].Operations.Add(new Operation("Cadeaux", debit: 200m)); // décembre, saisi à l'avance
+
+        var prevision = Previsionnel.Calculer(compte, moisReels: 6, moisPrevus: 12, moisEnCours: new PeriodeMois(2026, 11));
+
+        Assert.Equal(new[] { new PeriodeMois(2026, 10), new PeriodeMois(2026, 11) }, prevision.Mois.Where(m => m.Reel).Select(m => m.Periode));
+        Assert.Equal(12, prevision.MoisPrevus.Count());
+        Assert.Equal(new PeriodeMois(2026, 12), prevision.MoisPrevus.First().Periode);
+        Assert.Equal(new PeriodeMois(2027, 11), prevision.MoisPrevus.Last().Periode);
+        Assert.Equal(3 * GainMensuel - 200m, prevision.MoisPrevus.First().SoldeFin);
+    }
+
+    [Fact]
+    public void CompteEnRetard_PrevisionApresLeMoisEnCours()
+    {
+        var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());
+        compte.CreerMoisSuivant(); // octobre 2026 seulement
+
+        var prevision = Previsionnel.Calculer(compte, moisReels: 6, moisPrevus: 3, moisEnCours: new PeriodeMois(2027, 1));
+
+        Assert.Equal(new PeriodeMois(2027, 2), prevision.MoisPrevus.First().Periode);
+        Assert.Equal(3, prevision.MoisPrevus.Count());
+        Assert.Equal(7 * GainMensuel, prevision.MoisPrevus.Last().SoldeFin);
+    }
+
+    [Fact]
     public void MoisReels_SeulsLesDerniersSontGardes()
     {
         var compte = new CompteBancaire(DonneesExcel.ConfigurationOctobre2026());

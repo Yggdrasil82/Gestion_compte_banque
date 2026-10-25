@@ -530,7 +530,7 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         _compte.OperationsPrevues.Add(new OperationPrevue(saisie.Periode, saisie.Libelle, debit: saisie.Montant));
         Enregistrer();
-        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = Previsionnel.Horizon };
+        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees, _moisDuJour) { Horizon = Previsionnel.Horizon };
         AideBudget.Recalculer();
         Credits.RafraichirTout();
         OngletSelectionne = OngletPrevisionnel;
@@ -1121,7 +1121,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void ReconstruirePrevisionnel()
     {
         var horizon = Previsionnel?.Horizon ?? 12;
-        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = horizon };
+        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees, _moisDuJour) { Horizon = horizon };
         AideBudget = new AideBudgetViewModel(_compte, _dialogues, Enregistrer, ConfigurationRemplacee, _moisDuJour.Suivant());
         Credits = new CreditsViewModel(_compte, AideBudget.Periodes, _dialogues, Enregistrer, CreditAjouteOuRetire, IA, () => _aujourdhui);
         // Même prêt sélectionné après un changement de la configuration (ex. « Ajouter aux charges »).
@@ -1159,7 +1159,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void CreditAjouteOuRetire()
     {
         Enregistrer();
-        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees) { Horizon = Previsionnel.Horizon };
+        Previsionnel = new PrevisionnelViewModel(_compte, OperationsPrevuesModifiees, _moisDuJour) { Horizon = Previsionnel.Horizon };
         AideBudget.Recalculer();
         Bilan.Recalculer();
         AfficherMoisCourant();

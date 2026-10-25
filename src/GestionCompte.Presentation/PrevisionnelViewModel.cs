@@ -16,10 +16,13 @@ public sealed partial class PrevisionnelViewModel : ObservableObject
 
     private readonly CompteBancaire _compte;
     private readonly Action _donneesModifiees;
+    private readonly PeriodeMois? _moisEnCours;
 
-    public PrevisionnelViewModel(CompteBancaire compte, Action donneesModifiees)
+    /// <param name="moisEnCours">Mois du jour : la prévision commence au mois suivant.</param>
+    public PrevisionnelViewModel(CompteBancaire compte, Action donneesModifiees, PeriodeMois? moisEnCours = null)
     {
         _compte = compte;
+        _moisEnCours = moisEnCours;
         _donneesModifiees = donneesModifiees;
 
         var premier = compte.ProchainMois;
@@ -66,7 +69,7 @@ public sealed partial class PrevisionnelViewModel : ObservableObject
 
     public void Recalculer()
     {
-        var prevision = Previsionnel.Calculer(_compte, MoisReelsAffiches, Horizon);
+        var prevision = Previsionnel.Calculer(_compte, MoisReelsAffiches, Horizon, _moisEnCours);
         Lignes = prevision.Mois.Select(m => new LignePrevisionViewModel(m)).ToList();
         Echeances = prevision.Echeances.Select(e => new EcheanceViewModel(e)).ToList();
 

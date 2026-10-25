@@ -44,8 +44,12 @@ public static class Previsionnel
     public const int MoisMaximumPourEcheances = 120;
 
     /// <param name="moisReels">Nombre de derniers mois réels à inclure (pour comparer avec le passé).</param>
-    /// <param name="moisPrevus">Nombre de mois à simuler après le dernier mois créé.</param>
-    public static ResultatPrevision Calculer(CompteBancaire compte, int moisReels, int moisPrevus)
+    /// <param name="moisPrevus">Nombre de mois prévus affichés après le mois en cours.</param>
+    /// <param name="moisEnCours">
+    /// Mois du jour : les mois déjà créés après lui sont comptés comme prévus (avec leurs montants saisis) et la prévision
+    /// commence au mois suivant. Null : la prévision commence après le dernier mois créé.
+    /// </param>
+    public static ResultatPrevision Calculer(CompteBancaire compte, int moisReels, int moisPrevus, PeriodeMois? moisEnCours = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         ArgumentOutOfRangeException.ThrowIfNegative(moisReels);
@@ -90,13 +94,27 @@ public static class Previsionnel
             solde = calcul.SoldeFinPrevisionnel;
         }
 
+        var courant = moisEnCours ?? (compte.Mois.Count > 0 ? compte.Mois[^1].Periode : compte.ProchainMois.Precedent());
+        var reels = compte.Mois.Count(m => m.Periode <= courant);
+        var prevus = 0;
         for (var i = 0; i < compte.Mois.Count; i++)
-            Ajouter(compte.Mois[i], reel: true, garder: i >= compte.Mois.Count - moisReels);
+        {
+            if (i < reels)
+                Ajouter(compte.Mois[i], reel: true, garder: i >= reels - moisReels);
+            else
+                Ajouter(compte.Mois[i], reel: false, garder: prevus++ < moisPrevus);
+        }
 
+        // Mois simulés : ceux d'avant le mois suivant le mois en cours (compte en retard) sont calculés sans être affichés.
         var periode = compte.ProchainMois;
-        var aSimuler = Math.Max(moisPrevus, echeances.Values.Any(e => !e.Deja) ? MoisMaximumPourEcheances : 0);
-        for (var i = 0; i < aSimuler; i++, periode = periode.Suivant())
-            Ajouter(compte.Generer(periode), reel: false, garder: i < moisPrevus);
+        var aSimuler = echeances.Values.Any(e => !e.Deja) ? MoisMaximumPourEcheances : 0;
+        for (var i = 0; prevus < moisPrevus || i < aSimuler; i++, periode = periode.Suivant())
+        {
+            var affiche = periode > courant;
+            Ajouter(compte.Generer(periode), reel: false, garder: affiche && prevus < moisPrevus);
+            if (affiche)
+                prevus++;
+        }
 
         return new ResultatPrevision(
             resultat,
