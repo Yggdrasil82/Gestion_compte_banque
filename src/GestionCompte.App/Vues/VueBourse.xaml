@@ -458,7 +458,7 @@
                                     <DataGridTemplateColumn Header="Secteur" Width="170">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <ComboBox IsEditable="True" Margin="2,0" VerticalAlignment="Center"
+                                                <ComboBox Style="{StaticResource ListeSaisie}" Margin="2,0" VerticalAlignment="Center"
                                                           ItemsSource="{Binding DataContext.Secteurs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           Text="{Binding Secteur, UpdateSourceTrigger=LostFocus}"
                                                           ToolTip="Choisissez un secteur ou tapez-en un nouveau" />
@@ -565,7 +565,7 @@
                                         <DataGridTemplateColumn Header="Secteur" Width="170">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <ComboBox IsEditable="True" Margin="2,0" VerticalAlignment="Center"
+                                                    <ComboBox Style="{StaticResource ListeSaisie}" Margin="2,0" VerticalAlignment="Center"
                                                               ItemsSource="{Binding DataContext.Secteurs, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                               Text="{Binding Secteur, UpdateSourceTrigger=LostFocus}" />
                                                 </DataTemplate>
@@ -610,7 +610,7 @@
                                 <TextBlock Text="Répartition par secteur" Style="{StaticResource TitreCarte}" />
                             </StackPanel>
                             <TextBlock Style="{StaticResource Aide}" Text="Valeur des titres détenus par secteur. Le secteur se choisit dans « Bilan par titre »." />
-                            <ItemsControl ItemsSource="{Binding RepartitionSecteurs}" Margin="0,6,0,0" MaxWidth="640" HorizontalAlignment="Left">
+                            <ItemsControl ItemsSource="{Binding RepartitionSecteurs}" Margin="0,6,0,0" Width="640" HorizontalAlignment="Left">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,3">

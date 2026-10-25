@@ -409,6 +409,48 @@
         </Style>
 
         <!-- Liste déroulante discrète, dans les cellules des tableaux. -->
+        <!-- Liste où l'on peut aussi taper une valeur (IsEditable) : la saisie se fait dans PART_EditableTextBox. -->
+        <Style x:Key="ListeSaisie" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="IsEditable" Value="True" />
+            <Setter Property="Cursor" Value="IBeam" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton Focusable="False" ClickMode="Press" Cursor="Hand"
+                                          Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                            <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,9,0"
+                                                  Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource TexteDiscret}" StrokeThickness="1.6" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <TextBox x:Name="PART_EditableTextBox" Margin="4,1,24,1" VerticalAlignment="Center" Padding="2,0"
+                                     Background="Transparent" BorderThickness="0" Foreground="{TemplateBinding Foreground}"
+                                     CaretBrush="{DynamicResource Texte}" IsReadOnly="{TemplateBinding IsReadOnly}" />
+                            <Popup x:Name="PART_Popup" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade"
+                                   IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Border Background="{DynamicResource FondCarte}" BorderBrush="{DynamicResource Bordure}" BorderThickness="1"
+                                        CornerRadius="8" Padding="3" Margin="0,2,0,0"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ScrollViewer>
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="ListeCellule" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
