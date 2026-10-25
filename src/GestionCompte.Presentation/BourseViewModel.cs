@@ -459,6 +459,7 @@ public sealed partial class BourseViewModel : ObservableObject
         EnCours = true;
         ActualiserCoursCommand.NotifyCanExecuteChanged();
         var trouves = 0;
+        var secteurs = 0;
         var absents = new List<string>();
         string? erreur = null;
         try
@@ -468,11 +469,18 @@ public sealed partial class BourseViewModel : ObservableObject
                 var isin = position.Key;
                 Statut = $"Recherche du cours de {position.First().Nom}…";
                 var symbole = Portefeuille.Cours.GetValueOrDefault(isin)?.Symbole;
+                var sansSecteur = !Portefeuille.Secteurs.ContainsKey(isin);
                 try
                 {
-                    if (await _cours.ChercherAsync(isin, symbole) is { } cours)
+                    if (await _cours.ChercherAsync(isin, symbole, avecSecteur: sansSecteur) is { } cours)
                     {
                         Portefeuille.Cours[isin] = new CoursTitre(cours.Valeur, cours.Date, false, cours.Symbole);
+                        // Le secteur n'est rempli que s'il n'a pas été choisi : un choix fait à la main n'est jamais remplacé.
+                        if (sansSecteur && cours.Secteur is { } secteur)
+                        {
+                            Portefeuille.Secteurs[isin] = secteur;
+                            secteurs++;
+                        }
                         trouves++;
                     }
                     else
@@ -496,9 +504,14 @@ public sealed partial class BourseViewModel : ObservableObject
                 Statut = $"Recherche du cours de {idee.Nom}…";
                 try
                 {
-                    if (await _cours.ChercherAsync(recherche, idee.Symbole) is { } cours)
+                    if (await _cours.ChercherAsync(recherche, idee.Symbole, avecSecteur: idee.Secteur is null) is { } cours)
                     {
-                        Portefeuille.Idees[i] = idee with { Cours = cours.Valeur, DateCours = cours.Date, Symbole = cours.Symbole };
+                        Portefeuille.Idees[i] = idee with
+                        {
+                            Cours = cours.Valeur, DateCours = cours.Date, Symbole = cours.Symbole, Secteur = idee.Secteur ?? cours.Secteur,
+                        };
+                        if (idee.Secteur is null && cours.Secteur is not null)
+                            secteurs++;
                         trouves++;
                     }
                     else
@@ -515,6 +528,7 @@ public sealed partial class BourseViewModel : ObservableObject
         }
 
         Statut = $"{trouves} cours mis à jour."
+                 + (secteurs > 0 ? $" {secteurs} secteur{(secteurs > 1 ? "s" : "")} rempli{(secteurs > 1 ? "s" : "")}." : "")
                  + (absents.Count > 0 ? $" Introuvable{(absents.Count > 1 ? "s" : "")} : {string.Join(", ", absents)} (saisissez le cours à la main)." : "")
                  + (erreur is not null ? $" {erreur}" : "");
         if (trouves > 0)

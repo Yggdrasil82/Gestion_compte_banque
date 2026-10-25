@@ -4,8 +4,8 @@ using System.Text.Json;
 
 namespace GestionCompte.Presentation;
 
-/// <summary>Cours trouvé sur internet, converti en euros.</summary>
-public sealed record CoursTrouve(string Symbole, decimal Valeur, DateTime Date);
+/// <summary>Cours trouvé sur internet, converti en euros, avec le secteur du titre quand il est demandé et connu.</summary>
+public sealed record CoursTrouve(string Symbole, decimal Valeur, DateTime Date, string? Secteur = null);
 
 /// <summary>
 /// Cours des titres sur Yahoo Finance (gratuit, sans clé) : le symbole est cherché à partir de l'ISIN,
@@ -24,9 +24,18 @@ public class ServiceCoursBourse
     }
 
     /// <summary>Dernier cours du titre ; <paramref name="symbole"/> (« CW8.PA ») évite la recherche par ISIN.</summary>
-    public virtual async Task<CoursTrouve?> ChercherAsync(string isin, string? symbole, CancellationToken annulation = default)
+    /// <param name="avecSecteur">Cherche aussi le secteur (la recherche est alors faite même si le symbole est connu).</param>
+    public virtual async Task<CoursTrouve?> ChercherAsync(string isin, string? symbole, CancellationToken annulation = default,
+        bool avecSecteur = false)
     {
-        symbole ??= ChoisirSymbole(await LireAsync($"https://query2.finance.yahoo.com/v1/finance/search?q={Uri.EscapeDataString(isin)}&quotesCount=10&newsCount=0", annulation));
+        string? secteur = null;
+        if (symbole is null || avecSecteur)
+        {
+            var recherche = await LireAsync($"https://query2.finance.yahoo.com/v1/finance/search?q={Uri.EscapeDataString(isin)}&quotesCount=10&newsCount=0", annulation);
+            symbole ??= ChoisirSymbole(recherche);
+            if (avecSecteur && symbole is not null)
+                secteur = LireSecteur(recherche, symbole);
+        }
         if (symbole is null)
             return null;
 
@@ -44,7 +53,57 @@ public class ServiceCoursBourse
                 return null;
             valeur *= change.Value.Valeur;
         }
-        return new CoursTrouve(symbole, Math.Round(valeur, 4), date);
+        return new CoursTrouve(symbole, Math.Round(valeur, 4), date, secteur);
+    }
+
+    /// <summary>
+    /// Secteur en français d'un titre trouvé par la recherche (champs « quoteType », « sector » et « industry » de Yahoo Finance,
+    /// classement Morningstar), ou null s'il n'est pas donné.
+    /// </summary>
+    public static string? LireSecteur(string json, string symbole)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (!document.RootElement.TryGetProperty("quotes", out var resultats) || resultats.ValueKind != JsonValueKind.Array)
+            return null;
+        string? Texte(JsonElement e, string nom) => e.TryGetProperty(nom, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+        var resultat = resultats.EnumerateArray().Cast<JsonElement?>()
+            .FirstOrDefault(q => string.Equals(Texte(q!.Value, "symbol"), symbole, StringComparison.OrdinalIgnoreCase))
+            ?? resultats.EnumerateArray().Cast<JsonElement?>().FirstOrDefault(q => Texte(q!.Value, "sector") is not null);
+        return resultat is { } q ? Secteur(Texte(q, "quoteType"), Texte(q, "sector"), Texte(q, "industry")) : null;
+    }
+
+    /// <summary>Traduit le type, le secteur et l'activité de Yahoo Finance vers les secteurs proposés.</summary>
+    public static string? Secteur(string? type, string? secteur, string? activite)
+    {
+        if (type is "ETF" or "MUTUALFUND")
+            return "ETF";
+        var a = activite ?? "";
+        bool Contient(params string[] mots) => mots.Any(m => a.Contains(m, StringComparison.OrdinalIgnoreCase));
+        if (Contient("Semiconductor"))
+            return "Semi-conducteurs";
+        if (Contient("Drug Manufacturers", "Biotechnology", "Pharmaceutical"))
+            return "Pharmaceutique";
+        if (Contient("Oil & Gas"))
+            return "Pétrole et gaz";
+        if (Contient("Aerospace & Defense"))
+            return "Défense et aéronautique";
+        if (Contient("Gold", "Silver", "Precious Metals", "Copper", "Steel", "Industrial Metals", "Aluminum", "Coking Coal"))
+            return "Matières premières";
+        if (Contient("Luxury Goods", "Household & Personal Products"))
+            return "Luxe et cosmétique";
+        return secteur switch
+        {
+            "Technology" => "Technologie",
+            "Healthcare" => "Santé",
+            "Energy" or "Utilities" => "Énergie",
+            "Basic Materials" => "Matières premières",
+            "Industrials" => "Industrie",
+            "Financial Services" => "Banque et assurance",
+            "Consumer Cyclical" or "Consumer Defensive" => "Consommation",
+            "Real Estate" => "Immobilier",
+            "Communication Services" => "Télécoms et médias",
+            _ => null,
+        };
     }
 
     private async Task<string> LireAsync(string adresse, CancellationToken annulation)

@@ -128,7 +128,7 @@ public static class SecteursBourse
 
     public static readonly IReadOnlyList<string> Proposes = new[]
     {
-        "ETF monde", "Pharmaceutique", "Semi-conducteurs", "Technologie", "Énergie", "Pétrole et gaz", "Matières premières",
-        "Défense et aéronautique", "Industrie", "Banque et assurance", "Consommation", "Luxe et cosmétique", "Immobilier", "Autre",
+        "ETF", "ETF monde", "Pharmaceutique", "Santé", "Semi-conducteurs", "Technologie", "Énergie", "Pétrole et gaz", "Matières premières",
+        "Défense et aéronautique", "Industrie", "Banque et assurance", "Consommation", "Luxe et cosmétique", "Immobilier", "Télécoms et médias", "Autre",
     };
 }

@@ -365,8 +365,12 @@ public sealed class BourseTests : IDisposable
         vm.Idees[0].Nom = "Sanofi";
         vm.Idees[0].Recherche = "fr0000120578";
         Assert.Equal(new IdeeInvestissement("Sanofi", Recherche: "FR0000120578"), compte.Portefeuille.Idees[0]);
+        vm.TitresDetenus.Single(t => t.Isin == "FR0000120271").Secteur = "Pétrole et gaz";
         await vm.ActualiserCoursCommand.ExecuteAsync(null);
         Assert.Equal(180m, vm.Idees[0].Cours);
+        Assert.Equal("Technologie", vm.Idees[0].Secteur);
+        Assert.Equal("Pétrole et gaz", compte.Portefeuille.Secteurs["FR0000120271"]); // choisi à la main : jamais remplacé
+        Assert.Equal("Technologie", compte.Portefeuille.Secteurs["FR0000120073"]); // rempli par Yahoo
         vm.BasculerIdeesCommand.Execute(null);
         Assert.True(vm.IdeesRepliees);
         vm.RetirerIdeeCommand.Execute(vm.Idees[0]);
@@ -384,6 +388,31 @@ public sealed class BourseTests : IDisposable
         Assert.Equal("EUNL.DE", ServiceCoursBourse.ChoisirSymbole(json));
         Assert.Equal("IWDA.L", ServiceCoursBourse.ChoisirSymbole("""{ "quotes": [ { "symbol": "IWDA.L" } ] }"""));
         Assert.Null(ServiceCoursBourse.ChoisirSymbole("""{ "quotes": [] }"""));
+    }
+
+    [Theory]
+    [InlineData("EQUITY", "Technology", "Semiconductors", "Semi-conducteurs")]
+    [InlineData("EQUITY", "Healthcare", "Drug Manufacturers - General", "Pharmaceutique")]
+    [InlineData("EQUITY", "Energy", "Oil & Gas Integrated", "Pétrole et gaz")]
+    [InlineData("EQUITY", "Industrials", "Aerospace & Defense", "Défense et aéronautique")]
+    [InlineData("EQUITY", "Basic Materials", "Gold", "Matières premières")]
+    [InlineData("EQUITY", "Utilities", "Utilities - Renewable", "Énergie")]
+    [InlineData("EQUITY", "Consumer Cyclical", "Restaurants", "Consommation")]
+    [InlineData("ETF", null, null, "ETF")]
+    [InlineData("EQUITY", null, null, null)]
+    public void Yahoo_SecteurEnFrancais(string type, string? secteur, string? activite, string? attendu) =>
+        Assert.Equal(attendu, ServiceCoursBourse.Secteur(type, secteur, activite));
+
+    [Fact]
+    public void Yahoo_LitLeSecteurDuSymboleChoisi()
+    {
+        const string json = """
+            { "quotes": [ { "symbol": "SAN.MI", "quoteType": "EQUITY" },
+                          { "symbol": "SAN.PA", "quoteType": "EQUITY", "sector": "Healthcare", "industry": "Drug Manufacturers - General" } ] }
+            """;
+
+        Assert.Equal("Pharmaceutique", ServiceCoursBourse.LireSecteur(json, "SAN.PA"));
+        Assert.Null(ServiceCoursBourse.LireSecteur("""{ "quotes": [] }""", "SAN.PA"));
     }
 
     [Fact]
@@ -426,7 +455,8 @@ public sealed class BourseTests : IDisposable
 
         await vm.ActualiserCoursCommand.ExecuteAsync(null);
         Assert.Equal(0, vm.Bilan.SansCours); // le faux Yahoo donne un cours pour chaque titre
-        Assert.StartsWith("4 cours mis à jour.", vm.Statut);
+        Assert.StartsWith("4 cours mis à jour. 4 secteurs remplis.", vm.Statut);
+        Assert.Equal("Technologie", compte.Portefeuille.SecteurDe("FR0000120271"));
 
         vm.Filtre = 2;
         Assert.Equal(2, vm.Positions.Count);
@@ -459,7 +489,7 @@ public sealed class BourseTests : IDisposable
         {
             var adresse = requete.RequestUri!.ToString();
             var json = adresse.Contains("/search")
-                ? """{ "quotes": [ { "symbol": "AAPL" } ] }"""
+                ? """{ "quotes": [ { "symbol": "AAPL", "quoteType": "EQUITY", "sector": "Technology", "industry": "Consumer Electronics" } ] }"""
                 : adresse.Contains("USDEUR")
                     ? """{ "chart": { "result": [ { "meta": { "currency": "EUR", "regularMarketPrice": 0.9, "regularMarketTime": 1794700000 } } ] } }"""
                     : """{ "chart": { "result": [ { "meta": { "currency": "USD", "regularMarketPrice": 200, "regularMarketTime": 1794700000 } } ] } }""";
