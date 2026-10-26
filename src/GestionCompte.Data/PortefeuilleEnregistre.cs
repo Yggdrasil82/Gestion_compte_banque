@@ -11,6 +11,7 @@ internal sealed class PortefeuilleEnregistre
     public Dictionary<string, string> Secteurs { get; set; } = new();
     public List<IdeeEnregistree> Idees { get; set; } = new();
     public bool IdeesRepliees { get; set; }
+    public bool SimulateurReplie { get; set; }
 
     internal sealed class IdeeEnregistree
     {
@@ -66,6 +67,7 @@ internal sealed class PortefeuilleEnregistre
             Nom = i.Nom, Secteur = i.Secteur, Recherche = i.Recherche, Note = i.Note, Cours = i.Cours, Date = i.DateCours, Symbole = i.Symbole,
         }).ToList(),
         IdeesRepliees = portefeuille.IdeesRepliees,
+        SimulateurReplie = portefeuille.SimulateurReplie,
     });
 
     /// <summary>Relit le portefeuille dans <paramref name="portefeuille"/> ; des données illisibles laissent le portefeuille vide.</summary>
@@ -83,6 +85,7 @@ internal sealed class PortefeuilleEnregistre
                 portefeuille.Secteurs[isin] = secteur;
             portefeuille.Idees.AddRange((e.Idees ?? new()).Select(i => new IdeeInvestissement(i.Nom, i.Secteur, i.Recherche, i.Note, i.Cours, i.Date, i.Symbole)));
             portefeuille.IdeesRepliees = e.IdeesRepliees;
+            portefeuille.SimulateurReplie = e.SimulateurReplie;
         }
         catch (JsonException)
         {

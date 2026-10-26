@@ -46,7 +46,7 @@ internal static class Captures
     private const double HauteurPrets = 2000;
 
     /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
-    private const double HauteurBourse = 2900;
+    private const double HauteurBourse = 3450;
 
     /// <summary>Module Impôts : revenus, foyer, détail du calcul et pistes.</summary>
     private const double HauteurImpots = 1620;
@@ -262,6 +262,11 @@ internal static class Captures
             new DepotSqlite(registre.Chemin(registre.Ajouter("Trade Republic"))).Enregistrer(demoBourse);
             vm.CompteActif = "Trade Republic";
             vm.Bourse.Statut = "16 opérations importées.";
+            // Simulateur d'achat : 5 actions Air Liquide au dernier cours, revendues 200 € (exemple inventé).
+            vm.Bourse.Simulateur.Titre = "Air Liquide";
+            vm.Bourse.Simulateur.Quantite = 5;
+            vm.Bourse.Simulateur.PrixVente = 200m;
+            vm.Bourse.Simulateur.Ttf = true;
             await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 2;
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));

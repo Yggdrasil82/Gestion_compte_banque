@@ -61,10 +61,13 @@ public sealed class Portefeuille
     /// <summary>Carte des idées d'investissement repliée.</summary>
     public bool IdeesRepliees { get; set; }
 
+    /// <summary>Carte du simulateur d'achat repliée.</summary>
+    public bool SimulateurReplie { get; set; }
+
     public bool Vide => Operations.Count == 0;
 
     /// <summary>Rien à enregistrer : ni opération, ni cours, ni secteur, ni idée.</summary>
-    public bool SansDonnees => Vide && Cours.Count == 0 && Secteurs.Count == 0 && Idees.Count == 0 && !IdeesRepliees;
+    public bool SansDonnees => Vide && Cours.Count == 0 && Secteurs.Count == 0 && Idees.Count == 0 && !IdeesRepliees && !SimulateurReplie;
 
     /// <summary>Secteur du titre, « Non classé » s'il n'a pas été choisi.</summary>
     public string SecteurDe(string isin) => Secteurs.TryGetValue(isin, out var secteur) && !string.IsNullOrWhiteSpace(secteur)
@@ -80,6 +83,7 @@ public sealed class Portefeuille
             autre.Secteurs[isin] = secteur;
         autre.Idees.AddRange(Idees.Select(i => i with { }));
         autre.IdeesRepliees = IdeesRepliees;
+        autre.SimulateurReplie = SimulateurReplie;
     }
 
     /// <summary>Ajoute les opérations pas encore connues (même identifiant) ; renvoie le nombre d'ajouts.</summary>

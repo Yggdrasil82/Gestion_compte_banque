@@ -32,6 +32,7 @@ public sealed partial class BourseViewModel : ObservableObject
         _cours = cours;
         _aujourdhui = aujourdhui;
         _lireFichier = lireFichier ?? File.ReadAllText;
+        Simulateur = new SimulateurAchatViewModel(TitresPourSimulateur, aujourdhui.Year);
         Recalculer();
     }
 
@@ -120,6 +121,25 @@ public sealed partial class BourseViewModel : ObservableObject
 
     /// <summary>Part d'un secteur au-delà de laquelle une alerte s'affiche (choix de l'application, pas une règle).</summary>
     public const decimal SeuilSecteur = 40;
+
+    // Simulateur d'achat
+    public SimulateurAchatViewModel Simulateur { get; }
+
+    public bool SimulateurReplie => Portefeuille.SimulateurReplie;
+
+    [RelayCommand]
+    private void BasculerSimulateur()
+    {
+        Portefeuille.SimulateurReplie = !Portefeuille.SimulateurReplie;
+        OnPropertyChanged(nameof(SimulateurReplie));
+        _donneesModifiees();
+    }
+
+    /// <summary>Titres détenus puis idées, avec leur dernier cours.</summary>
+    private IReadOnlyList<(string Nom, decimal? Cours)> TitresPourSimulateur() =>
+        CalculBourse.Calculer(Portefeuille).Positions.Select(p => (p.Nom, p.Cours))
+            .Concat(Portefeuille.Idees.Where(i => i.Nom.Length > 0).Select(i => (i.Nom, i.Cours)))
+            .ToList();
 
     // Idées d'investissement
     public ObservableCollection<IdeeViewModel> Idees { get; } = new();
@@ -344,6 +364,7 @@ public sealed partial class BourseViewModel : ObservableObject
         RemplirIdees();
         CalculerRepartition();
         ActualiserSecteurs();
+        Simulateur?.ActualiserNoms();
     }
 
     private void RemplirHistorique()

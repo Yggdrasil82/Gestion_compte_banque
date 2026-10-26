@@ -390,6 +390,60 @@ public sealed class BourseTests : IDisposable
         Assert.Null(ServiceCoursBourse.ChoisirSymbole("""{ "quotes": [] }"""));
     }
 
+    [Fact]
+    public void SimulationAchat_CompteTitres_FraisTaxeEtFlatTax()
+    {
+        var r = SimulationAchat.Calculer(new DemandeSimulationAchat(10, 100m, 120m, EnveloppeBourse.CompteTitres, Ttf: true, 2026));
+
+        Assert.Equal((1_000m, 1m, 4m, 1_005m), (r.MontantAchat, r.FraisAchat, r.Ttf, r.CoutTotal));
+        Assert.Equal(1_199m, r.VenteNette);
+        Assert.Equal(194m, r.GainNet);
+        Assert.Equal(19.30m, r.GainPourcent);
+        Assert.Equal(60.92m, r.Impot); // 31,4 % de 194
+        Assert.Equal(133.08m, r.GainApresImpot);
+        Assert.Equal(100.60m, r.PrixEquilibre); // (1 005 + 1) ÷ 10
+    }
+
+    [Fact]
+    public void SimulationAchat_Pea_PetitOrdreEtPerte()
+    {
+        var r = SimulationAchat.Calculer(new DemandeSimulationAchat(10, 15m, 14m, EnveloppeBourse.Pea, Ttf: false, 2026));
+
+        Assert.Equal(0.05m, r.FraisAchat);
+        Assert.Equal(-11.05m, r.GainNet); // 139 − 150,05
+        Assert.Equal(0m, r.Impot);
+        Assert.Equal(15.11m, r.PrixEquilibre); // (150,05 + 1) ÷ 10, arrondi au centime supérieur
+        Assert.Equal(2m, SimulationAchat.Calculer(new DemandeSimulationAchat(10, 15m, 14m, EnveloppeBourse.Pea, false, 2026, 2m)).FraisAchat);
+    }
+
+    [Fact]
+    public void ViewModel_SimulateurDAchat()
+    {
+        var compte = ConfigurationParDefaut.CreerDemoBourse();
+        var enregistrements = 0;
+        var vm = new BourseViewModel(compte, new Dialogues(), () => enregistrements++, new ServiceCoursBourse(new HttpClient(new FauxYahoo())),
+            new DateTime(2026, 11, 15));
+        var simulateur = vm.Simulateur;
+        Assert.Contains("TotalEnergies", simulateur.Noms);
+        Assert.False(simulateur.AvecResultat);
+
+        simulateur.Titre = "TotalEnergies";
+        Assert.Equal(56.30m, simulateur.PrixAchat); // dernier cours
+        simulateur.Montant = 563m;
+        simulateur.PrixVente = 60m;
+        Assert.Equal(10m, simulateur.QuantiteRetenue);
+        Assert.True(simulateur.AvecResultat);
+        Assert.Equal(35m, simulateur.Resultat!.GainNet); // 599 − 564
+        Assert.StartsWith("+24,01", simulateur.TexteGain); // 35 − 10,99 de flat tax
+        simulateur.IndexEnveloppe = 1;
+        Assert.Equal("+35,00 €", simulateur.TexteGain);
+        Assert.StartsWith("PEA", simulateur.NoteImpot);
+
+        vm.BasculerSimulateurCommand.Execute(null);
+        Assert.True(vm.SimulateurReplie);
+        Assert.Equal(1, enregistrements);
+    }
+
     [Theory]
     [InlineData("EQUITY", "Technology", "Semiconductors", "Semi-conducteurs")]
     [InlineData("EQUITY", "Healthcare", "Drug Manufacturers - General", "Pharmaceutique")]

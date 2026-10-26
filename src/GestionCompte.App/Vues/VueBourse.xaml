@@ -19,6 +19,15 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Margin" Value="0,0,0,4" />
         </Style>
+        <Style x:Key="Saisie" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="LibelleSaisie" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
         <!-- Titres rangés par enveloppe : compte-titres puis PEA. -->
         <CollectionViewSource x:Key="PositionsParEnveloppe" Source="{Binding Positions}">
             <CollectionViewSource.GroupDescriptions>
@@ -599,6 +608,119 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Simulateur d'achat : gain potentiel d'un achat puis d'une revente, frais et impôt compris. -->
+                    <Border Style="{StaticResource Carte}">
+                        <StackPanel>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Command="{Binding BasculerSimulateurCommand}" Padding="8,4" ToolTip="Replier ou déplier la carte">
+                                    <Grid>
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE70D;"
+                                                   Visibility="{Binding SimulateurReplie, Converter={StaticResource Visible}}" />
+                                        <TextBlock Style="{StaticResource Icone}" Text="&#xE70E;"
+                                                   Visibility="{Binding SimulateurReplie, Converter={StaticResource MasqueSiVrai}}" />
+                                    </Grid>
+                                </Button>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource PuceTitre}" Background="{DynamicResource Accent1}" />
+                                    <TextBlock Text="Simulateur d'achat" Style="{StaticResource TitreCarte}" />
+                                </StackPanel>
+                            </DockPanel>
+                            <Grid Margin="0,6,0,0" DataContext="{Binding Simulateur}"
+                                  Visibility="{Binding DataContext.SimulateurReplie, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource MasqueSiVrai}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="430" />
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Style="{StaticResource LibelleSaisie}" Text="Titre" />
+                                    <ComboBox Grid.Column="1" Style="{StaticResource ListeSaisie}" Width="200" Margin="0,3" ItemsSource="{Binding Noms}"
+                                              Text="{Binding Titre, UpdateSourceTrigger=LostFocus}"
+                                              ToolTip="Un titre détenu ou une idée : son dernier cours remplit le prix d'achat" />
+                                    <TextBlock Grid.Row="1" Style="{StaticResource LibelleSaisie}" Text="Compte" />
+                                    <ComboBox Grid.Row="1" Grid.Column="1" Width="200" Margin="0,3" ItemsSource="{Binding Enveloppes}" SelectedIndex="{Binding IndexEnveloppe}" />
+                                    <TextBlock Grid.Row="2" Style="{StaticResource LibelleSaisie}" Text="Nombre de titres" />
+                                    <TextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource Saisie}" Width="120" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding Quantite, Converter={StaticResource Montant}}" ToolTip="Vide : calculé à partir du montant à investir" />
+                                    <TextBlock Grid.Row="3" Style="{StaticResource LibelleSaisie}" Text="ou montant à investir (€)" />
+                                    <TextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource Saisie}" Width="120" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding Montant, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="4" Style="{StaticResource LibelleSaisie}" Text="Prix d'achat souhaité (€)" />
+                                    <TextBox Grid.Row="4" Grid.Column="1" Style="{StaticResource Saisie}" Width="120" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding PrixAchat, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="5" Style="{StaticResource LibelleSaisie}" Text="Prix de revente souhaité (€)" />
+                                    <TextBox Grid.Row="5" Grid.Column="1" Style="{StaticResource Saisie}" Width="120" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding PrixVente, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="6" Style="{StaticResource LibelleSaisie}" Text="Frais d'achat (€)" />
+                                    <TextBox Grid.Row="6" Grid.Column="1" Style="{StaticResource Saisie}" Width="120" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding FraisAchat, Converter={StaticResource Montant}}" />
+                                    <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Style="{StaticResource Discret}" FontSize="11" Text="{Binding AideFraisAchat}" Margin="0,0,0,2" />
+                                    <TextBlock Grid.Row="8" Style="{StaticResource LibelleSaisie}" Text="Frais de vente (€)" />
+                                    <TextBox Grid.Row="8" Grid.Column="1" Style="{StaticResource Saisie}" Width="120" HorizontalAlignment="Right" Margin="0,3"
+                                             Text="{Binding FraisVente, Converter={StaticResource Montant}}" ToolTip="Vide : 1 € (tarif Trade Republic)" />
+                                    <CheckBox Grid.Row="9" Grid.ColumnSpan="2" Margin="0,6,0,0" IsChecked="{Binding Ttf}"
+                                              Content="Taxe sur les transactions financières (0,4 % de l'achat)"
+                                              ToolTip="Actions de sociétés françaises de plus d'un milliard d'euros de capitalisation ; pas les ETF" />
+                                </Grid>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Style="{StaticResource Discret}" Text="{Binding Consigne}" TextWrapping="Wrap"
+                                               Visibility="{Binding AvecResultat, Converter={StaticResource MasqueSiVrai}}" />
+                                    <StackPanel Visibility="{Binding AvecResultat, Converter={StaticResource Visible}}">
+                                        <TextBlock Style="{StaticResource Discret}" Text="Gain après frais et impôt" />
+                                        <TextBlock Text="{Binding TexteGain}" FontSize="26" FontWeight="Bold" Margin="0,0,0,6">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Positif}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding GainPositif}" Value="False">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <ItemsControl ItemsSource="{Binding Lignes}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,2">
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Texte}" TextAlignment="Right">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Important}" Value="True">
+                                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Negatif}" Value="True">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource Negatif}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding Libelle}" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <Border Margin="0,10,0,0" Padding="10,6" CornerRadius="6" Background="{DynamicResource LigneAlternee}">
+                                            <TextBlock Text="{Binding TexteEquilibre}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        </Border>
+                                        <TextBlock Style="{StaticResource Aide}" Margin="0,8,0,0" Text="{Binding NoteImpot}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
                     </Border>
 
