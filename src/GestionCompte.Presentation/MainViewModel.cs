@@ -1007,7 +1007,7 @@ public sealed partial class MainViewModel : ObservableObject
         if (OngletSelectionne != OngletImport)
             _ongletAvantImport = OngletSelectionne;
         Import = new ImportViewModel(_compte, plan, Path.GetFileName(chemin), _dialogues, ImportTermine, ImportAnnule,
-            dansLeurMois => ImportReleve.Preparer(_compte, releve, _moisDuJour, dansLeurMois));
+            (dansLeurMois, moisSuivant) => ImportReleve.Preparer(_compte, releve, _moisDuJour, dansLeurMois, moisSuivant));
         OngletSelectionne = OngletImport;
     }
 

@@ -613,4 +613,100 @@ public class ImportReleveTests
         Assert.Null(ImportReleve.EnveloppePour(regles, "CB LECLERC", enveloppes));
         Assert.Equal("CARREFOUR", ImportReleve.MotCleSuggere("CB CARREFOUR MARKET"));
     }
+
+    // ---- Fin de mois : salaire ou loyer du mois suivant ----
+
+    /// <summary>Octobre avec le salaire et le loyer déjà importés.</summary>
+    private static CompteBancaire CompteOctobreRegle()
+    {
+        var compte = CompteOctobre();
+        var octobre = compte.Mois[0];
+        var salaire = octobre.Revenus.First(r => r.Nom == "Salaire");
+        salaire.Recu = true;
+        salaire.IdentifiantBanque = "ANCIEN-SALAIRE";
+        var loyer = octobre.Operations.First(o => o.Libelle == "Loyer");
+        loyer.Pointee = true;
+        loyer.IdentifiantBanque = "ANCIEN";
+        return compte;
+    }
+
+    [Fact]
+    public void Preparer_FinDeMois_RattacheeAuMoisSuivant()
+    {
+        var plan = ImportReleve.Preparer(CompteOctobreRegle(), Releve(
+            Ligne("CREDIT", "20261030", "+2600.00", "F1", "VIR FREE RESEAU"),
+            Ligne("DEBIT", "20261030", "-801.00", "D1", "VIR INST DUPONT MARIE")),
+            new PeriodeMois(2026, 10));
+
+        var novembre = new PeriodeMois(2026, 11);
+        Assert.All(plan.Lignes, l => Assert.Equal(novembre, l.Periode));
+        Assert.All(plan.Lignes, l => Assert.True(l.MoisSuivantPossible));
+        Assert.Equal(new[] { "Loyer", "Salaire" }, plan.Lignes.Select(l => l.Choix!.Libelle));
+        Assert.Equal(new[] { novembre }, plan.MoisACreer);
+        Assert.All(plan.Lignes, l => Assert.Null(l.Verification));
+    }
+
+    [Fact]
+    public void Preparer_FinDeMois_AvantLe25_ResteDansSonMois()
+    {
+        var plan = ImportReleve.Preparer(CompteOctobreRegle(), Releve(Ligne("CREDIT", "20261024", "+2600.00", "F1", "VIR FREE RESEAU")));
+
+        var ligne = Assert.Single(plan.Lignes);
+        Assert.Equal(new PeriodeMois(2026, 10), ligne.Periode);
+        Assert.False(ligne.MoisSuivantPossible);
+        Assert.Equal(StatutImport.Nouvelle, ligne.Statut);
+    }
+
+    [Fact]
+    public void Preparer_FinDeMois_DansLesDeuxMois_ResteEtDemandeConfirmation()
+    {
+        var plan = ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("CREDIT", "20261028", "+2600.00", "S1", "VIR SALAIRE")));
+
+        var ligne = Assert.Single(plan.Lignes);
+        Assert.Equal(new PeriodeMois(2026, 10), ligne.Periode);
+        Assert.Equal("Salaire", ligne.Choix!.Libelle);
+        Assert.Contains("Novembre", ligne.Verification);
+        Assert.True(ligne.AVerifier);
+        Assert.Empty(plan.MoisACreer);
+    }
+
+    [Fact]
+    public void Preparer_FinDeMois_ChoixDeLUtilisateur()
+    {
+        var compte = CompteOctobre();
+        var releve = Releve(Ligne("CREDIT", "20261028", "+2600.00", "S1", "VIR SALAIRE"));
+
+        var auSuivant = Assert.Single(ImportReleve.Preparer(compte, releve, null, null, new Dictionary<string, bool> { ["S1"] = true }).Lignes);
+        Assert.Equal(new PeriodeMois(2026, 11), auSuivant.Periode);
+        Assert.Equal("Salaire", auSuivant.Choix!.Libelle);
+        Assert.Null(auSuivant.Verification);
+
+        var regle = CompteOctobreRegle();
+        var dansSonMois = Assert.Single(ImportReleve.Preparer(regle, Releve(Ligne("CREDIT", "20261030", "+2600.00", "F1", "VIR FREE")),
+            null, null, new Dictionary<string, bool> { ["F1"] = false }).Lignes);
+        Assert.Equal(new PeriodeMois(2026, 10), dansSonMois.Periode);
+    }
+
+    [Fact]
+    public void Preparer_FinDeMois_DejaPointeALaMain_RangeeAuSuivantAVerifier()
+    {
+        var compte = CompteOctobre();
+        compte.Mois[0].Operations.First(o => o.Libelle == "Loyer").Pointee = true;
+
+        var ligne = Assert.Single(ImportReleve.Preparer(compte, Releve(Ligne("DEBIT", "20261030", "-801.00", "D1", "VIR INST DUPONT"))).Lignes);
+
+        Assert.Equal(new PeriodeMois(2026, 11), ligne.Periode);
+        Assert.Contains("déjà pointé", ligne.Verification);
+    }
+
+    [Fact]
+    public void Appliquer_FinDeMois_CreeLeMoisSuivant()
+    {
+        var compte = CompteOctobreRegle();
+        var resultat = ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, Releve(Ligne("CREDIT", "20261030", "+2600.00", "F1", "VIR FREE RESEAU"))));
+
+        Assert.Equal(1, resultat.RevenusRecus);
+        var novembre = compte.Trouver(new PeriodeMois(2026, 11))!;
+        Assert.True(novembre.Revenus.First(r => r.Nom == "Salaire").Recu);
+    }
 }

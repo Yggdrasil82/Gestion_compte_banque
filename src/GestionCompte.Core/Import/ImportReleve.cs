@@ -65,6 +65,12 @@ public sealed class LigneImport
     /// </summary>
     public string? Verification { get; internal set; }
 
+    /// <summary>
+    /// Opération de fin de mois (à partir du <see cref="ImportReleve.JourFinDeMois"/>) : elle peut être rangée dans le mois de sa date
+    /// ou dans le suivant (salaire ou loyer du mois suivant versé en avance).
+    /// </summary>
+    public bool MoisSuivantPossible { get; internal set; }
+
     /// <summary>Le même montant est déjà pointé à la main dans le mois de la date : la ligne est décochée par défaut.</summary>
     public bool DejaComptee { get; internal set; }
 
@@ -121,6 +127,9 @@ public static class ImportReleve
         "ET", "EN", "AU", "AUX", "ECH", "ECHEANCE", "FACTURE", "INST", "INSTANTANE", "RECU", "EMIS", "SCT", "FR", "EUR", "REF",
     };
 
+    /// <summary>Jour à partir duquel une opération peut compter pour le mois suivant (salaire, loyer versés en fin de mois).</summary>
+    public const int JourFinDeMois = 25;
+
     /// <summary>Prépare l'import sans rien modifier : statut de chaque ligne et mois à créer.</summary>
     /// <param name="moisCourant">Mois en cours : une opération datée d'un mois antérieur (chevauchement de relevé) y est rangée,
     /// sauf si elle est dans <paramref name="dansLeurMois"/> ; null = chaque opération dans le mois de sa date.
@@ -128,8 +137,11 @@ public static class ImportReleve
     /// <param name="dansLeurMois">Choix de l'utilisateur par identifiant bancaire : true = dans le mois de la date,
     /// false = dans le mois en cours. Sans choix, une opération va dans le mois de sa date si le même montant y attend
     /// d'être pointé, sinon dans le mois en cours.</param>
+    /// <param name="moisSuivant">Choix de l'utilisateur pour une opération de fin de mois (à partir du <see cref="JourFinDeMois"/>) :
+    /// true = dans le mois suivant, false = dans le mois de sa date. Sans choix, elle va dans le mois suivant si elle n'est rattachée
+    /// qu'à une opération ou un revenu prévu de ce mois-là ; rattachable aux deux mois, elle reste dans le sien et la question est posée.</param>
     public static PlanImport Preparer(CompteBancaire compte, ReleveBancaire releve, PeriodeMois? moisCourant = null,
-        IReadOnlyDictionary<string, bool>? dansLeurMois = null)
+        IReadOnlyDictionary<string, bool>? dansLeurMois = null, IReadOnlyDictionary<string, bool>? moisSuivant = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         ArgumentNullException.ThrowIfNull(releve);
@@ -144,6 +156,7 @@ public static class ImportReleve
         var aRapprocher = new List<(OperationBancaire Operation, PeriodeMois Periode)>();
         var courant = moisCourant is { } m && m >= premier ? m : (PeriodeMois?)null;
         var dejaComptees = new Dictionary<OperationBancaire, string>();
+        var finDeMois = new HashSet<OperationBancaire>();
 
         foreach (var operation in releve.Operations.OrderBy(o => o.Date))
         {
@@ -166,8 +179,14 @@ public static class ImportReleve
                 aRapprocher.Add((operation, dansSonMois ? periode : mois));
             }
             else
+            {
+                if (operation.Date.Day >= JourFinDeMois)
+                    finDeMois.Add(operation);
                 aRapprocher.Add((operation, periode));
+            }
         }
+
+        var questions = RangerFinDeMois(compte, aRapprocher, finDeMois, courant, moisSuivant);
 
         var dernierPeriode = aRapprocher.Count == 0 ? (PeriodeMois?)null : aRapprocher.Max(o => o.Periode);
         var moisACreer = new List<PeriodeMois>();
@@ -177,20 +196,89 @@ public static class ImportReleve
                 moisACreer.Add(p);
         }
 
-        foreach (var groupe in aRapprocher.GroupBy(o => o.Periode))
-        {
-            // Un mois pas encore créé est rapproché avec le mois tel qu'il sera créé.
-            var mois = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
-            lignes.AddRange(Rapprocher(compte.Configuration, mois, groupe.Select(o => o.Operation).ToList(), courant, dejaComptees));
-        }
+        lignes.AddRange(RapprocherTout(compte, aRapprocher, courant, dejaComptees));
 
         foreach (var ligne in lignes.Where(l => l.DateAnterieure))
             ligne.PeutAllerDansSonMois = ligne.PeriodeDate >= premier;
+
+        foreach (var ligne in lignes.Where(l => finDeMois.Contains(l.Source)))
+        {
+            ligne.MoisSuivantPossible = true;
+            if (ligne.Verification is null && ligne.Choix is not null && questions.GetValueOrDefault(ligne.Source) is { } question)
+                ligne.Verification = question;
+        }
 
         return new PlanImport(
             lignes.OrderBy(l => l.Source.Date).ThenBy(l => l.Source.Identifiant, StringComparer.Ordinal).ToList(),
             moisACreer, releve.Solde, releve.DateSolde, courant);
     }
+
+    /// <summary>Rapproche chaque groupe d'opérations avec son mois (un mois pas encore créé : tel qu'il sera créé).</summary>
+    private static List<LigneImport> RapprocherTout(CompteBancaire compte, IEnumerable<(OperationBancaire Operation, PeriodeMois Periode)> aRapprocher,
+        PeriodeMois? courant, IReadOnlyDictionary<OperationBancaire, string>? dejaComptees = null) =>
+        aRapprocher.GroupBy(o => o.Periode)
+            .SelectMany(groupe => Rapprocher(compte.Configuration, compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key),
+                groupe.Select(o => o.Operation).ToList(), courant, dejaComptees).ToList())
+            .ToList();
+
+    /// <summary>
+    /// Opérations de fin de mois : rangées dans le mois suivant quand elles ne sont rattachées qu'à une opération ou un revenu
+    /// prévu de ce mois-là (salaire, loyer versés en avance), ou quand l'utilisateur l'a choisi.
+    /// </summary>
+    /// <returns>Question à poser par opération : rattachable aux deux mois (elle reste dans le sien),
+    /// ou rangée dans le mois suivant alors que le même montant est déjà pointé à la main dans le sien.</returns>
+    private static Dictionary<OperationBancaire, string> RangerFinDeMois(CompteBancaire compte,
+        List<(OperationBancaire Operation, PeriodeMois Periode)> aRapprocher, HashSet<OperationBancaire> finDeMois,
+        PeriodeMois? courant, IReadOnlyDictionary<string, bool>? moisSuivant)
+    {
+        var questions = new Dictionary<OperationBancaire, string>();
+        if (finDeMois.Count == 0)
+            return questions;
+
+        var dansSonMois = RapprocherTout(compte, aRapprocher, courant).ToDictionary(l => l.Source);
+        var auSuivant = new HashSet<OperationBancaire>();
+        foreach (var groupe in finDeMois.GroupBy(o => new PeriodeMois(o.Date.Year, o.Date.Month).Suivant()))
+        {
+            var suivant = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
+            // Les opérations datées du mois suivant gardent la priorité sur ses opérations prévues.
+            var operations = aRapprocher.Where(x => x.Periode == groupe.Key && !finDeMois.Contains(x.Operation)).Select(x => x.Operation)
+                .Concat(groupe).ToList();
+            var dansLeSuivant = Rapprocher(compte.Configuration, suivant, operations, courant).ToDictionary(l => l.Source);
+
+            foreach (var operation in groupe)
+            {
+                var ici = dansSonMois[operation].ChoixPropose;
+                var la = dansLeSuivant[operation].ChoixPropose;
+                var periode = new PeriodeMois(operation.Date.Year, operation.Date.Month);
+                if (moisSuivant is not null && moisSuivant.TryGetValue(operation.Identifiant, out var choisi))
+                {
+                    if (choisi)
+                        auSuivant.Add(operation);
+                }
+                else if (la is not null && ici is not null)
+                    questions[operation] = $"Correspond aussi à « {la.Libelle} » ({Montants.Formater(la.Montant)} €) en {groupe.Key.Libelle} : " +
+                                           $"rangée en {periode.Libelle}. Choisissez {groupe.Key.Libelle} dans la colonne « Mois » si c'est celle-là.";
+                else if (la is not null)
+                {
+                    auSuivant.Add(operation);
+                    if (DejaPointe(compte, operation))
+                        questions[operation] = $"Rangée en {groupe.Key.Libelle} (« {la.Libelle} »), mais le même montant est déjà pointé en {periode.Libelle} : " +
+                                               $"choisissez {periode.Libelle} dans la colonne « Mois » si c'est celle de ce mois-là.";
+                }
+            }
+        }
+
+        for (var i = 0; i < aRapprocher.Count; i++)
+        {
+            if (auSuivant.Contains(aRapprocher[i].Operation))
+                aRapprocher[i] = (aRapprocher[i].Operation, aRapprocher[i].Periode.Suivant());
+        }
+        return questions;
+    }
+
+    private static bool DejaPointe(CompteBancaire compte, OperationBancaire operation) =>
+        compte.Trouver(new PeriodeMois(operation.Date.Year, operation.Date.Month)) is { } mois
+        && MontantsDuMois(mois, operation.Montant).Any(x => x.Pointe);
 
     /// <summary>Opérations et revenus du mois au même montant que la ligne du relevé, pointés (ou reçus) à la main ou non.</summary>
     private static IEnumerable<(string Nom, bool Pointe)> MontantsDuMois(MoisBudget mois, decimal montant) =>

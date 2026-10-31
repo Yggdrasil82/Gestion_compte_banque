@@ -119,7 +119,8 @@ public sealed class ImportViewModelTests : IDisposable
 
         Assert.Equal("À vérifier", wero.StatutTexte);
         Assert.Contains("Même montant que « Marché »", wero.Verification);
-        Assert.Equal(1, import.NombreAVerifier);
+        // Le salaire du 27 décembre correspond aussi à celui de janvier : à vérifier aussi.
+        Assert.Equal(2, import.NombreAVerifier);
 
         _dialogues.Reponse = false;
         import.ValiderCommand.Execute(null);
@@ -128,7 +129,7 @@ public sealed class ImportViewModelTests : IDisposable
 
         wero.OptionChoisie = wero.Options[0];
         Assert.Equal("Nouvelle", wero.StatutTexte);
-        Assert.Equal(0, import.NombreAVerifier);
+        Assert.Equal(1, import.NombreAVerifier);
     }
 
     [Fact]
