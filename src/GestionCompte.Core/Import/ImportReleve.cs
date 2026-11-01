@@ -265,6 +265,10 @@ public static class ImportReleve
                     if (choisi)
                         deplacees.Add(operation);
                 }
+                // Virement de début de mois rattachable aux deux mois : l'opération du mois précédent n'est pas encore validée,
+                // c'est donc elle (épargne du mois passé).
+                else if (la is not null && ici is not null && groupe.Key < periode)
+                    deplacees.Add(operation);
                 else if (la is not null && ici is not null)
                     questions[operation] = $"Correspond aussi à « {la.Libelle} » ({Montants.Formater(la.Montant)} €) en {groupe.Key.Libelle} : " +
                                            $"rangée en {periode.Libelle}. Choisissez {groupe.Key.Libelle} dans la colonne « Mois » si c'est celle-là.";

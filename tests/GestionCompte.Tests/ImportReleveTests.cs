@@ -771,4 +771,32 @@ public class ImportReleveTests
         Assert.True(economie.Pointee);
         Assert.Equal("E1", economie.IdentifiantBanque);
     }
+
+    [Fact]
+    public void Preparer_DebutDeMois_DansLesDeuxMois_RangeDansLeMoisPrecedent()
+    {
+        var compte = CompteNovembreAvecEpargne();
+        compte.Mois[1].Operations.First(o => o.Libelle == "Économie").Debit = 200m;
+
+        var ligne = Assert.Single(ImportReleve.Preparer(compte, Releve(Ligne("XFER", "20261101", "-200.00", "E1", "VIR LIVRET EPARGNE")),
+            new PeriodeMois(2026, 11)).Lignes);
+
+        Assert.Equal(new PeriodeMois(2026, 10), ligne.Periode);
+        Assert.Null(ligne.Verification);
+    }
+
+    [Fact]
+    public void Preparer_DebutDeMois_DejaValideeLeMoisPrecedent_ResteDansSonMois()
+    {
+        var compte = CompteNovembreAvecEpargne();
+        compte.Mois[0].Operations.First(o => o.Libelle == "Économie").Pointee = true;
+        compte.Mois[1].Operations.First(o => o.Libelle == "Économie").Debit = 200m;
+
+        var ligne = Assert.Single(ImportReleve.Preparer(compte, Releve(Ligne("XFER", "20261101", "-200.00", "E1", "VIR LIVRET EPARGNE")),
+            new PeriodeMois(2026, 11)).Lignes);
+
+        Assert.Equal(new PeriodeMois(2026, 11), ligne.Periode);
+        Assert.Equal("Économie", ligne.Choix!.Libelle);
+        Assert.Null(ligne.Verification);
+    }
 }
