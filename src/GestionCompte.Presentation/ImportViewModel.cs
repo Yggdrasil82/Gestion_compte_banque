@@ -19,7 +19,7 @@ public sealed partial class ImportViewModel : ObservableObject
     private readonly Action _annule;
     private readonly Func<IReadOnlyDictionary<string, bool>, IReadOnlyDictionary<string, bool>, PlanImport>? _preparer;
     private readonly Dictionary<string, bool> _dansLeurMois = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, bool> _moisSuivant = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _autreMois = new(StringComparer.Ordinal);
     private PlanImport _plan;
     private decimal _soldePointeAvant;
 
@@ -78,7 +78,7 @@ public sealed partial class ImportViewModel : ObservableObject
         }
         else
         {
-            Lignes = plan.Lignes.Select(l => new LigneImportViewModel(l, Recalculer, plan.MoisCourant, PlacerDansSonMois, PlacerMoisSuivant)).ToList();
+            Lignes = plan.Lignes.Select(l => new LigneImportViewModel(l, Recalculer, plan.MoisCourant, PlacerDansSonMois, PlacerAutreMois)).ToList();
             OnPropertyChanged(nameof(Lignes));
         }
 
@@ -104,16 +104,16 @@ public sealed partial class ImportViewModel : ObservableObject
             modifie = true;
         }
         if (modifie)
-            Afficher(_preparer(_dansLeurMois, _moisSuivant), Lignes);
+            Afficher(_preparer(_dansLeurMois, _autreMois), Lignes);
     }
 
-    /// <summary>Range une opération de fin de mois dans le mois suivant (true) ou dans le mois de sa date (false).</summary>
-    private void PlacerMoisSuivant(LigneImportViewModel ligne, bool auSuivant)
+    /// <summary>Range une opération de fin ou de début de mois dans l'autre mois possible (true) ou dans le mois de sa date (false).</summary>
+    private void PlacerAutreMois(LigneImportViewModel ligne, bool dansLAutre)
     {
-        if (_preparer is null || !ligne.Ligne.MoisSuivantPossible)
+        if (_preparer is null || !ligne.Ligne.AutreMoisPossible)
             return;
-        _moisSuivant[ligne.Ligne.Source.Identifiant] = auSuivant;
-        Afficher(_preparer(_dansLeurMois, _moisSuivant), Lignes);
+        _autreMois[ligne.Ligne.Source.Identifiant] = dansLAutre;
+        Afficher(_preparer(_dansLeurMois, _autreMois), Lignes);
     }
 
     public string NomFichier { get; }
@@ -261,20 +261,20 @@ public sealed class LigneImportViewModel : ObservableObject
 {
     private readonly Action _modifie;
     private readonly Action<IEnumerable<LigneImportViewModel>, bool>? _placer;
-    private readonly Action<LigneImportViewModel, bool>? _placerMoisSuivant;
+    private readonly Action<LigneImportViewModel, bool>? _placerAutreMois;
 
     /// <param name="moisCourant">Mois en cours du plan (choix entre lui et le mois de la date).</param>
     /// <param name="placer">Range la ligne dans le mois de sa date (true) ou dans le mois en cours (false).</param>
-    /// <param name="placerMoisSuivant">Range une opération de fin de mois dans le mois suivant (true) ou dans le sien (false).</param>
+    /// <param name="placerAutreMois">Range une opération de fin ou de début de mois dans l'autre mois possible (true) ou dans le sien (false).</param>
     public LigneImportViewModel(LigneImport ligne, Action modifie, PeriodeMois? moisCourant = null,
-        Action<IEnumerable<LigneImportViewModel>, bool>? placer = null, Action<LigneImportViewModel, bool>? placerMoisSuivant = null)
+        Action<IEnumerable<LigneImportViewModel>, bool>? placer = null, Action<LigneImportViewModel, bool>? placerAutreMois = null)
     {
         Ligne = ligne;
         _modifie = modifie;
         _placer = placer;
-        _placerMoisSuivant = placerMoisSuivant;
-        ChoixMois = ligne.MoisSuivantPossible && placerMoisSuivant is not null
-            ? new[] { ligne.PeriodeDate.Libelle, ligne.PeriodeDate.Suivant().Libelle }
+        _placerAutreMois = placerAutreMois;
+        ChoixMois = ligne.AutreMois is { } autre && placerAutreMois is not null
+            ? (autre < ligne.PeriodeDate ? new[] { autre.Libelle, ligne.PeriodeDate.Libelle } : new[] { ligne.PeriodeDate.Libelle, autre.Libelle })
             : ligne.PeutAllerDansSonMois && moisCourant is { } courant && placer is not null
             ? new[] { courant.Libelle, ligne.PeriodeDate.Libelle }
             : new[] { ligne.Periode.Libelle };
@@ -324,9 +324,9 @@ public sealed class LigneImportViewModel : ObservableObject
 
     public string AlerteDate => DateAnterieure
         ? $"Date antérieure au mois : opération de {Ligne.PeriodeDate.Libelle}, rangée dans {Ligne.Periode.Libelle}."
-        : Ligne.MoisSuivantPossible
-        ? $"Fin de mois : opération de {Ligne.PeriodeDate.Libelle}, rangée dans {Ligne.Periode.Libelle}. " +
-          $"Elle peut compter pour {Ligne.PeriodeDate.Suivant().Libelle} (salaire, loyer…)."
+        : Ligne.AutreMois is { } autre
+        ? (autre > Ligne.PeriodeDate ? "Fin de mois" : "Début de mois") +
+          $" : opération de {Ligne.PeriodeDate.Libelle}, rangée dans {Ligne.Periode.Libelle}. Elle peut compter pour {autre.Libelle}."
         : "";
 
     /// <summary>La ligne est rangée dans le mois de sa date plutôt que dans le mois en cours.</summary>
@@ -344,8 +344,8 @@ public sealed class LigneImportViewModel : ObservableObject
         {
             if (value is null || value == MoisChoisi || !MoisModifiable)
                 return;
-            if (Ligne.MoisSuivantPossible && _placerMoisSuivant is not null)
-                _placerMoisSuivant(this, value == Ligne.PeriodeDate.Suivant().Libelle);
+            if (Ligne.AutreMois is { } autre && _placerAutreMois is not null)
+                _placerAutreMois(this, value == autre.Libelle);
             else
                 _placer?.Invoke(new[] { this }, value == Ligne.PeriodeDate.Libelle);
         }

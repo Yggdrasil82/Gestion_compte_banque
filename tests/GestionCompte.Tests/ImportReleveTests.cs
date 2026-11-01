@@ -640,7 +640,7 @@ public class ImportReleveTests
 
         var novembre = new PeriodeMois(2026, 11);
         Assert.All(plan.Lignes, l => Assert.Equal(novembre, l.Periode));
-        Assert.All(plan.Lignes, l => Assert.True(l.MoisSuivantPossible));
+        Assert.All(plan.Lignes, l => Assert.Equal(novembre, l.AutreMois));
         Assert.Equal(new[] { "Loyer", "Salaire" }, plan.Lignes.Select(l => l.Choix!.Libelle));
         Assert.Equal(new[] { novembre }, plan.MoisACreer);
         Assert.All(plan.Lignes, l => Assert.Null(l.Verification));
@@ -653,7 +653,7 @@ public class ImportReleveTests
 
         var ligne = Assert.Single(plan.Lignes);
         Assert.Equal(new PeriodeMois(2026, 10), ligne.Periode);
-        Assert.False(ligne.MoisSuivantPossible);
+        Assert.Null(ligne.AutreMois);
         Assert.Equal(StatutImport.Nouvelle, ligne.Statut);
     }
 
@@ -708,5 +708,67 @@ public class ImportReleveTests
         Assert.Equal(1, resultat.RevenusRecus);
         var novembre = compte.Trouver(new PeriodeMois(2026, 11))!;
         Assert.True(novembre.Revenus.First(r => r.Nom == "Salaire").Recu);
+    }
+
+    // ---- Début de mois : virement pour le mois précédent ----
+
+    /// <summary>Octobre avec 200 € d'épargne prévus, novembre créé.</summary>
+    private static CompteBancaire CompteNovembreAvecEpargne()
+    {
+        var compte = CompteOctobre();
+        compte.Mois[0].Operations.First(o => o.Libelle == "Économie").Debit = 200m;
+        compte.CreerMoisSuivant();
+        return compte;
+    }
+
+    [Fact]
+    public void Preparer_DebutDeMois_VirementRangeDansLeMoisPrecedent()
+    {
+        var plan = ImportReleve.Preparer(CompteNovembreAvecEpargne(), Releve(Ligne("XFER", "20261101", "-200.00", "E1", "VIR LIVRET EPARGNE")),
+            new PeriodeMois(2026, 11));
+
+        var ligne = Assert.Single(plan.Lignes);
+        var octobre = new PeriodeMois(2026, 10);
+        Assert.Equal(octobre, ligne.Periode);
+        Assert.Equal(octobre, ligne.AutreMois);
+        Assert.Equal("Économie", ligne.Choix!.Libelle);
+        Assert.False(ligne.DateAnterieure);
+    }
+
+    [Theory]
+    [InlineData("20261101", "PRLV SEPA LIVRET")]   // prélèvement : pas concerné
+    [InlineData("20261101", "CB LIVRET 01/11")]    // carte : pas concernée
+    [InlineData("20261106", "VIR LIVRET EPARGNE")] // après le 5
+    public void Preparer_DebutDeMois_SeulementLesVirementsJusquAu5(string date, string libelle)
+    {
+        var ligne = Assert.Single(ImportReleve.Preparer(CompteNovembreAvecEpargne(), Releve(Ligne("XFER", date, "-200.00", "E1", libelle)),
+            new PeriodeMois(2026, 11)).Lignes);
+
+        Assert.Equal(new PeriodeMois(2026, 11), ligne.Periode);
+        Assert.Null(ligne.AutreMois);
+    }
+
+    [Fact]
+    public void Preparer_DebutDeMois_MoisPrecedentNonGere_PasDeChoix()
+    {
+        var ligne = Assert.Single(ImportReleve.Preparer(CompteOctobre(), Releve(Ligne("XFER", "20261002", "-200.00", "E1", "VIR LIVRET EPARGNE"))).Lignes);
+
+        Assert.Null(ligne.AutreMois);
+    }
+
+    [Fact]
+    public void Preparer_DebutDeMois_ChoixDeLUtilisateur()
+    {
+        var compte = CompteNovembreAvecEpargne();
+        var releve = Releve(Ligne("XFER", "20261102", "-200.00", "E1", "VIR LIVRET EPARGNE"));
+
+        var gardee = Assert.Single(ImportReleve.Preparer(compte, releve, new PeriodeMois(2026, 11), null,
+            new Dictionary<string, bool> { ["E1"] = false }).Lignes);
+        Assert.Equal(new PeriodeMois(2026, 11), gardee.Periode);
+
+        ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, releve, new PeriodeMois(2026, 11)));
+        var economie = compte.Trouver(new PeriodeMois(2026, 10))!.Operations.First(o => o.Libelle == "Économie");
+        Assert.True(economie.Pointee);
+        Assert.Equal("E1", economie.IdentifiantBanque);
     }
 }

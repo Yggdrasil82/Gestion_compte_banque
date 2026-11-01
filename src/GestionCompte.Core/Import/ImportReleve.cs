@@ -66,10 +66,13 @@ public sealed class LigneImport
     public string? Verification { get; internal set; }
 
     /// <summary>
-    /// Opération de fin de mois (à partir du <see cref="ImportReleve.JourFinDeMois"/>) : elle peut être rangée dans le mois de sa date
-    /// ou dans le suivant (salaire ou loyer du mois suivant versé en avance).
+    /// Autre mois possible : le suivant pour une opération de fin de mois (à partir du <see cref="ImportReleve.JourFinDeMois"/>,
+    /// salaire ou loyer versés en avance), le précédent pour un virement de début de mois (jusqu'au <see cref="ImportReleve.JourDebutDeMois"/>,
+    /// épargne du mois passé) ; null = seulement le mois de sa date.
     /// </summary>
-    public bool MoisSuivantPossible { get; internal set; }
+    public PeriodeMois? AutreMois { get; internal set; }
+
+    public bool AutreMoisPossible => AutreMois is not null;
 
     /// <summary>Le même montant est déjà pointé à la main dans le mois de la date : la ligne est décochée par défaut.</summary>
     public bool DejaComptee { get; internal set; }
@@ -130,6 +133,9 @@ public static class ImportReleve
     /// <summary>Jour à partir duquel une opération peut compter pour le mois suivant (salaire, loyer versés en fin de mois).</summary>
     public const int JourFinDeMois = 25;
 
+    /// <summary>Jour jusqu'auquel un virement peut compter pour le mois précédent (épargne du mois passé virée début de mois).</summary>
+    public const int JourDebutDeMois = 5;
+
     /// <summary>Prépare l'import sans rien modifier : statut de chaque ligne et mois à créer.</summary>
     /// <param name="moisCourant">Mois en cours : une opération datée d'un mois antérieur (chevauchement de relevé) y est rangée,
     /// sauf si elle est dans <paramref name="dansLeurMois"/> ; null = chaque opération dans le mois de sa date.
@@ -137,11 +143,11 @@ public static class ImportReleve
     /// <param name="dansLeurMois">Choix de l'utilisateur par identifiant bancaire : true = dans le mois de la date,
     /// false = dans le mois en cours. Sans choix, une opération va dans le mois de sa date si le même montant y attend
     /// d'être pointé, sinon dans le mois en cours.</param>
-    /// <param name="moisSuivant">Choix de l'utilisateur pour une opération de fin de mois (à partir du <see cref="JourFinDeMois"/>) :
-    /// true = dans le mois suivant, false = dans le mois de sa date. Sans choix, elle va dans le mois suivant si elle n'est rattachée
+    /// <param name="autreMois">Choix de l'utilisateur pour une opération de fin ou de début de mois (voir <see cref="LigneImport.AutreMois"/>) :
+    /// true = dans l'autre mois, false = dans le mois de sa date. Sans choix, elle va dans l'autre mois si elle n'est rattachée
     /// qu'à une opération ou un revenu prévu de ce mois-là ; rattachable aux deux mois, elle reste dans le sien et la question est posée.</param>
     public static PlanImport Preparer(CompteBancaire compte, ReleveBancaire releve, PeriodeMois? moisCourant = null,
-        IReadOnlyDictionary<string, bool>? dansLeurMois = null, IReadOnlyDictionary<string, bool>? moisSuivant = null)
+        IReadOnlyDictionary<string, bool>? dansLeurMois = null, IReadOnlyDictionary<string, bool>? autreMois = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         ArgumentNullException.ThrowIfNull(releve);
@@ -156,7 +162,7 @@ public static class ImportReleve
         var aRapprocher = new List<(OperationBancaire Operation, PeriodeMois Periode)>();
         var courant = moisCourant is { } m && m >= premier ? m : (PeriodeMois?)null;
         var dejaComptees = new Dictionary<OperationBancaire, string>();
-        var finDeMois = new HashSet<OperationBancaire>();
+        var voisins = new Dictionary<OperationBancaire, PeriodeMois>();
 
         foreach (var operation in releve.Operations.OrderBy(o => o.Date))
         {
@@ -181,12 +187,16 @@ public static class ImportReleve
             else
             {
                 if (operation.Date.Day >= JourFinDeMois)
-                    finDeMois.Add(operation);
+                    voisins[operation] = periode.Suivant();
+                // Virement de début de mois pour le mois précédent, s'il est déjà géré.
+                else if (operation.Date.Day <= JourDebutDeMois && EstVirement(operation) && periode.Precedent() >= premier
+                         && compte.Trouver(periode.Precedent()) is not null)
+                    voisins[operation] = periode.Precedent();
                 aRapprocher.Add((operation, periode));
             }
         }
 
-        var questions = RangerFinDeMois(compte, aRapprocher, finDeMois, courant, moisSuivant);
+        var questions = RangerMoisVoisins(compte, aRapprocher, voisins, courant, autreMois);
 
         var dernierPeriode = aRapprocher.Count == 0 ? (PeriodeMois?)null : aRapprocher.Max(o => o.Periode);
         var moisACreer = new List<PeriodeMois>();
@@ -201,9 +211,9 @@ public static class ImportReleve
         foreach (var ligne in lignes.Where(l => l.DateAnterieure))
             ligne.PeutAllerDansSonMois = ligne.PeriodeDate >= premier;
 
-        foreach (var ligne in lignes.Where(l => finDeMois.Contains(l.Source)))
+        foreach (var ligne in lignes.Where(l => voisins.ContainsKey(l.Source)))
         {
-            ligne.MoisSuivantPossible = true;
+            ligne.AutreMois = voisins[ligne.Source];
             if (ligne.Verification is null && ligne.Choix is not null && questions.GetValueOrDefault(ligne.Source) is { } question)
                 ligne.Verification = question;
         }
@@ -222,45 +232,45 @@ public static class ImportReleve
             .ToList();
 
     /// <summary>
-    /// Opérations de fin de mois : rangées dans le mois suivant quand elles ne sont rattachées qu'à une opération ou un revenu
-    /// prévu de ce mois-là (salaire, loyer versés en avance), ou quand l'utilisateur l'a choisi.
+    /// Opérations de fin de mois (et virements de début de mois) : rangées dans le mois voisin quand elles ne sont rattachées
+    /// qu'à une opération ou un revenu prévu de ce mois-là, ou quand l'utilisateur l'a choisi.
     /// </summary>
     /// <returns>Question à poser par opération : rattachable aux deux mois (elle reste dans le sien),
-    /// ou rangée dans le mois suivant alors que le même montant est déjà pointé à la main dans le sien.</returns>
-    private static Dictionary<OperationBancaire, string> RangerFinDeMois(CompteBancaire compte,
-        List<(OperationBancaire Operation, PeriodeMois Periode)> aRapprocher, HashSet<OperationBancaire> finDeMois,
-        PeriodeMois? courant, IReadOnlyDictionary<string, bool>? moisSuivant)
+    /// ou rangée dans le mois voisin alors que le même montant est déjà pointé à la main dans le sien.</returns>
+    private static Dictionary<OperationBancaire, string> RangerMoisVoisins(CompteBancaire compte,
+        List<(OperationBancaire Operation, PeriodeMois Periode)> aRapprocher, Dictionary<OperationBancaire, PeriodeMois> voisins,
+        PeriodeMois? courant, IReadOnlyDictionary<string, bool>? autreMois)
     {
         var questions = new Dictionary<OperationBancaire, string>();
-        if (finDeMois.Count == 0)
+        if (voisins.Count == 0)
             return questions;
 
         var dansSonMois = RapprocherTout(compte, aRapprocher, courant).ToDictionary(l => l.Source);
-        var auSuivant = new HashSet<OperationBancaire>();
-        foreach (var groupe in finDeMois.GroupBy(o => new PeriodeMois(o.Date.Year, o.Date.Month).Suivant()))
+        var deplacees = new HashSet<OperationBancaire>();
+        foreach (var groupe in voisins.GroupBy(x => x.Value, x => x.Key))
         {
-            var suivant = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
-            // Les opérations datées du mois suivant gardent la priorité sur ses opérations prévues.
-            var operations = aRapprocher.Where(x => x.Periode == groupe.Key && !finDeMois.Contains(x.Operation)).Select(x => x.Operation)
+            var voisin = compte.Trouver(groupe.Key) ?? compte.Generer(groupe.Key);
+            // Les opérations datées de ce mois-là gardent la priorité sur ses opérations prévues.
+            var operations = aRapprocher.Where(x => x.Periode == groupe.Key && !voisins.ContainsKey(x.Operation)).Select(x => x.Operation)
                 .Concat(groupe).ToList();
-            var dansLeSuivant = Rapprocher(compte.Configuration, suivant, operations, courant).ToDictionary(l => l.Source);
+            var dansLeVoisin = Rapprocher(compte.Configuration, voisin, operations, courant).ToDictionary(l => l.Source);
 
             foreach (var operation in groupe)
             {
                 var ici = dansSonMois[operation].ChoixPropose;
-                var la = dansLeSuivant[operation].ChoixPropose;
+                var la = dansLeVoisin[operation].ChoixPropose;
                 var periode = new PeriodeMois(operation.Date.Year, operation.Date.Month);
-                if (moisSuivant is not null && moisSuivant.TryGetValue(operation.Identifiant, out var choisi))
+                if (autreMois is not null && autreMois.TryGetValue(operation.Identifiant, out var choisi))
                 {
                     if (choisi)
-                        auSuivant.Add(operation);
+                        deplacees.Add(operation);
                 }
                 else if (la is not null && ici is not null)
                     questions[operation] = $"Correspond aussi à « {la.Libelle} » ({Montants.Formater(la.Montant)} €) en {groupe.Key.Libelle} : " +
                                            $"rangée en {periode.Libelle}. Choisissez {groupe.Key.Libelle} dans la colonne « Mois » si c'est celle-là.";
                 else if (la is not null)
                 {
-                    auSuivant.Add(operation);
+                    deplacees.Add(operation);
                     if (DejaPointe(compte, operation))
                         questions[operation] = $"Rangée en {groupe.Key.Libelle} (« {la.Libelle} »), mais le même montant est déjà pointé en {periode.Libelle} : " +
                                                $"choisissez {periode.Libelle} dans la colonne « Mois » si c'est celle de ce mois-là.";
@@ -270,10 +280,18 @@ public static class ImportReleve
 
         for (var i = 0; i < aRapprocher.Count; i++)
         {
-            if (auSuivant.Contains(aRapprocher[i].Operation))
-                aRapprocher[i] = (aRapprocher[i].Operation, aRapprocher[i].Periode.Suivant());
+            if (deplacees.Contains(aRapprocher[i].Operation))
+                aRapprocher[i] = (aRapprocher[i].Operation, voisins[aRapprocher[i].Operation]);
         }
         return questions;
+    }
+
+    /// <summary>Virement (émis ou reçu), d'après le libellé de la banque : « VIR », « VIREMENT »… (pas les prélèvements ni la carte).</summary>
+    public static bool EstVirement(OperationBancaire operation)
+    {
+        var libelle = operation.LibelleBanque.TrimStart().ToUpperInvariant();
+        return libelle.StartsWith("VIR ", StringComparison.Ordinal) || libelle.StartsWith("VIR.", StringComparison.Ordinal)
+            || libelle.StartsWith("VIREMENT", StringComparison.Ordinal) || libelle.StartsWith("VIRT ", StringComparison.Ordinal);
     }
 
     private static bool DejaPointe(CompteBancaire compte, OperationBancaire operation) =>
