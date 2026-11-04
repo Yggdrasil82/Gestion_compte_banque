@@ -294,6 +294,16 @@ internal static class Captures
             await Capturer(("46-impots-ocean", Ambiance.Ocean, false, MainViewModel.OngletImpots, false));
             await Capturer(("47-impots-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletImpots, false));
 
+            // Vue épurée du mois, puis son panneau « Personnaliser » (réglages non enregistrés pendant les captures).
+            vm.Apparence.VueMoisEpuree = true;
+            hauteurSpeciale = HauteurMoisComplet;
+            await Capturer(("50-mois-epure-ocean", Ambiance.Ocean, false, MainViewModel.OngletMois, false));
+            vm.Apparence.DispositionMois.EnEdition = true;
+            await Capturer(("51-mois-epure-personnaliser-pastel-sombre", Ambiance.Pastel, true, MainViewModel.OngletMois, false));
+            vm.Apparence.DispositionMois.EnEdition = false;
+            vm.Apparence.VueMoisEpuree = false;
+            hauteurSpeciale = null;
+
             // Bilan : sur un troisième compte d'exemple qui a presque deux ans de mois.
             new DepotSqlite(registre.Chemin(registre.Ajouter("Compte joint"))).Enregistrer(ConfigurationParDefaut.CreerDemoHistorique());
             vm.CompteActif = "Compte joint";

@@ -115,6 +115,12 @@ public sealed class PreferencesAffichage
     /// <summary>Barre de gauche réduite aux icônes.</summary>
     public bool BarreReduite { get; set; }
 
+    /// <summary>Écran du mois en vue épurée (sinon la vue normale).</summary>
+    public bool VueMoisEpuree { get; set; }
+
+    /// <summary>Disposition de la vue épurée du mois.</summary>
+    public DispositionMois DispositionMois { get; set; } = new();
+
     /// <summary>Lit les préférences ; valeurs par défaut si le fichier est absent ou illisible.</summary>
     public static PreferencesAffichage Charger(string? chemin)
     {
@@ -491,6 +497,32 @@ public sealed partial class ApparenceViewModel : ObservableObject
                 Enregistrer();
         }
     }
+
+    /// <summary>Écran du mois en vue épurée, avec ses modules personnalisables (réglage propre au PC).</summary>
+    public bool VueMoisEpuree
+    {
+        get => _preferences.VueMoisEpuree;
+        set
+        {
+            if (SetProperty(_preferences.VueMoisEpuree, value, _preferences, (p, v) => p.VueMoisEpuree = v))
+            {
+                Enregistrer();
+                OnPropertyChanged(nameof(VueMoisNormale));
+            }
+        }
+    }
+
+    /// <summary>Écran du mois dans sa vue normale (choix de la Configuration).</summary>
+    public bool VueMoisNormale
+    {
+        get => !VueMoisEpuree;
+        set => VueMoisEpuree = !value;
+    }
+
+    private DispositionMoisViewModel? _dispositionMois;
+
+    /// <summary>Disposition de la vue épurée du mois, commune à tous les mois.</summary>
+    public DispositionMoisViewModel DispositionMois => _dispositionMois ??= new DispositionMoisViewModel(_preferences.DispositionMois, Enregistrer);
 
     /// <summary>Opérations du mois rangées par catégorie, ou dans l'ordre de saisie (réglage propre au PC).</summary>
     public bool RangerParCategorie

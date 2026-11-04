@@ -53,6 +53,18 @@ public sealed partial class MoisViewModel : ObservableObject
 
     public PeriodeMois Periode => _mois.Periode;
 
+    /// <summary>Écran du mois en vue épurée (choix de la Configuration), sinon la vue normale.</summary>
+    public bool Epuree => _apparence?.VueMoisEpuree ?? false;
+
+    /// <summary>Vue épurée : place des modules, éléments affichés et filtre des opérations (commune à tous les mois).</summary>
+    public DispositionMoisViewModel Disposition => _disposition ??= _apparence?.DispositionMois
+        ?? new DispositionMoisViewModel(new DispositionMois(), () => { });
+
+    private DispositionMoisViewModel? _disposition;
+
+    /// <summary>Texte du bouton « ? » de la vue épurée.</summary>
+    public string AideOperationsCourte => AideOperations + " Cliquez sur une case du tableau pour la modifier.";
+
     /// <summary>Autres comptes : choix de la colonne « Virement avec » (masquée avec un seul compte).</summary>
     public ComptesLiables Comptes { get; }
 
@@ -343,14 +355,51 @@ public sealed partial class OperationViewModel : ObservableObject
     public decimal Debit
     {
         get => Modele.Debit;
-        set { if (SetProperty(Modele.Debit, value, Modele, (m, v) => m.Debit = v)) _modifie(); }
+        set
+        {
+            if (SetProperty(Modele.Debit, value, Modele, (m, v) => m.Debit = v))
+            {
+                OnPropertyChanged(nameof(Montant));
+                OnPropertyChanged(nameof(EstCredit));
+                _modifie();
+            }
+        }
     }
 
     public decimal Credit
     {
         get => Modele.Credit;
-        set { if (SetProperty(Modele.Credit, value, Modele, (m, v) => m.Credit = v)) _modifie(); }
+        set
+        {
+            if (SetProperty(Modele.Credit, value, Modele, (m, v) => m.Credit = v))
+            {
+                OnPropertyChanged(nameof(Montant));
+                OnPropertyChanged(nameof(EstCredit));
+                _modifie();
+            }
+        }
     }
+
+    /// <summary>Montant signé de la vue épurée : négatif pour un débit, positif pour un crédit.</summary>
+    public decimal Montant
+    {
+        get => Modele.Credit - Modele.Debit;
+        set
+        {
+            if (value == Montant)
+                return;
+            Modele.Debit = value < 0 ? -value : 0m;
+            Modele.Credit = value > 0 ? value : 0m;
+            OnPropertyChanged(nameof(Debit));
+            OnPropertyChanged(nameof(Credit));
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(EstCredit));
+            _modifie();
+        }
+    }
+
+    /// <summary>Crédit (montant en vert dans la vue épurée), sinon débit (en rouge).</summary>
+    public bool EstCredit => Modele.Credit > Modele.Debit;
 
     public bool Pointee
     {

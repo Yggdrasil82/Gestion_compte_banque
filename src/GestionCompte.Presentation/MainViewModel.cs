@@ -131,6 +131,12 @@ public sealed partial class MainViewModel : ObservableObject
             if (await Mail.JoindreDocumentAsync(fiche))
                 OngletSelectionne = OngletMail;
         };
+        // Vue du mois changée dans la Configuration : l'écran du mois est refait à la prochaine ouverture.
+        Apparence.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ApparenceViewModel.VueMoisEpuree) && _indexMois >= 0)
+                AfficherMoisCourant();
+        };
         Apparence.ModulesChanges += (_, _) =>
         {
             if ((OngletSelectionne == OngletCredits && !Apparence.ModuleCredits)

@@ -26,6 +26,27 @@ public sealed class MontantConvertisseur : IValueConverter
     }
 }
 
+/// <summary>
+/// Montant signé de la vue épurée : « −780,00 » pour un débit, « +42,10 » pour un crédit, vide si nul.
+/// À la saisie, un montant sans signe est un débit ; « +50 » est un crédit.
+/// </summary>
+public sealed class MontantSigneConvertisseur : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is decimal montant && montant != 0 ? (montant < 0 ? "−" : "+") + Montants.Formater(Math.Abs(montant)) : "";
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var texte = (value as string ?? "").Trim().Replace('−', '-');
+        if (texte.Length == 0)
+            return 0m;
+        var credit = texte.StartsWith('+');
+        if (!Montants.TryLire(texte.TrimStart('+', '-').Trim(), out var montant))
+            return DependencyProperty.UnsetValue;
+        return credit ? Math.Abs(montant) : -Math.Abs(montant);
+    }
+}
+
 /// <summary>Montant avec le symbole euro, pour les zones en lecture seule (« 1 234,50 € »).</summary>
 public sealed class EurosConvertisseur : IValueConverter
 {

@@ -131,6 +131,17 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
 </section>
 
 <section class="page">
+  <h3>Vue épurée et personnalisation</h3>
+  <p>Dans Configuration › Modules, « Affichage du mois » propose la vue <b>Normal</b> (l'écran habituel) ou <b>Épuré</b>. La vue épurée garde les couleurs de votre apparence et allège l'écran :</p>
+  <ul>
+    <li>une seule bande en haut : le solde de fin de mois, avec les revenus, les dépenses prévues et l'épargne cumulée si vous les gardez ;</li>
+    <li>les opérations filtrées : « À pointer », « Pointées » ou « Toutes » ; le « ? » rappelle l'aide ;</li>
+    <li>une seule colonne « Montant » : débits en rouge, crédits en vert et en gras. À la saisie, un montant sans signe est un débit, « +50 » est un crédit.</li>
+  </ul>
+  <p>Le bouton <b>Personnaliser</b> ouvre le réglage : faites glisser un module (Opérations, Revenus du mois, Enveloppes, Détail du solde, Comptes cumulés) par sa barre bleue vers l'autre colonne ou à une autre place, « Masquer » le retire, et les cases affichent ou retirent les chiffres du haut, les barres des enveloppes et chaque colonne des opérations (catégorie, enveloppe, compte cumulé, virement, débit et crédit séparés, solde). « Revenir à l'affichage d'origine » remet tout comme au départ. Le réglage est retenu sur ce PC.</p>
+</section>
+
+<section class="page">
   <h2>4. Importer un relevé</h2>
   <p>Téléchargez le relevé sur le site de votre banque au format <b>OFX</b> ou <b>QIF</b> (Fortuneo…), puis « Relevé » (onglet Mois) ou « Importer un relevé… » (barre de gauche). Le fichier est lu sur votre PC uniquement. Sous ce bouton, la date de la dernière opération importée indique à partir de quand télécharger le relevé suivant.</p>
   <figure><img src="images/12-import-ocean.png" alt="Import du relevé"><figcaption>Chaque ligne du relevé est rapprochée d'une opération prévue ou ajoutée.</figcaption></figure>
@@ -376,7 +387,7 @@ th { color: var(--doux); font-weight: normal; font-size: 8.5pt; text-transform: 
     <tr><td><b>Comptes cumulés</b></td><td>Épargne, remboursements… avec un objectif facultatif.</td></tr>
     <tr><td><b>Enveloppes</b></td><td>Budgets de dépenses (courses, carburant) et leur catégorie.</td></tr>
     <tr><td><b>Règles de classement</b></td><td>Mot-clé du libellé → enveloppe, utilisé à l'import des relevés.</td></tr>
-    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts et Bourse, et changer leur ordre dans la barre de gauche avec les flèches ↑ ↓. Réglage propre au compte ouvert : un nouveau compte reprend celui du compte ouvert au moment de sa création. Vos données restent conservées même si un module est masqué. La case du canard règle l'animation d'ouverture.</td></tr>
+    <tr><td><b>Modules</b></td><td>Afficher ou masquer Bilan, Documents, Mail, Achats, Lettres, Assistant, Crédits, Prêts et Bourse, et changer leur ordre dans la barre de gauche avec les flèches ↑ ↓. Réglage propre au compte ouvert : un nouveau compte reprend celui du compte ouvert au moment de sa création. Vos données restent conservées même si un module est masqué. La case du canard règle l'animation d'ouverture. « Affichage du mois » choisit la vue normale ou épurée de l'écran du mois.</td></tr>
     <tr><td><b>Suggestions</b></td><td>« Suggérer une amélioration » ouvre le formulaire en ligne (la version de l'application est déjà remplie). Le lien des réponses ne concerne que l'auteur de l'application : il affiche l'onglet « Suggestions » avec les suggestions reçues, lues à chaque ouverture.</td></tr>
     <tr><td><b>Compte Google</b></td><td>État « Connecté : adresse » ou « Non connecté », boutons Connecter, Reconnecter et Déconnecter. Pendant la connexion, la carte affiche l'étape en cours.</td></tr>
     <tr><td><b>Stockage des données</b></td><td>Sur ce PC, ou dans Google Drive, chiffrées : voir le chapitre 20.</td></tr>

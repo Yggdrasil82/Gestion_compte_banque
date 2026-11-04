@@ -245,6 +245,13 @@
                         </ItemsControl>
                         <CheckBox Content="Vidéo du canard à l'ouverture de l'application"
                                   IsChecked="{Binding Apparence.AnimationDemarrage}" />
+                        <TextBlock Text="Affichage du mois" FontWeight="SemiBold" Margin="0,10,0,4" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="Normal" IsChecked="{Binding Apparence.VueMoisNormale}" Margin="0,0,20,0"
+                                         ToolTip="L'écran du mois habituel" />
+                            <RadioButton Content="Épuré" IsChecked="{Binding Apparence.VueMoisEpuree}"
+                                         ToolTip="Écran du mois allégé, avec le bouton « Personnaliser » pour déplacer et masquer les modules" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource Aide}" Margin="0,6,0,0"
                                    Text="Affiche ou masque les onglets du compte ouvert, et règle leur ordre dans la barre de gauche avec les flèches. Chaque compte a ses propres modules ; les données sont conservées même si un module est masqué." />
                     </StackPanel>

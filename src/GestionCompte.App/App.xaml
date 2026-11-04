@@ -11,6 +11,7 @@
     -->
     <Application.Resources>
         <local:MontantConvertisseur x:Key="Montant" />
+        <local:MontantSigneConvertisseur x:Key="MontantSigne" />
         <local:EurosConvertisseur x:Key="Euros" />
         <local:EgalConvertisseur x:Key="Egal" />
         <local:VisibleSiEgalConvertisseur x:Key="VisibleSiEgal" />
@@ -621,8 +622,32 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
 
+        <!-- Écran du mois : vue normale ou vue épurée (choix de la Configuration). -->
         <DataTemplate DataType="{x:Type vm:MoisViewModel}">
-            <vues:VueMois />
+            <ContentControl Content="{Binding}" Focusable="False">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Setter Property="ContentTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <vues:VueMois />
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Epuree}" Value="True">
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate>
+                                            <vues:VueMoisEpuree />
+                                        </DataTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:PrevisionnelViewModel}">
