@@ -80,6 +80,15 @@ public partial class VueMoisEpuree : UserControl
         Organiser(grille);
     }
 
+    /// <summary>Le tableau reçoit le mois (aussi hors écran, pour les captures, où « Loaded » n'arrive pas).</summary>
+    private void Grille_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is MoisViewModel)
+            Grille_Loaded(sender, new RoutedEventArgs());
+        else if (sender is DataGrid grille)
+            _grilles.Remove(grille);
+    }
+
     private void Grille_Unloaded(object sender, RoutedEventArgs e)
     {
         if (sender is DataGrid grille)

@@ -65,9 +65,9 @@
                     </StackPanel>
                 </DockPanel>
                 <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                    <RadioButton Content="À pointer" IsChecked="{Binding Disposition.FiltreAPointer}" Margin="0,0,16,0" />
-                    <RadioButton Content="Pointées" IsChecked="{Binding Disposition.FiltrePointees}" Margin="0,0,16,0" />
-                    <RadioButton Content="Toutes" IsChecked="{Binding Disposition.FiltreToutes}" Margin="0,0,24,0" />
+                    <RadioButton Content="À pointer" Foreground="{DynamicResource Texte}" IsChecked="{Binding Disposition.FiltreAPointer}" Margin="0,0,16,0" />
+                    <RadioButton Content="Pointées" Foreground="{DynamicResource Texte}" IsChecked="{Binding Disposition.FiltrePointees}" Margin="0,0,16,0" />
+                    <RadioButton Content="Toutes" Foreground="{DynamicResource Texte}" IsChecked="{Binding Disposition.FiltreToutes}" Margin="0,0,24,0" />
                     <CheckBox Content="Ranger par catégorie" IsChecked="{Binding RangerParCategorie}"
                               ToolTip="Décochez pour revenir à l'ordre de saisie des opérations"
                               Visibility="{Binding ACategories, Converter={StaticResource Visible}}" />
@@ -75,6 +75,7 @@
 
                 <!-- Liste remplie par le code (VueMoisEpuree.xaml.cs) : filtrée, regroupée par catégorie ou dans l'ordre de saisie. -->
                 <DataGrid SelectedItem="{Binding Operations.Selection}" Loaded="Grille_Loaded" Unloaded="Grille_Unloaded"
+                          DataContextChanged="Grille_DataContextChanged"
                           PreviewMouseWheel="Grille_PreviewMouseWheel">
                     <DataGrid.GroupStyle>
                         <GroupStyle>
@@ -371,7 +372,6 @@
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Style="{StaticResource Icone}" Text="&#xE76F;" FontSize="14" Foreground="{DynamicResource Accent1}" Margin="2,0,8,0" />
                                     <TextBlock Text="{Binding Nom}" FontWeight="SemiBold" Foreground="{DynamicResource Accent1}" VerticalAlignment="Center" />
-                                    <TextBlock Text=" · glisser pour déplacer" Style="{StaticResource Discret}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Border>
                         </DockPanel>
