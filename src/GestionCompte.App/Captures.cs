@@ -46,7 +46,7 @@ internal static class Captures
     private const double HauteurPrets = 2000;
 
     /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
-    private const double HauteurBourse = 3900;
+    private const double HauteurBourse = 4150;
 
     /// <summary>Module Impôts : revenus, foyer, détail du calcul et pistes.</summary>
     private const double HauteurImpots = 1620;
@@ -286,6 +286,7 @@ internal static class Captures
                 }
                 """));
             vm.Veille.DetailOuvert = true;
+            vm.PartageFortunix.AfficherExemple("Portefeuille « Trade Republic » partagé le 09/11/2026 à 18:42, dans G:\\Mon Drive\\Mon Budget - Fortunix.");
             await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 2;
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));

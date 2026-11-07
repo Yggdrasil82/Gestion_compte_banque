@@ -28,7 +28,12 @@ public sealed partial class BourseViewModel : ObservableObject
     {
         _compte = compte;
         _dialogues = dialogues;
-        _donneesModifiees = donneesModifiees;
+        // Après chaque changement enregistré, le portefeuille partagé avec Fortunix est aussi mis à jour.
+        _donneesModifiees = () =>
+        {
+            donneesModifiees();
+            Partage?.Publier(NomCompte, Portefeuille);
+        };
         _cours = cours;
         _aujourdhui = aujourdhui;
         _lireFichier = lireFichier ?? File.ReadAllText;
@@ -37,6 +42,37 @@ public sealed partial class BourseViewModel : ObservableObject
     }
 
     public CompteBancaire Compte => _compte;
+
+    /// <summary>Nom du compte (celui dont le portefeuille peut être partagé avec Fortunix).</summary>
+    public string NomCompte { get; init; } = "";
+
+    /// <summary>Carte « Fortunix (téléphone) » (commune à tous les comptes).</summary>
+    public PartageFortunixViewModel? Partage
+    {
+        get => _partage;
+        init
+        {
+            _partage = value;
+            if (value is not null)
+                value.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(PartageFortunixViewModel.Actif))
+                        OnPropertyChanged(nameof(PartageDeCeCompte));
+                };
+        }
+    }
+
+    private readonly PartageFortunixViewModel? _partage;
+
+    /// <summary>Le partage avec Fortunix concerne ce compte.</summary>
+    public bool PartageDeCeCompte => Partage is { Actif: true } p && string.Equals(p.Compte, NomCompte, StringComparison.CurrentCultureIgnoreCase);
+
+    [RelayCommand]
+    private void PartagerFortunix()
+    {
+        Partage?.Configurer(NomCompte, Portefeuille);
+        OnPropertyChanged(nameof(PartageDeCeCompte));
+    }
 
     /// <summary>Carte « Veille marchés » (commune à tous les comptes).</summary>
     public VeilleMarchesViewModel? Veille
