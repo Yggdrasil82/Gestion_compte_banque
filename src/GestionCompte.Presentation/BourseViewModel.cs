@@ -38,6 +38,46 @@ public sealed partial class BourseViewModel : ObservableObject
 
     public CompteBancaire Compte => _compte;
 
+    /// <summary>Carte « Veille marchés » (commune à tous les comptes).</summary>
+    public VeilleMarchesViewModel? Veille
+    {
+        get => _veille;
+        init
+        {
+            _veille = value;
+            if (value is not null)
+                value.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(VeilleMarchesViewModel.Veille))
+                    {
+                        OnPropertyChanged(nameof(ExpositionVeille));
+                        OnPropertyChanged(nameof(AvecExpositionVeille));
+                    }
+                };
+        }
+    }
+
+    private readonly VeilleMarchesViewModel? _veille;
+
+    /// <summary>
+    /// Risque de ce portefeuille d'après la veille, calculé sur ce PC (la répartition des titres n'est envoyée nulle part) ; vide sans veille ou sans titre.
+    /// </summary>
+    public string ExpositionVeille
+    {
+        get
+        {
+            if (Veille?.Veille is not { } veille
+                || veille.Exposer(RepartitionSecteurs.Select(r => (r.Secteur, r.Part))) is not { } exposition)
+                return "";
+            var texte = $"Votre portefeuille : risque {exposition.Score} %";
+            if (exposition.SecteursEleves.Count > 0)
+                texte += $", dont {exposition.PartRisqueEleve.ToString("0.#", Francais)} % dans des secteurs à risque élevé ({string.Join(", ", exposition.SecteursEleves)})";
+            return texte + ".";
+        }
+    }
+
+    public bool AvecExpositionVeille => ExpositionVeille.Length > 0;
+
     public Portefeuille Portefeuille => _compte.Portefeuille;
 
     public static readonly IReadOnlyList<string> NomsFiltres = new[] { "Tout", "Compte-titres", "PEA" };
@@ -235,6 +275,8 @@ public sealed partial class BourseViewModel : ObservableObject
             ? ""
             : $"{lourd.Secteur} pèse {lourd.Part.ToString("N1", Francais)} % de vos titres : une baisse de ce secteur toucherait une grosse partie du portefeuille.";
         OnPropertyChanged(nameof(RepartitionSecteurs));
+        OnPropertyChanged(nameof(ExpositionVeille));
+        OnPropertyChanged(nameof(AvecExpositionVeille));
         OnPropertyChanged(nameof(AlerteSecteur));
         OnPropertyChanged(nameof(AvecAlerteSecteur));
     }

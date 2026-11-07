@@ -107,6 +107,7 @@ public sealed partial class MainViewModel : ObservableObject
         };
         Mail = new MailViewModel(Apparence, dossier, Google, secrets, dialogues, Documents, () => Bilan);
         IA = new ServicesIA(secrets, dialogues);
+        Veille = new VeilleMarchesViewModel(secrets, dialogues);
         Achats = new AchatsViewModel(dossier, IA, dialogues);
         Achats.AchatAPrevoir += (_, achat) => PrevoirAchat(achat);
         Impots = new ImpotsViewModel(dossier, TousLesComptes, aujourdHui.Date);
@@ -299,6 +300,8 @@ public sealed partial class MainViewModel : ObservableObject
             Suggestions.MarquerVues();
         else if (value == OngletImpots)
             Impots.Actualiser();
+        else if (value == OngletBourse)
+            _ = Veille.ChargerSiBesoinAsync();
     }
 
     private void NotifierComptes()
@@ -515,6 +518,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     /// <summary>IA gratuites (Gemini, Groq) avec les clés de l'utilisateur, propres à ce PC.</summary>
     public ServicesIA IA { get; }
+
+    /// <summary>Veille des marchés (carte du module Bourse), commune à tous les comptes.</summary>
+    public VeilleMarchesViewModel Veille { get; }
 
     /// <summary>Aide à l'achat : recherche du meilleur prix, sites, prix suivis.</summary>
     public AchatsViewModel Achats { get; }
@@ -1154,7 +1160,7 @@ public sealed partial class MainViewModel : ObservableObject
         // Le portefeuille ne dépend pas de la configuration : l'écran (filtre, message) est gardé tant que le compte ne change pas.
         if (Bourse is null || !ReferenceEquals(Bourse.Compte, _compte))
         {
-            Bourse = new BourseViewModel(_compte, _dialogues, Enregistrer, _coursBourse, _aujourdhui);
+            Bourse = new BourseViewModel(_compte, _dialogues, Enregistrer, _coursBourse, _aujourdhui) { Veille = Veille };
             Bourse.AnalyseDemandee += (_, question) => AnalyserPortefeuille(question);
         }
         Bilan = new BilanViewModel(_compte, _moisDuJour, _dialogues) { EnvoiParMailPossible = Apparence.ModuleMail };

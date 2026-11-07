@@ -296,6 +296,12 @@ public sealed class Dialogues : IDialogues
         return fenetre.ShowDialog() == true ? fenetre.Saisie : null;
     }
 
+    public SaisieVeille? DemanderVeille(string depot, bool cleExistante)
+    {
+        var fenetre = new FenetreVeille(depot, cleExistante) { Owner = Fenetre };
+        return fenetre.ShowDialog() == true ? fenetre.Saisie : null;
+    }
+
     public SiteRecherche? DemanderSite(SiteRecherche? actuel)
     {
         var fenetre = new FenetreSite(actuel) { Owner = Fenetre };

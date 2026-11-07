@@ -82,6 +82,9 @@ public interface IDialogues
     /// <param name="cleExistante">Une clé est déjà enregistrée : la laisser vide la garde.</param>
     SaisieIA? DemanderCleIA(string nom, string adresseCle, bool cleExistante, string modele, string modeleParDefaut) => null;
 
+    /// <summary>Dépôt GitHub privé de la veille des marchés et clé en lecture seule ; null si annulé.</summary>
+    SaisieVeille? DemanderVeille(string depot, bool cleExistante) => null;
+
     /// <summary>Ajout ou modification d'un site de la liste de recherche ; null si annulé.</summary>
     Core.Achats.SiteRecherche? DemanderSite(Core.Achats.SiteRecherche? actuel) => null;
 

@@ -46,7 +46,7 @@ internal static class Captures
     private const double HauteurPrets = 2000;
 
     /// <summary>Module Bourse : chiffres clés, titres et opérations importées.</summary>
-    private const double HauteurBourse = 3450;
+    private const double HauteurBourse = 3900;
 
     /// <summary>Module Impôts : revenus, foyer, détail du calcul et pistes.</summary>
     private const double HauteurImpots = 1620;
@@ -267,6 +267,25 @@ internal static class Captures
             vm.Bourse.Simulateur.Quantite = 5;
             vm.Bourse.Simulateur.PrixVente = 200m;
             vm.Bourse.Simulateur.Ttf = true;
+            // Veille marchés : point inventé (scores, textes et liens d'exemple), détail des facteurs déplié.
+            vm.Veille.Afficher(VeilleMarches.Lire("""
+                {
+                  "date": "2026-11-09", "score": 48, "scorePrecedent": 41, "tendance": "hausse",
+                  "resume": "Exemple : doutes sur le coût de l'intelligence artificielle, taux stables, pétrole en repli.",
+                  "facteurs": [
+                    { "nom": "Technologie et IA", "score": 66, "tendance": "hausse", "explication": "Exemple : valorisations élevées et dépenses lourdes dans les centres de données.",
+                      "sources": [ { "titre": "Article d'exemple (presse économique)", "url": "https://exemple.fr/article-1" } ] },
+                    { "nom": "Taux et banques centrales", "score": 38, "tendance": "stable", "explication": "Exemple : pas de changement de taux attendu ce mois-ci.",
+                      "sources": [ { "titre": "Dépêche d'exemple", "url": "https://exemple.fr/article-2" } ] },
+                    { "nom": "Énergie et matières premières", "score": 24, "tendance": "baisse", "explication": "Exemple : le pétrole recule, les stocks sont confortables.", "sources": [] }
+                  ],
+                  "secteurs": [
+                    { "nom": "Industrie", "score": 63, "tendance": "hausse" },
+                    { "nom": "Pétrole et gaz", "score": 24, "tendance": "baisse" }
+                  ]
+                }
+                """));
+            vm.Veille.DetailOuvert = true;
             await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 2;
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));
