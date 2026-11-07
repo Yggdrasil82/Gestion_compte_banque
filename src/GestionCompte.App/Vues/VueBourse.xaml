@@ -353,7 +353,7 @@
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <TextBlock TextWrapping="Wrap" FontSize="12">
-                                                                    <Hyperlink Command="{Binding DataContext.OuvrirSourceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}"
+                                                                    <Hyperlink Foreground="{DynamicResource Accent1}" Command="{Binding DataContext.OuvrirSourceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl, AncestorLevel=2}}"
                                                                                CommandParameter="{Binding}" ToolTip="{Binding Url}"><Run Text="{Binding Titre, Mode=OneWay}" /></Hyperlink>
                                                                 </TextBlock>
                                                             </DataTemplate>
