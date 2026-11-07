@@ -84,18 +84,46 @@ public sealed class PartageFortunixTests : IDisposable
     }
 
     [Fact]
-    public void Arreter_SupprimeLeFichierEtLesReglages()
+    public async Task Arreter_SupprimeLeFichierEtLesReglages()
     {
         var secrets = new SecretsEnMemoire();
         var partage = Partage(secrets, new Dialogues(_dossier, "mot-de-passe-1"));
         partage.Configurer("Trade Republic", ConfigurationParDefaut.CreerDemoBourse().Portefeuille);
 
-        partage.ArreterCommand.Execute(null);
+        await partage.ArreterCommand.ExecuteAsync(null);
 
         Assert.False(partage.Actif);
         Assert.False(File.Exists(Fichier));
         Assert.Null(secrets.Lire(PartageFortunixViewModel.SecretMotDePasse));
         Assert.True(new PartageFortunixViewModel(secrets, new Dialogues(null, null)).NonActif);
+    }
+
+    [Fact]
+    public async Task DonneesDansGoogleDrive_FichierAColeDuCoffre_SansChoisirDeDossier()
+    {
+        var drive = new GestionCompte.Data.Documents.StockageDossier(Path.Combine(_dossier, "drive"));
+        var secrets = new SecretsEnMemoire();
+        var dialogues = new Dialogues(dossier: null, "mot-de-passe-1");
+        var partage = Partage(secrets, dialogues);
+        partage.StockageDonneesDrive = () => drive;
+        var portefeuille = ConfigurationParDefaut.CreerDemoBourse().Portefeuille;
+
+        Assert.True(partage.Configurer("Trade Republic", portefeuille));
+        await partage.PublierAsync("Trade Republic", portefeuille);
+
+        Assert.Equal(PartageFortunixViewModel.DossierDonneesDrive, partage.Dossier);
+        Assert.Contains("Google Drive, dossier « Mon Budget - Données »", partage.Etat);
+        var relu = FichierPortefeuille.Lire((await drive.LireAsync(FichierPortefeuille.Nom))!, "mot-de-passe-1");
+        Assert.Equal("Trade Republic", relu.Compte);
+
+        // Hors connexion : rien n'est envoyé, l'état le dit.
+        partage.StockageDonneesDrive = () => null;
+        await partage.PublierAsync("Trade Republic", portefeuille);
+        Assert.Contains("non mis à jour", partage.Etat);
+
+        partage.StockageDonneesDrive = () => drive;
+        await partage.ArreterCommand.ExecuteAsync(null);
+        Assert.Null(await drive.LireAsync(FichierPortefeuille.Nom));
     }
 
     [Fact]

@@ -121,10 +121,30 @@ public sealed partial class PartageFortunixViewModel : ObservableObject
 
     [ObservableProperty] private string _etat = "";
 
-    /// <summary>Choisit le dossier (Google Drive) et le mot de passe, puis dépose le portefeuille de ce compte.</summary>
+    /// <summary>Dossier enregistré quand le fichier va dans le dossier Google Drive des données (« Stocker dans Google Drive »).</summary>
+    public const string DossierDonneesDrive = "google-drive";
+
+    /// <summary>
+    /// Dossier Google Drive des données quand elles y sont rangées et modifiables (null sinon) : le fichier portefeuille y est
+    /// déposé à côté du coffre, Fortunix le lit avec le même compte Google.
+    /// </summary>
+    public Func<IStockageDocuments?>? StockageDonneesDrive { get; set; }
+
+    private readonly SemaphoreSlim _envoi = new(1, 1);
+
+    private bool DansDrive => Dossier == DossierDonneesDrive;
+
+    private string Destination => DansDrive ? $"Google Drive, dossier « {Data.Nuage.CoffreDonnees.NomDossierDrive} »" : Dossier ?? "";
+
+    /// <summary>
+    /// Choisit où déposer le fichier (le dossier Google Drive des données s'il y en a, sinon un dossier synchronisé) et le mot de
+    /// passe, puis dépose le portefeuille de ce compte.
+    /// </summary>
     public bool Configurer(string compte, Portefeuille portefeuille)
     {
-        var dossier = _dialogues.ChoisirDossier("Dossier synchronisé par Google Drive, partagé avec le téléphone");
+        var dossier = StockageDonneesDrive?.Invoke() is not null
+            ? DossierDonneesDrive
+            : _dialogues.ChoisirDossier("Dossier synchronisé par Google Drive, lu par le téléphone");
         if (dossier is null)
             return false;
         var motDePasse = _dialogues.DemanderMotDePasse("Mot de passe du portefeuille",
@@ -149,46 +169,76 @@ public sealed partial class PartageFortunixViewModel : ObservableObject
     }
 
     /// <summary>Dépose le portefeuille s'il s'agit du compte partagé ; une erreur est affichée dans l'état, sans fenêtre.</summary>
-    public void Publier(string compte, Portefeuille portefeuille)
+    public void Publier(string compte, Portefeuille portefeuille) => _ = PublierAsync(compte, portefeuille);
+
+    /// <summary>Dans un dossier : écrit tout de suite ; dans Google Drive : envoi en arrière-plan (un seul à la fois).</summary>
+    public async Task PublierAsync(string compte, Portefeuille portefeuille)
     {
         if (!Actif || !string.Equals(compte, Compte, StringComparison.CurrentCultureIgnoreCase)
             || Dossier is not { } dossier || _secrets.Lire(SecretMotDePasse) is not { } motDePasse
             || _secrets.Lire(SecretSel) is not { } selTexte)
             return;
+        var destination = Destination;
         try
         {
             var sel = Convert.FromBase64String(selTexte);
             _cle ??= ChiffrementDocuments.DeriverCle(motDePasse, sel, _iterations);
             var maintenant = _maintenant();
             var contenu = FichierPortefeuille.Creer(PortefeuillePartage.Depuis(portefeuille, compte, maintenant), _cle, sel, _iterations);
-            Directory.CreateDirectory(dossier);
-            var chemin = Path.Combine(dossier, FichierPortefeuille.Nom);
-            var provisoire = chemin + ".tmp";
-            File.WriteAllBytes(provisoire, contenu);
-            File.Move(provisoire, chemin, overwrite: true);
-            Etat = $"Portefeuille « {compte} » partagé le {maintenant.ToString("dd/MM/yyyy 'à' HH:mm", Francais)}, dans {dossier}.";
+            if (DansDrive)
+            {
+                if (StockageDonneesDrive?.Invoke() is not { } drive)
+                {
+                    Etat = "Portefeuille non mis à jour : les données ne sont pas ouvertes depuis Google Drive (hors connexion ou lecture seule).";
+                    return;
+                }
+                Etat = "Envoi du portefeuille dans Google Drive…";
+                await _envoi.WaitAsync();
+                try
+                {
+                    await drive.EcrireAsync(FichierPortefeuille.Nom, contenu);
+                }
+                finally
+                {
+                    _envoi.Release();
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(dossier);
+                var chemin = Path.Combine(dossier, FichierPortefeuille.Nom);
+                var provisoire = chemin + ".tmp";
+                File.WriteAllBytes(provisoire, contenu);
+                File.Move(provisoire, chemin, overwrite: true);
+            }
+            Etat = $"Portefeuille « {compte} » partagé le {maintenant.ToString("dd/MM/yyyy 'à' HH:mm", Francais)}, dans {destination}.";
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or HttpRequestException
+                                      or InvalidOperationException or TaskCanceledException)
         {
-            Etat = $"Le portefeuille n'a pas pu être déposé dans {dossier} : {e.Message}";
+            Etat = $"Le portefeuille n'a pas pu être déposé dans {destination} : {e.Message}";
         }
     }
 
     [RelayCommand]
-    private void Arreter()
+    private async Task Arreter()
     {
         if (!_dialogues.Confirmer("Arrêter le partage avec Fortunix",
-                "Le portefeuille ne sera plus mis à jour pour le téléphone et le fichier sera supprimé du dossier. Continuer ?"))
+                "Le portefeuille ne sera plus mis à jour pour le téléphone et le fichier sera supprimé. Continuer ?"))
             return;
-        if (Dossier is { } dossier)
+        try
         {
-            try
+            if (DansDrive)
             {
+                if (StockageDonneesDrive?.Invoke() is { } drive)
+                    await drive.SupprimerAsync(FichierPortefeuille.Nom);
+            }
+            else if (Dossier is { } dossier)
                 File.Delete(Path.Combine(dossier, FichierPortefeuille.Nom));
-            }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-            {
-            }
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or HttpRequestException or InvalidOperationException
+                                      or TaskCanceledException)
+        {
         }
         foreach (var secret in new[] { SecretDossier, SecretMotDePasse, SecretSel, SecretCompte })
             _secrets.Ecrire(secret, null);
@@ -206,6 +256,6 @@ public sealed partial class PartageFortunixViewModel : ObservableObject
     private void MettreAJour()
     {
         Actif = Dossier is { Length: > 0 } && Compte is { Length: > 0 };
-        Etat = Actif ? $"Partage du portefeuille « {Compte} » réglé, dans {Dossier}." : "";
+        Etat = Actif ? $"Partage du portefeuille « {Compte} » réglé, dans {Destination}." : "";
     }
 }

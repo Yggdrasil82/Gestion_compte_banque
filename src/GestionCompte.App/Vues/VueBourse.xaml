@@ -390,7 +390,7 @@
                                        Text="Le portefeuille (titres, secteurs et parts, aucune opération bancaire) est chiffré avec votre mot de passe et déposé dans un dossier Google Drive. Fortunix le lit pour croiser la veille avec vos titres." />
                             <StackPanel Visibility="{Binding Partage.NonActif, Converter={StaticResource Visible}}" Margin="0,6,0,0">
                                 <TextBlock TextWrapping="Wrap"
-                                           Text="Choisissez un dossier synchronisé par Google Drive pour ordinateur, puis partagez ce dossier dans Google Drive avec le compte Google utilisé sur le téléphone." />
+                                           Text="Si vos données sont rangées dans Google Drive, le fichier va dans le dossier « Mon Budget - Données », à côté d'elles. Sinon, choisissez un dossier synchronisé par Google Drive pour ordinateur. Fortunix le lit avec le même compte Google (ou un compte à qui le dossier est partagé)." />
                                 <Button Style="{StaticResource BoutonPrincipal}" Command="{Binding PartagerFortunixCommand}" HorizontalAlignment="Left" Margin="0,8,0,0">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Style="{StaticResource Icone}" Text="&#xE72D;" Margin="0,0,8,0" />

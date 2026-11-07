@@ -286,7 +286,7 @@ internal static class Captures
                 }
                 """));
             vm.Veille.DetailOuvert = true;
-            vm.PartageFortunix.AfficherExemple("Portefeuille « Trade Republic » partagé le 09/11/2026 à 18:42, dans G:\\Mon Drive\\Mon Budget - Fortunix.");
+            vm.PartageFortunix.AfficherExemple("Portefeuille « Trade Republic » partagé le 09/11/2026 à 18:42, dans Google Drive, dossier « Mon Budget - Données ».");
             await Capturer(("39-bourse-ocean", Ambiance.Ocean, false, MainViewModel.OngletBourse, false));
             vm.Bourse.Filtre = 2;
             await Capturer(("40-bourse-pea-nuit-sombre", Ambiance.Nuit, true, MainViewModel.OngletBourse, false));

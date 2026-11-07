@@ -509,6 +509,9 @@ public sealed partial class MainViewModel : ObservableObject
         set
         {
             _donneesDrive = value;
+            // Données dans Google Drive : le portefeuille pour Fortunix va dans le même dossier.
+            PartageFortunix.StockageDonneesDrive = () =>
+                value?.Session is { LectureSeule: false, Distant: { } distant } ? distant.Stockage : null;
             if (Configuration is not null)
                 Configuration.DonneesDrive = value;
         }
