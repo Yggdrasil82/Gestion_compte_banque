@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using GestionCompte.Core;
 using GestionCompte.Core.Modeles;
 using Microsoft.Data.Sqlite;
@@ -24,8 +25,9 @@ public sealed class DepotSqlite
     /// Version 10 : prêts en cours (module « Prêts »).
     /// Version 11 : virements liés entre comptes.
     /// Version 12 : portefeuille de bourse (module « Bourse »).
+    /// Version 13 : trace de l'import qui a validé chaque opération et revenu.
     /// </remarks>
-    public const int VersionSchema = 12;
+    public const int VersionSchema = 13;
 
     public DepotSqlite(string cheminFichier)
     {
@@ -112,14 +114,17 @@ public sealed class DepotSqlite
 
         // Colonnes absentes des fichiers aux formats 1 à 3.
         var format4 = ColonneExiste(connexion, "mois_revenu", "recu");
+        // Colonne absente avant le format 13.
+        var traceRevenu = ColonneExiste(connexion, "mois_revenu", "trace_import") ? "trace_import" : "NULL";
         Lire(connexion,
-            format4
-                ? "SELECT mois_id, nom, montant, recu, identifiant_banque FROM mois_revenu ORDER BY mois_id, ordre"
-                : "SELECT mois_id, nom, montant, 0, NULL FROM mois_revenu ORDER BY mois_id, ordre",
+            (format4
+                ? "SELECT mois_id, nom, montant, recu, identifiant_banque"
+                : "SELECT mois_id, nom, montant, 0, NULL") + $", {traceRevenu} FROM mois_revenu ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Revenus.Add(new LigneRevenu(l.GetString(1), LireDecimal(l.GetString(2)))
             {
                 Recu = l.GetInt64(3) != 0,
                 IdentifiantBanque = TexteOuNull(l, 4),
+                Trace = LireTrace(TexteOuNull(l, 5)),
             }));
         // Avant le format 4, les revenus n'étaient pas cochés « reçu » : ceux des mois terminés sont considérés reçus
         // (sinon le solde pointé serait faux au premier import) ; ceux du mois en cours le seront à l'import.
@@ -138,9 +143,11 @@ public sealed class DepotSqlite
         var categorieOperation = ColonneExiste(connexion, "operation", "categorie") ? "categorie" : "NULL";
         // Colonnes absentes avant le format 11.
         var lienOperation = ColonneExiste(connexion, "operation", "id_lien") ? "compte_lie, id_lien" : "NULL, NULL";
+        // Colonne absente avant le format 13.
+        var traceOperation = ColonneExiste(connexion, "operation", "trace_import") ? "trace_import" : "NULL";
         Lire(connexion,
             "SELECT mois_id, libelle, debit, credit, pointee, enveloppe, compte_cumul, " +
-            (format4 ? "identifiant_banque" : "NULL") + $", {categorieOperation}, {lienOperation} FROM operation ORDER BY mois_id, ordre",
+            (format4 ? "identifiant_banque" : "NULL") + $", {categorieOperation}, {lienOperation}, {traceOperation} FROM operation ORDER BY mois_id, ordre",
             l => moisParId[l.GetInt64(0)].Operations.Add(
                 new Operation(l.GetString(1), LireDecimal(l.GetString(2)), LireDecimal(l.GetString(3)))
                 {
@@ -151,6 +158,7 @@ public sealed class DepotSqlite
                     CategorieOperation = TexteOuNull(l, 8),
                     CompteLie = TexteOuNull(l, 9),
                     IdLien = TexteOuNull(l, 10),
+                    Trace = LireTrace(TexteOuNull(l, 11)),
                 }));
 
         // Table absente avant le format 9.
@@ -279,9 +287,9 @@ public sealed class DepotSqlite
 
             foreach (var (revenu, ordre) in mois.Revenus.Select((r, i) => (r, i)))
                 Executer(connexion,
-                    "INSERT INTO mois_revenu (mois_id, ordre, nom, montant, recu, identifiant_banque) VALUES ($id, $o, $n, $m, $r, $ib)",
+                    "INSERT INTO mois_revenu (mois_id, ordre, nom, montant, recu, identifiant_banque, trace_import) VALUES ($id, $o, $n, $m, $r, $ib, $t)",
                     ("$id", moisId), ("$o", ordre), ("$n", revenu.Nom), ("$m", EcrireDecimal(revenu.Montant)),
-                    ("$r", revenu.Recu ? 1 : 0), ("$ib", revenu.IdentifiantBanque));
+                    ("$r", revenu.Recu ? 1 : 0), ("$ib", revenu.IdentifiantBanque), ("$t", EcrireTrace(revenu.Trace)));
 
             foreach (var (enveloppe, ordre) in mois.Enveloppes.Select((e, i) => (e, i)))
                 Executer(connexion, "INSERT INTO mois_enveloppe (mois_id, ordre, nom, budget) VALUES ($id, $o, $n, $b)",
@@ -289,12 +297,13 @@ public sealed class DepotSqlite
 
             foreach (var (operation, ordre) in mois.Operations.Select((o, i) => (o, i)))
                 Executer(connexion,
-                    "INSERT INTO operation (mois_id, ordre, libelle, debit, credit, pointee, enveloppe, compte_cumul, identifiant_banque, categorie, compte_lie, id_lien) " +
-                    "VALUES ($id, $o, $l, $d, $c, $p, $e, $cc, $ib, $cat, $cl, $li)",
+                    "INSERT INTO operation (mois_id, ordre, libelle, debit, credit, pointee, enveloppe, compte_cumul, identifiant_banque, categorie, compte_lie, id_lien, trace_import) " +
+                    "VALUES ($id, $o, $l, $d, $c, $p, $e, $cc, $ib, $cat, $cl, $li, $t)",
                     ("$id", moisId), ("$o", ordre), ("$l", operation.Libelle), ("$d", EcrireDecimal(operation.Debit)),
                     ("$c", EcrireDecimal(operation.Credit)), ("$p", operation.Pointee ? 1 : 0),
                     ("$e", operation.Enveloppe), ("$cc", operation.CompteCumul), ("$ib", operation.IdentifiantBanque),
-                    ("$cat", operation.CategorieOperation), ("$cl", operation.CompteLie), ("$li", operation.IdLien));
+                    ("$cat", operation.CategorieOperation), ("$cl", operation.CompteLie), ("$li", operation.IdLien),
+                    ("$t", EcrireTrace(operation.Trace)));
         }
 
         foreach (var (prevue, ordre) in compte.OperationsPrevues.Select((o, i) => (o, i)))
@@ -469,8 +478,29 @@ public sealed class DepotSqlite
             Executer(connexion, "ALTER TABLE operation ADD COLUMN compte_lie TEXT");
             Executer(connexion, "ALTER TABLE operation ADD COLUMN id_lien TEXT");
         }
+        if (!ColonneExiste(connexion, "operation", "trace_import"))
+            Executer(connexion, "ALTER TABLE operation ADD COLUMN trace_import TEXT");
+        if (!ColonneExiste(connexion, "mois_revenu", "trace_import"))
+            Executer(connexion, "ALTER TABLE mois_revenu ADD COLUMN trace_import TEXT");
         Executer(connexion, $"PRAGMA user_version = {VersionSchema}");
     }
+
+    /// <summary>Trace d'import enregistrée en JSON ; une trace illisible est ignorée.</summary>
+    private static TraceImport? LireTrace(string? json)
+    {
+        if (json is null)
+            return null;
+        try
+        {
+            return JsonSerializer.Deserialize<TraceImport>(json);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string? EcrireTrace(TraceImport? trace) => trace is null ? null : JsonSerializer.Serialize(trace);
 
     private static Dictionary<string, string> LireParametres(SqliteConnection connexion)
     {

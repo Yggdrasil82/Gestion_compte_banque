@@ -36,6 +36,9 @@ public sealed class LigneRevenu
 
     /// <summary>Identifiant de l'opération bancaire importée (FITID du fichier OFX), ou null.</summary>
     public string? IdentifiantBanque { get; set; }
+
+    /// <summary>Import qui a validé ce revenu (depuis la 2.20.2), ou null.</summary>
+    public TraceImport? Trace { get; set; }
 }
 
 public sealed class LigneEnveloppe
@@ -78,10 +81,26 @@ public sealed class Operation
     /// <summary>Identifiant de l'opération bancaire importée (FITID du fichier OFX), ou null si saisie à la main.</summary>
     public string? IdentifiantBanque { get; set; }
 
+    /// <summary>Import qui a validé ou ajouté cette opération (depuis la 2.20.2), ou null.</summary>
+    public TraceImport? Trace { get; set; }
+
     /// <summary>Fichier de l'autre compte (ex. « compte-2.db ») pour un virement entre comptes, ou null.</summary>
     /// <remarks>L'opération inverse (crédit pour un débit) est créée et tenue à jour dans l'autre compte.</remarks>
     public string? CompteLie { get; set; }
 
     /// <summary>Identifiant commun à ce virement et à son double dans l'autre compte, ou null.</summary>
     public string? IdLien { get; set; }
+}
+
+/// <summary>Import d'un relevé qui a validé une opération ou un revenu : quand, et la ligne du relevé telle que la banque l'a écrite.</summary>
+/// <param name="Montant">Montant de la ligne du relevé (négatif pour un débit).</param>
+public sealed record TraceImport(DateTime Import, DateOnly DateReleve, string LibelleBanque, decimal Montant)
+{
+    private static readonly System.Globalization.CultureInfo Francais = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    /// <summary>Ex. « Validée par l'import du 11/11/2026 à 23:10. Relevé : 08/11/2026 « CB CARREFOUR » −45,50 € ».</summary>
+    public string Texte(string validee = "Validée") =>
+        $"{validee} par l'import du {Import.ToString("dd/MM/yyyy 'à' HH:mm", Francais)}.\n" +
+        $"Relevé : {DateReleve.ToString("dd/MM/yyyy", Francais)} « {LibelleBanque} » " +
+        $"{(Montant < 0 ? "\u2212" : "+")}{Math.Abs(Montant).ToString("#,##0.00", Francais)} €";
 }

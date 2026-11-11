@@ -207,6 +207,7 @@ public static class ImportReleve
         }
 
         lignes.AddRange(RapprocherTout(compte, aRapprocher, courant, dejaComptees));
+        SignalerDejaValidees(compte, lignes);
 
         foreach (var ligne in lignes.Where(l => l.DateAnterieure))
             ligne.PeutAllerDansSonMois = ligne.PeriodeDate >= premier;
@@ -221,6 +222,32 @@ public static class ImportReleve
         return new PlanImport(
             lignes.OrderBy(l => l.Source.Date).ThenBy(l => l.Source.Identifiant, StringComparer.Ordinal).ToList(),
             moisACreer, releve.Solde, releve.DateSolde, courant);
+    }
+
+    /// <summary>
+    /// Ligne du relevé de même date et même montant qu'une opération (ou un revenu) déjà validée par un import précédent sous un
+    /// autre identifiant (relevé OFX puis QIF, ou banque qui renumérote) : doublon probable, la ligne est décochée et la question posée.
+    /// </summary>
+    private static void SignalerDejaValidees(CompteBancaire compte, List<LigneImport> lignes)
+    {
+        var validees = compte.Mois
+            .SelectMany(m => m.Operations.Select(o => (Nom: o.Libelle, o.Trace)).Concat(m.Revenus.Select(r => (Nom: r.Nom, r.Trace))))
+            .Where(x => x.Trace is not null)
+            .GroupBy(x => (x.Trace!.DateReleve, x.Trace.Montant))
+            .ToDictionary(g => g.Key, g => new Queue<(string Nom, TraceImport Trace)>(g.Select(x => (x.Nom, x.Trace!))));
+        if (validees.Count == 0)
+            return;
+        foreach (var ligne in lignes.Where(l => l.Modifiable && l.Verification is null).OrderBy(l => l.Source.Date)
+                     .ThenBy(l => l.Source.Identifiant, StringComparer.Ordinal))
+        {
+            if (!validees.TryGetValue((ligne.Source.Date, ligne.Source.Montant), out var file) || !file.TryDequeue(out var deja))
+                continue;
+            ligne.Verification = $"Déjà validée le {deja.Trace.Import:dd/MM/yyyy} ? « {deja.Nom} » ({Montants.Formater(Math.Abs(ligne.Source.Montant))} €, " +
+                                 $"même date sur le relevé) a été validée par l'import du {deja.Trace.Import:dd/MM/yyyy 'à' HH:mm}. " +
+                                 "Ligne décochée : cochez-la pour l'importer quand même.";
+            ligne.DejaComptee = true;
+            ligne.Importer = false;
+        }
     }
 
     /// <summary>Rapproche chaque groupe d'opérations avec son mois (un mois pas encore créé : tel qu'il sera créé).</summary>
@@ -420,10 +447,12 @@ public static class ImportReleve
     }
 
     /// <summary>Applique l'import : crée les mois nécessaires, pointe, ajuste ou ajoute les opérations.</summary>
-    public static ResultatImport Appliquer(CompteBancaire compte, PlanImport plan)
+    /// <param name="maintenant">Date et heure de l'import, retenues sur chaque ligne validée (par défaut : maintenant).</param>
+    public static ResultatImport Appliquer(CompteBancaire compte, PlanImport plan, DateTime? maintenant = null)
     {
         ArgumentNullException.ThrowIfNull(compte);
         ArgumentNullException.ThrowIfNull(plan);
+        var date = maintenant ?? DateTime.Now;
 
         var aImporter = plan.Lignes.Where(l => l.Importer && l.Modifiable).ToList();
         var crees = new List<PeriodeMois>();
@@ -439,6 +468,7 @@ public static class ImportReleve
         {
             var mois = compte.Trouver(ligne.Periode)!;
             var source = ligne.Source;
+            var trace = new TraceImport(date, source.Date, source.LibelleBanque.Trim(), source.Montant);
 
             if (ligne.Choix is { EstRevenu: true } choixRevenu)
             {
@@ -446,6 +476,7 @@ public static class ImportReleve
                 revenu.Montant = source.Montant;
                 revenu.Recu = true;
                 revenu.IdentifiantBanque = source.Identifiant;
+                revenu.Trace = trace;
                 revenus++;
                 continue;
             }
@@ -460,6 +491,7 @@ public static class ImportReleve
                 AppliquerMontant(operation, source.Montant);
                 operation.Pointee = true;
                 operation.IdentifiantBanque = source.Identifiant;
+                operation.Trace = trace;
                 continue;
             }
 
@@ -467,6 +499,7 @@ public static class ImportReleve
             {
                 Pointee = true,
                 IdentifiantBanque = source.Identifiant,
+                Trace = trace,
                 Enveloppe = source.Montant < 0 && !string.IsNullOrWhiteSpace(ligne.Enveloppe) ? ligne.Enveloppe : null,
             };
             AppliquerMontant(nouvelle, source.Montant);

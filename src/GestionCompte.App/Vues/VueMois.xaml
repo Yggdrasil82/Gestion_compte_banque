@@ -124,6 +124,12 @@
                         </StackPanel>
                     </DockPanel>
                     <DataGrid ItemsSource="{Binding Revenus.Elements}" SelectedItem="{Binding Revenus.Selection}" Height="150">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <!-- Info-bulle sur toute la ligne : import qui l'a validée, ou pointée à la main. -->
+                                <Setter Property="ToolTip" Value="{Binding Origine}" />
+                            </Style>
+                        </DataGrid.RowStyle>
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Reçu" Width="50">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -246,6 +252,8 @@
                     <!-- Ligne pointée (à la main ou par l'import d'un relevé) : surlignée en vert. -->
                     <DataGrid.RowStyle>
                         <Style TargetType="DataGridRow">
+                            <!-- Info-bulle sur toute la ligne : import qui l'a validée, ou pointée à la main. -->
+                            <Setter Property="ToolTip" Value="{Binding Origine}" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Pointee}" Value="True">
                                     <Setter Property="Background" Value="{DynamicResource Accent2Clair}" />
@@ -280,7 +288,7 @@
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <CheckBox IsChecked="{Binding Pointee, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" />
                                         <TextBlock Style="{StaticResource Icone}" Text="&#xE896;" FontSize="11" Margin="6,0,0,0"
-                                                   Foreground="{DynamicResource Accent1}" ToolTip="Importée du relevé bancaire"
+                                                   Foreground="{DynamicResource Accent1}" ToolTip="{Binding Origine}"
                                                    Visibility="{Binding Importee, Converter={StaticResource Visible}}" />
                                     </StackPanel>
                                 </DataTemplate>

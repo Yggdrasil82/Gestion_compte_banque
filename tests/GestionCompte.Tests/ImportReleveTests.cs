@@ -386,6 +386,49 @@ public class ImportReleveTests
     }
 
     [Fact]
+    public void Appliquer_RetientLImportSurChaqueLigneValidee()
+    {
+        var compte = CompteOctobre();
+        var maintenant = new DateTime(2026, 11, 11, 23, 10, 0);
+        ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, Releve(
+            Ligne("XFER", "20261005", "-801.00", "L1", "PRLV SEPA LOYER"),
+            Ligne("CREDIT", "20261028", "+2650.40", "S1", "VIR SALAIRE"),
+            Ligne("DEBIT", "20261010", "-64.20", "C1", "CB CARREFOUR MARKET 09/10/26"))), maintenant);
+
+        var octobre = compte.Mois[0];
+        var loyer = octobre.Operations.Single(o => o.Libelle == "Loyer").Trace!;
+        Assert.Equal(new TraceImport(maintenant, new DateOnly(2026, 10, 5), "PRLV SEPA LOYER", -801m), loyer);
+        Assert.Equal(2650.40m, octobre.Revenus.Single(r => r.Recu).Trace!.Montant);
+        var carrefour = octobre.Operations.Single(o => o.IdentifiantBanque == "C1").Trace!;
+        Assert.Equal("CB CARREFOUR MARKET 09/10/26", carrefour.LibelleBanque);
+        Assert.Contains("Validée par l'import du 11/11/2026 à 23:10.", carrefour.Texte());
+        Assert.Contains("10/10/2026 « CB CARREFOUR MARKET 09/10/26 » \u221264,20 €", carrefour.Texte());
+        Assert.All(octobre.Operations.Where(o => o.IdentifiantBanque is null), o => Assert.Null(o.Trace));
+    }
+
+    [Fact]
+    public void Preparer_DejaValideeParUnAutreImport_DecocheeEtSignalee()
+    {
+        // Même relevé en OFX puis en QIF : les identifiants diffèrent, la date et le montant non.
+        var compte = CompteOctobre();
+        ImportReleve.Appliquer(compte, ImportReleve.Preparer(compte, Releve(
+            Ligne("DEBIT", "20261010", "-64.20", "C1", "CB CARREFOUR MARKET"))), new DateTime(2026, 11, 5, 8, 30, 0));
+
+        var plan = ImportReleve.Preparer(compte, Releve(
+            Ligne("DEBIT", "20261010", "-64.20", "AUTRE-ID", "CB CARREFOUR MARKET"),
+            Ligne("DEBIT", "20261010", "-64.20", "AUTRE-ID-2", "CB CARREFOUR MARKET"),
+            Ligne("DEBIT", "20261011", "-64.20", "AUTRE-ID-3", "CB CARREFOUR MARKET")));
+
+        var doublon = plan.Lignes.Single(l => l.Source.Identifiant == "AUTRE-ID");
+        Assert.False(doublon.Importer);
+        Assert.Contains("Déjà validée le 05/11/2026", doublon.Verification);
+        Assert.Contains("import du 05/11/2026 à 08:30", doublon.Verification);
+        // Une seule ligne validée ce jour-là : la deuxième du même jour, et celle du lendemain, sont nouvelles.
+        Assert.True(plan.Lignes.Single(l => l.Source.Identifiant == "AUTRE-ID-2").Importer);
+        Assert.Null(plan.Lignes.Single(l => l.Source.Identifiant == "AUTRE-ID-3").Verification);
+    }
+
+    [Fact]
     public void Appliquer_ChoixUtilisateur_Respecte()
     {
         var compte = CompteOctobre();

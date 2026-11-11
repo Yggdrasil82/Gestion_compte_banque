@@ -243,8 +243,27 @@ public sealed class RevenuMoisViewModel : ObservableObject
     public bool Recu
     {
         get => Modele.Recu;
-        set { if (SetProperty(Modele.Recu, value, Modele, (m, v) => m.Recu = v)) _modifie(); }
+        set
+        {
+            if (!SetProperty(Modele.Recu, value, Modele, (m, v) => m.Recu = v))
+                return;
+            OnPropertyChanged(nameof(Origine));
+            _modifie();
+        }
     }
+
+    /// <summary>Info-bulle de la ligne : import qui a validé ce revenu, ou « Reçu (coché à la main) ».</summary>
+    public string? Origine => OrigineImport.Texte(Modele.Trace, Modele.IdentifiantBanque, Modele.Recu, "Validé", "Reçu (coché à la main).", "Importé");
+}
+
+/// <summary>Info-bulle « d'où vient le pointage » d'une opération ou d'un revenu.</summary>
+public static class OrigineImport
+{
+    public static string? Texte(Core.Modeles.TraceImport? trace, string? identifiantBanque, bool pointee, string validee, string aLaMain, string importee) =>
+        trace is not null ? trace.Texte(validee)
+        : identifiantBanque is not null ? $"{importee} d'un relevé (avant la 2.20.2 : date de l'import non retenue)."
+        : pointee ? aLaMain
+        : null;
 }
 
 public sealed partial class EnveloppeMoisViewModel : ObservableObject
@@ -404,8 +423,17 @@ public sealed partial class OperationViewModel : ObservableObject
     public bool Pointee
     {
         get => Modele.Pointee;
-        set { if (SetProperty(Modele.Pointee, value, Modele, (m, v) => m.Pointee = v)) _modifie(); }
+        set
+        {
+            if (!SetProperty(Modele.Pointee, value, Modele, (m, v) => m.Pointee = v))
+                return;
+            OnPropertyChanged(nameof(Origine));
+            _modifie();
+        }
     }
+
+    /// <summary>Info-bulle de la ligne : import qui a validé ou ajouté l'opération, ou « Pointée à la main ».</summary>
+    public string? Origine => OrigineImport.Texte(Modele.Trace, Modele.IdentifiantBanque, Modele.Pointee, "Validée", "Pointée à la main.", "Importée");
 
     /// <summary>Enveloppe de la dépense ; chaîne vide = aucune.</summary>
     public string Enveloppe

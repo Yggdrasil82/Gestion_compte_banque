@@ -229,8 +229,28 @@ public sealed class DepotSqliteTests : IDisposable
         Assert.All(compte.Mois[^1].Revenus, r => Assert.False(r.Recu));
 
         compte.Mois[0].Operations[0].IdentifiantBanque = "F1";
+        compte.Mois[0].Operations[0].Trace = new TraceImport(new DateTime(2026, 12, 3, 9, 5, 0), new DateOnly(2026, 10, 2), "PRLV LOYER", -800m);
         depot.Enregistrer(compte);
         Assert.Equal("F1", depot.Charger()!.Mois[0].Operations[0].IdentifiantBanque);
+        Assert.Equal("PRLV LOYER", depot.Charger()!.Mois[0].Operations[0].Trace!.LibelleBanque);
+    }
+
+    [Fact]
+    public void TraceImport_EnregistreeEtRelue()
+    {
+        var compte = CompteAvecTroisMois();
+        var traceOperation = new TraceImport(new DateTime(2026, 11, 11, 23, 10, 0), new DateOnly(2026, 10, 8), "CB CARREFOUR 07/10", -45.50m);
+        var traceRevenu = new TraceImport(new DateTime(2026, 11, 11, 23, 10, 0), new DateOnly(2026, 10, 28), "VIR SALAIRE", 2650.40m);
+        compte.Mois[0].Operations[0].Trace = traceOperation;
+        compte.Mois[0].Revenus[0].Trace = traceRevenu;
+        var depot = new DepotSqlite(Chemin());
+
+        depot.Enregistrer(compte);
+        var relu = depot.Charger()!;
+
+        Assert.Equal(traceOperation, relu.Mois[0].Operations[0].Trace);
+        Assert.Equal(traceRevenu, relu.Mois[0].Revenus[0].Trace);
+        Assert.Null(relu.Mois[0].Operations[1].Trace);
     }
 
     [Fact]
